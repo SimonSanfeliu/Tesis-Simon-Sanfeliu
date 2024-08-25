@@ -6,14 +6,14 @@
 
 
 # Functions and prompts
-from prompts.prompts import base_prompt, prompt_request
+from prompts.base.prompts import base_prompt, prompt_request
 # import all prompts and functions from the different types of prompts
-from prompts.prompts import *
-from prompts.Decomposition import *
-from prompts.SelfCorrection import *
-from prompts.SchemaLinking import *
-from prompts.Classification import *
-from prompts.DBSchema import *
+from prompts.base.prompts import *
+from prompts.decomposition.Decomposition import *
+from prompts.correction.SelfCorrection import *
+from prompts.schema_linking.SchemaLinking import *
+from prompts.classification.Classification import *
+from prompts.schema_linking.DBSchema import *
 
 ## Base Prompt: 
 # Base prompt for the basic pipeline with a direct approach to complete the task and generate the SQL query
