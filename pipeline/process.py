@@ -28,6 +28,7 @@ def api_call(api_key, model, max_tokens, prompt):
                     {"role": "user", "content": prompt}
                 ]
             )
+            usage = response.usage
             response = response.choices[0].message.content
         except Exception as e:
             print(f"The following exception occured: {e}")
@@ -44,6 +45,9 @@ def api_call(api_key, model, max_tokens, prompt):
                     {"role": "user", "content": prompt}
                 ]
             )
+            usage = response.usage.to_dict()
+            usage["total_tokens"] = usage["input_tokens"] + \
+                                    usage["output_tokens"]
             response = response.content[0].text
         except Exception as e:
             print(f"The following exception occured: {e}")
@@ -62,6 +66,7 @@ def api_call(api_key, model, max_tokens, prompt):
             )
             chat_session = model2use.start_chat(history=[])
             response = chat_session.send_message(prompt)
+            usage = response.usage_metadata  # 'prompt_token_count', 'candidates_token_count' and 'total_token_count'
             response = response.text
         except Exception as e:
             print(f"The following exception occured: {e}")
@@ -69,7 +74,7 @@ def api_call(api_key, model, max_tokens, prompt):
     else:
         raise Exception("No valid model")
     
-    return response
+    return response, usage
 
 
 def format_response(specified_format, response):
@@ -122,8 +127,11 @@ def run_query(specified_format, formatted_response, engine):
     elif specified_format == "var":
         results = []
         for query in formatted_response:
-            query = exec(query)
-            results.append(pd.read_sql_query(query, con=engine))
+            exec(query)
+            try:
+                results.append(pd.read_sql_query(full_query, con=engine))
+            except:
+                Exception("No 'full_query' variable generated")
     else:
         raise Exception("No valid format specified")
     
