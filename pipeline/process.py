@@ -2,24 +2,24 @@ import pandas as pd
 import openai
 import anthropic
 import google.generativeai as genai
+from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 
 
-def api_call(api_key, model, max_tokens, prompt):
+def api_call(model, max_tokens, prompt):
     """Create the API calls for the LLM to use.
 
     Args:
-        api_key (str): Key of the API
         model (str): Name of the model
         max_tokens (int): The maximum number of tokens used for the response 
         of the API
         prompt (str): Prompt for the model
     
-    Return:
+    Returns:
         response (str): The response from the API
     """
     if "gpt" in model:
         try:
-            client = openai.OpenAI(api_key=api_key)
+            client = openai.OpenAI(api_key=OPENAI_KEY)
             response = client.chat.completions.create(
                 model=model,
                 temperature=0,
@@ -36,7 +36,7 @@ def api_call(api_key, model, max_tokens, prompt):
         
     elif "claude" in model:
         try:
-            client = anthropic.Anthropic(api_key=api_key)
+            client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
             response = client.messages.create(
                 model=model,
                 temperature=0,
@@ -55,7 +55,7 @@ def api_call(api_key, model, max_tokens, prompt):
     
     elif "gemini" in model:
         try:
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=GOOGLE_KEY)
             generation_config = {
             "temperature": 0,
             "max_output_tokens": max_tokens
@@ -86,7 +86,7 @@ def format_response(specified_format, response):
         decomposition in variables
         response (str): The response from the LLM
         
-    Return:
+    Returns:
         formatted_response (str or list): The response ready to be used in the
         database. A string if the specified format is 'singular', list of the 
         sub-queries if the format is 'var'
@@ -116,7 +116,7 @@ def run_query(specified_format, formatted_response, engine):
         sub-queries if the format is 'var'
         engine (SQL object): The engine to access the database
         
-    Return:
+    Returns:
         results (pd.DataFrame or list): Pandas DataFrame with the results of 
         the query if specified format is 'singular'. List of DataFrames with 
         the results of the subqueries and total query if specified format is 
