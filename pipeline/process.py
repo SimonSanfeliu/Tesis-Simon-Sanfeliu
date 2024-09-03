@@ -2,7 +2,9 @@ import pandas as pd
 import openai
 import anthropic
 import google.generativeai as genai
+
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
+from prompts.classification.Classification import general_task_classification_v1
 
 
 def api_call(model, max_tokens, prompt):
@@ -136,3 +138,20 @@ def run_query(specified_format, formatted_response, engine):
         raise Exception("No valid format specified")
     
     return results
+
+
+def classify(query, model):
+    """Function to classify the difficulty of a NL query
+
+    Args:
+        query (str): NL query
+        model (str): LLM to classify the query
+        
+    Returns:
+        label (str): Label of the difficulty level of the query. It can be
+        'simple', 'medium' or 'advanced'.
+    """
+    prompt = general_task_classification_v1 + \
+    f"\nThe query in question to classify is the following: {query}"
+    label = api_call(model, 500, prompt)
+    return label

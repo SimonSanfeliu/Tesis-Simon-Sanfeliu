@@ -2,7 +2,7 @@ import requests
 import sqlalchemy as sa
 import pandas as pd
 
-from pipeline.process import api_call, format_response
+from pipeline.process import api_call, format_response, classify
 from pipeline.ragStep import rag_step
 from secret.config import SQL_URL
 
@@ -33,6 +33,12 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     Returns:
         table (str): Resulting SQL query
     """
+    # Classify the query
+    label = classify(query, model)
+    
+    # TODO: Add more specific steps for label and self correction. Study more 
+    # the prompts
+    
     # Context for the RAG process
     with open('your_file.txt', 'r') as file:
         context = file.read()
