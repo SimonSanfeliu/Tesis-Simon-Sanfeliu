@@ -492,6 +492,7 @@ II Need 1 complex nested-query (clause other than 'WHERE' on probability)
 If (2 or more nested query are needed)
 OR (If 3 tables or more are used)
 OR (If two features from the features table are required)
+# ONLY return the value as such: 'label: "<difficulty>"', nothing more.
 '''
 # spatial classification
 type_class_prompt = '''

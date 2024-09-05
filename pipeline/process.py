@@ -4,7 +4,7 @@ import anthropic
 import google.generativeai as genai
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
-from prompts.classification.Classification import general_task_classification_v1
+from prompts.classification.Classification import diff_class_prompt
 
 
 def api_call(model, max_tokens, prompt):
@@ -151,7 +151,12 @@ def classify(query, model):
         label (str): Label of the difficulty level of the query. It can be
         'simple', 'medium' or 'advanced'.
     """
-    prompt = general_task_classification_v1 + \
-    f"\nThe query in question to classify is the following: {query}"
-    label = api_call(model, 500, prompt)
-    return label
+    # Make the difficulty classification prompt
+    prompt = diff_class_prompt + \
+    f"\nThe request to classify is the following: {query}"
+    
+    # Obtain the difficulty label
+    label = api_call(model, 20, prompt)
+    labels = ["simple", "medium", "advanced"]
+    true_label = [l for l in labels if l in label]
+    return true_label[0]
