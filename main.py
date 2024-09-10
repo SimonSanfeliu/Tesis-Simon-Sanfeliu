@@ -2,7 +2,7 @@ import requests
 import sqlalchemy as sa
 import pandas as pd
 
-from pipeline.process import api_call, format_response, classify
+from pipeline.process import api_call, format_response, schema_linking, classify
 from pipeline.ragStep import rag_step
 from secret.config import SQL_URL
 
@@ -12,6 +12,7 @@ engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['pass
 engine.begin()
 
 # TODO: Update the entire pipeline here
+# TODO: Create different pipeline for original process
 
 
 def pipeline(query, model, max_tokens, size, overlap, quantity, format):
@@ -32,12 +33,17 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
         
     Returns:
         table (str): Resulting SQL query
+        usage (dict): API usage after RAG process
     """
-    # Classify the query
-    label = classify(query, model)
+    # Schema linking to obtain the tables needed for the query
+    tables, schema_usage = schema_linking(query, model)
     
-    # TODO: Add more specific steps for label and self correction. Study more 
-    # the prompts
+    # Classify the query
+    to_classify = query + " The following tables are needed: {tables}"
+    label, classify_usage = classify(to_classify, model)
+    
+    # TODO: Add different if's depending on label and create different prompts
+    # TODO: Add self correction
     
     # Context for the RAG process
     with open('your_file.txt', 'r') as file:
@@ -61,4 +67,13 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     # Formatting the response
     table = format_response(format, response)
     
-    return table
+    return table, usage
+
+
+if __name__ == '__main__':
+    query = "Get the object identifier, candidate identifier, magnitudes, magnitude errors, and band identifiers as a function of time of the objects classified as SN II in the year 2019-2022, with probability larger than 0.6, initial rise rate greater than 0.5 in ZTF g and r-band and number of detections greater than 50."
+    model = "gpt-4o"
+    max_tokens = 500
+    size = 50
+    overlap = 10
+    quantity = 3

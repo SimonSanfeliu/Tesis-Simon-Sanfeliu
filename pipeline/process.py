@@ -5,6 +5,7 @@ import google.generativeai as genai
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt
+from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 
 
 def api_call(model, max_tokens, prompt):
@@ -18,6 +19,7 @@ def api_call(model, max_tokens, prompt):
     
     Returns:
         response (str): The response from the API
+        usage (dict): LLM API usage
     """
     if "gpt" in model:
         try:
@@ -150,13 +152,37 @@ def classify(query, model):
     Returns:
         label (str): Label of the difficulty level of the query. It can be
         'simple', 'medium' or 'advanced'.
+        usage (dict): LLM API usage
     """
     # Make the difficulty classification prompt
     prompt = diff_class_prompt + \
     f"\nThe request to classify is the following: {query}"
     
     # Obtain the difficulty label
-    label = api_call(model, 20, prompt)
+    label, usage = api_call(model, 20, prompt)
     labels = ["simple", "medium", "advanced"]
     true_label = [l for l in labels if l in label]
-    return true_label[0]
+    label = true_label[0]
+    return label, usage
+
+
+def schema_linking(query, model):
+    """Function to make the schema linking of a NL query. This means it will
+    obtain the tables necessary to create the corresponding SQL query 
+
+    Args:
+        query (str): NL query
+        model (str): LLM to obtain the necessary tables
+        
+    Returns:
+        tables (str): A string of a list of the tables needed to create the 
+        query
+        usage (dict): LLM API usage
+    """
+    # Make the schema linking prompt
+    prompt = tables_linking_prompt_V2 + \
+        f"\nThe user request is the following: {query}"
+        
+    # Obtain the tables necessary for the SQL query
+    tables, usage = api_call(model, 100, prompt)  # Assuming it will only return the list of tables
+    return tables, usage
