@@ -604,16 +604,9 @@ final_prompt_simple_vf='''
 
 # Context:
 ## General information of the schema and the database
-{simple_query_cntx}
-    
-# Postgres SQL tables, with their properties:
-{tab_schema}
-
-## Information useful for the query
-{ext_kn}
-{dom_kn}
-
-{simple_query_instructions}
+# {simple_query_cntx}
+# # Important details about the database required for the query:
+# {simple_query_instructions}
 # Answer ONLY with a SQL query, with the following format: 
   ```sql SQL_QUERY_HERE ```
 DON'T include anything else in your answer.
