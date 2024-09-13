@@ -216,6 +216,7 @@ def decomposition(label, ur_w_tables, model):
             simple_query_instructions = simple_query_instructions_vf,
             request = ur_w_tables
         )
+        usage = None
     elif label == "medium":
         decomp_plan = medium_decomp_prompt_vf.format(
             medium_decomp_task = medium_decomp_task_vf,
