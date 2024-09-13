@@ -41,15 +41,15 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
         context = file.read()
         
     # Creating the RAG instruction
-    ragInstruction = f" Given the user request, search for the tables needed
+    ragInstruction = f""" Given the user request, search for the tables needed
     to generate a SQL query in the ALeRCE database (PostgreSQL).
-    \n Request: {query}"
+    \n Request: {query}"""
     
     # Initiating RAG
     rag_info = rag_step(size, overlap, context, ragInstruction, quantity)
     
     # Creating the prompt
-    prompt = f"""Given the user request, select the tables needed to 
+    rag_prompt = f"""Given the user request, select the tables needed to 
     generate a SQL query. Give the answer in the following format: [table1, 
     table2, ...]. For example, if the answer is table object and table 
     taxonomy, then you should type: [object, taxonomy].
@@ -57,15 +57,15 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     Consider that these tables are necessary to execute the query: {rag_info}"""
     
     # Calling the LLM
-    tables, schema_usage = api_call(model, max_tokens, prompt)
+    tables, schema_usage = api_call(model, max_tokens, rag_prompt)
     
     # Classify the query
-    to_classify = query + f"\n The following tables are needed to generate the
-    query: {tables}"
+    to_classify = query + f"""\n The following tables are needed to generate the
+    query: {tables}"""
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify)    
+    prompt, decomp_usage = decomposition(label, to_classify, model)    
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
@@ -81,7 +81,17 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
         "Query generation": usage
     }
     
-    return table, total_usage
+    # Adding up the prompts used
+    prompts = {
+        "Schema Linking": {
+            "ragInstruction": ragInstruction,
+            "Used prompt": rag_prompt
+        },
+        "Classification": to_classify,
+        "Decomposition": prompt
+    }
+    
+    return table, total_usage, prompts
 
 
 def recreated_pipeline(query, model, max_tokens, format):
@@ -106,13 +116,13 @@ def recreated_pipeline(query, model, max_tokens, format):
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify)
+    prompt, decomp_usage = decomposition(label, to_classify, model)
     
     # Obtaining the SQL query
-    response, usage = api_call(model, max_tokens, prompt)
+    table, usage = api_call(model, max_tokens, prompt)
     
     # Formatting the response
-    table = format_response(format, response)
+    #table = format_response(format, response)
     
     # Obtaining the total usage of the pipeline
     total_usage = {
@@ -122,14 +132,33 @@ def recreated_pipeline(query, model, max_tokens, format):
         "Query generation": usage
     }
     
-    return table, total_usage
+    # Adding up the prompts used
+    prompts = {
+        "Schema Linking": tables,
+        "Classification": to_classify,
+        "Decomposition": prompt
+    }
+    
+    return table, total_usage, prompts
     
         
 
 if __name__ == '__main__':
-    query = "Get the object identifier, candidate identifier, magnitudes, magnitude errors, and band identifiers as a function of time of the objects classified as SN II in the year 2019-2022, with probability larger than 0.6, initial rise rate greater than 0.5 in ZTF g and r-band and number of detections greater than 50."
-    model = "gpt-4o"
+    query = "Give me all the SNe that were first detected between december first 2022 and september first 2023"
+    model = "claude-3-5-sonnet-20240620"
+    print(f"Model used: {model}\n")
     max_tokens = 500
     size = 50
     overlap = 10
     quantity = 3
+    format = "singular"
+    print("New pipeline\n")
+    table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
+    print(f"Generated SQL query: {table}")
+    print(f"Total usage of the pipeline: {total_usage}\n")
+    print(f"Prompts used: {prompts}\n")
+    print("Original pipeline\n")
+    table, total_usage, prompts = recreated_pipeline(query, model, max_tokens, format)
+    print(f"Generated SQL query: {table}")
+    print(f"Total usage of the pipeline: {total_usage}\n")
+    print(f"Prompts used: {prompts}")
