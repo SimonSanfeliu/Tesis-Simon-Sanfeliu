@@ -41,7 +41,9 @@ def api_call(model, max_tokens, prompt):
                     {"role": "user", "content": prompt}
                 ]
             )
-            usage = response.usage
+            usage = {"input_tokens": response.usage.prompt_tokens,
+                     "output_tokens": response.usage.completion_tokens,
+                     "total_tokens": response.usage.total_tokens}
             response = response.choices[0].message.content
         except Exception as e:
             print(f"The following exception occured: {e}")
@@ -79,7 +81,9 @@ def api_call(model, max_tokens, prompt):
             )
             chat_session = model2use.start_chat(history=[])
             response = chat_session.send_message(prompt)
-            usage = response.usage_metadata  # 'prompt_token_count', 'candidates_token_count' and 'total_token_count'
+            usage = {"input_tokens": response.usage_metadata.prompt_token_count,
+                     "output_tokens": response.usage_metadata.candidates_token_count,
+                     "total_tokens": response.usage_metadata.total_token_count}  # 'prompt_token_count', 'candidates_token_count' and 'total_token_count'
             response = response.text
         except Exception as e:
             print(f"The following exception occured: {e}")
