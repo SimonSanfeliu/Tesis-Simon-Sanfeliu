@@ -1,6 +1,5 @@
 import requests
 import sqlalchemy as sa
-import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking, classify, decomposition, run_query
 from pipeline.ragStep import rag_step
@@ -179,6 +178,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
+                # TODO: Check the tab_schema variable
                 tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[1]
                 corr_prompt = prompt_self_correction_v2(
                     gen_task=general_context_selfcorr_v1, 
@@ -237,6 +237,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 
 
 if __name__ == '__main__':
+    from pprint import pprint
     query = "Give me all the SNe that were first detected between december first 2022 and september first 2023"
     model = "claude-3-5-sonnet-20240620"
     print(f"Model used: {model}\n")
@@ -244,14 +245,21 @@ if __name__ == '__main__':
     size = 50
     overlap = 10
     quantity = 3
-    format = "singular"
-    print("New pipeline\n")
-    table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
-    print(f"Generated SQL query: {table}")
-    print(f"Total usage of the pipeline: {total_usage}\n")
-    print(f"Prompts used: {prompts}\n")
-    print("Original pipeline\n")
-    table, total_usage, prompts = recreated_pipeline(query, model, max_tokens, format)
-    print(f"Generated SQL query: {table}")
-    print(f"Total usage of the pipeline: {total_usage}\n")
-    print(f"Prompts used: {prompts}")
+    format = "var"
+    # print("New pipeline\n")
+    # table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
+    # print(f"Generated SQL query: {table}")
+    # print(f"Total usage of the pipeline: {total_usage}\n")
+    # print(f"Prompts used: {prompts}\n")
+    # print("Original pipeline\n")
+    # table, total_usage, prompts = recreated_pipeline(query, model, max_tokens, format)
+    # print(f"Generated SQL query: {table}")
+    # print(f"Total usage of the pipeline: {total_usage}\n")
+    # print(f"Prompts used: {prompts}")
+    result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, True, False)
+    print(f"Resulting table: {result}")
+    print("Total usage of the pipeline:")
+    pprint(total_usage)
+    print("Prompts used:")
+    pprint(prompts)
+    print(prompts)
