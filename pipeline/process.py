@@ -9,12 +9,13 @@ from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
 simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
 from prompts.decomposition.Decomposition import medium_decomp_prompt_vf, \
-medium_decomp_gen_vf, medium_query_task_vf, medium_query_cntx_vf, \
-medium_query_instructions_1_vf, medium_query_instructions_2_vf, \
-medium_decomp_task_vf
+medium_decomp_gen_vf, medium_decomp_gen_vf_python, medium_query_task_vf, \
+medium_query_cntx_vf, medium_query_instructions_1_vf, \
+medium_query_instructions_2_vf, medium_decomp_task_vf
 from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
-adv_decomp_gen_vf, adv_query_task_vf, adv_query_cntx_vf, \
-adv_query_instructions_1_vf, adv_query_instructions_2_vf, adv_decomp_task_vf
+adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
+adv_query_cntx_vf, adv_query_instructions_1_vf, adv_query_instructions_2_vf, \
+adv_decomp_task_vf
 
 
 def api_call(model, max_tokens, prompt):
@@ -201,58 +202,86 @@ def schema_linking(query, model):
     return tables, usage
 
 
-def decomposition(label, ur_w_tables, model):
+def decomposition(label, ur_w_tables, model, format):
     """Function to create the decomposition prompts
 
     Args:
         label (str): Difficulty label
         ur_w_tables (str): User request with the needed tables from the DB
         model (str): Name of the model (LLM)
+        format (str): The type of formatting to use. It can be 
+        'singular' for a singular query string or 'var' for the 
+        decomposition in variables
         
     Returns:
         prompt (str): Prompt to use in the decomposition task of a NL query
         usage (dict): LLM API usage
     """
     if label == "simple":
+        # Simple queries don't need decomposition
         prompt = final_prompt_simple_vf.format(
-            simple_query_task = simple_query_task_vf, 
-            simple_query_cntx = simple_query_cntx_vf,
-            simple_query_instructions = simple_query_instructions_vf,
-            request = ur_w_tables
+                simple_query_task = simple_query_task_vf, 
+                simple_query_cntx = simple_query_cntx_vf,
+                simple_query_instructions = simple_query_instructions_vf,
+                request = ur_w_tables
         )
+        # No usage needed for the simple query. There is no decomposition
         usage = None
+        
     elif label == "medium":
+        # Getting the decomposition plan
         decomp_plan = medium_decomp_prompt_vf.format(
-            medium_decomp_task = medium_decomp_task_vf,
-            medium_query_cntx = medium_query_cntx_vf,
-            user_request_with_tables = ur_w_tables,
-            medium_query_instructions_1 = medium_query_instructions_1_vf
-        )
-        # Getting the actual decomposition plan
+                medium_decomp_task = medium_decomp_task_vf,
+                medium_query_cntx = medium_query_cntx_vf,
+                user_request_with_tables = ur_w_tables,
+                medium_query_instructions_1 = medium_query_instructions_1_vf
+            )
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
-        prompt = medium_decomp_gen_vf.format(
-            medium_query_task = medium_query_task_vf,
-            user_request_with_tables = ur_w_tables,
-            medium_query_instructions_2 = medium_query_instructions_2_vf,
-            decomp_plan = decomp_plan_true
-        )
+        if format == "singular":
+            # Through SQL queries
+            prompt = medium_decomp_gen_vf.format(
+                medium_query_task = medium_query_task_vf,
+                user_request_with_tables = ur_w_tables,
+                medium_query_instructions_2 = medium_query_instructions_2_vf,
+                decomp_plan = decomp_plan_true
+            )
+        else:
+            # Through Python variables
+            prompt = medium_decomp_gen_vf_python.format(
+                medium_query_task = medium_query_task_vf,
+                user_request_with_tables = ur_w_tables,
+                medium_query_instructions_2 = medium_query_instructions_2_vf,
+                decomp_plan = decomp_plan_true
+            )
+            
     elif label == "advanced":
+        # Getting the decomposition plan
         decomp_plan = adv_decomp_prompt_vf.format(
             adv_decomp_task = adv_decomp_task_vf,
             adv_query_cntx = adv_query_cntx_vf,
             user_request_with_tables = ur_w_tables,
             adv_query_instructions_1 = adv_query_instructions_1_vf
         )
-        # Getting the actual decomposition plan
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
-        prompt = adv_decomp_gen_vf.format(
-            adv_query_task = adv_query_task_vf,
-            user_request_with_tables = ur_w_tables,
-            adv_query_instructions_2 = adv_query_instructions_2_vf,
-            decomp_plan = decomp_plan_true
-        )
+        if format == "singular":
+            # Through SQL queries
+            prompt = adv_decomp_gen_vf.format(
+                adv_query_task = adv_query_task_vf,
+                user_request_with_tables = ur_w_tables,
+                adv_query_instructions_2 = adv_query_instructions_2_vf,
+                decomp_plan = decomp_plan_true
+            )
+        else:
+            # Through Python variables
+            prompt = adv_decomp_gen_vf_python.format(
+                adv_query_task = adv_query_task_vf,
+                user_request_with_tables = ur_w_tables,
+                adv_query_instructions_2 = adv_query_instructions_2_vf,
+                decomp_plan = decomp_plan_true
+            )
+        
     else:
         raise Exception("No valid label difficulty")
     

@@ -511,6 +511,21 @@ DON'T include anything else in your answer. If you want to add comments, use the
 # You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
 '''
 
+medium_decomp_gen_vf_python = '''
+{medium_query_task}
+{user_request_with_tables}
+{medium_query_instructions_2}
+# Answer ONLY with the final SQL query divided in different sub-queries given by a Python script, with the following format: 
+  ```python PYTHON_SCRIPT_HERE ```
+DON'T include anything else in your answer. If you want to add comments, use the Python comment format inside the query.
+The variable that concatenates all the sub-queries MUST be named 'full_query'.
+
+# Use the next decomposed planification to write the query:
+{decomp_plan}
+# If there is SQL code, use it only as reference, changing the conditions you consider necessary.
+# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+'''
+
 
 ## Advanced
 adv_query_task_vf=simple_query_task_vf
@@ -586,6 +601,22 @@ adv_decomp_gen_vf='''
 ```step_number [STEP QUERY HERE] ```
 # Finally, join all the steps in a final query, with the following format: 
 ```sql [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answer.
+
+# Use the next decomposed planification to write the query:
+{decomp_plan}
+# If there is SQL code, use it only as reference, changing the conditions you consider necessary.
+# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+'''
+
+adv_decomp_gen_vf_python='''
+{adv_query_task}
+{user_request_with_tables}
+{adv_query_instructions_2}
+# Generate a query for each step, resolving and analysing it, with the following format:
+```python [VARIABLE SUB-QUERY HERE] ```
+# Finally, join all the steps in a final query, with the following format: 
+```python full_query = [FINAL QUERY HERE] ```
 DON'T include anything else inside and after your FINAL answer.
 
 # Use the next decomposed planification to write the query:
