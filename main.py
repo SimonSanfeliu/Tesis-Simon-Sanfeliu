@@ -63,7 +63,7 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify, model)    
+    prompt, decomp_usage = decomposition(label, to_classify, model, format)    
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
@@ -116,13 +116,13 @@ def recreated_pipeline(query, model, max_tokens, format):
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify, model)
+    prompt, decomp_usage = decomposition(label, to_classify, model, format)
     
     # Obtaining the SQL query
     table, usage = api_call(model, max_tokens, prompt)
     
     # Formatting the response
-    #table = format_response(format, response)
+    table = format_response(format, table)
     
     # Obtaining the total usage of the pipeline
     total_usage = {
@@ -238,7 +238,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 
 if __name__ == '__main__':
     from pprint import pprint
-    query = "Give me all the SNe that were first detected between december first 2022 and september first 2023"
+    query = "Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers."
     model = "claude-3-5-sonnet-20240620"
     print(f"Model used: {model}\n")
     max_tokens = 500
@@ -262,4 +262,3 @@ if __name__ == '__main__':
     pprint(total_usage)
     print("Prompts used:")
     pprint(prompts)
-    print(prompts)
