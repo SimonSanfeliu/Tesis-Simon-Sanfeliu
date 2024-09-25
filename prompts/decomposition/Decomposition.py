@@ -615,7 +615,7 @@ adv_decomp_gen_vf_python='''
 {adv_query_instructions_2}
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```python [VARIABLE SUB-QUERY HERE] ```
-# Finally, join all the steps in a final query, with the following format: 
+# Finally, join all the steps in a final query like so: 
 ```python full_query = [FINAL QUERY HERE] ```
 DON'T include anything else inside and after your FINAL answer.
 
