@@ -238,7 +238,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 
 if __name__ == '__main__':
     from pprint import pprint
-    query = "Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers."
+    query = "Get the object identifiers and probabilities in the light curve classifier for objects classified in the light curve classifier as SNIa with ranking=1 and CV/Nova with ranking=2, where the difference between the probabilities at each ranking is lower than 0.1. Return oids, and the probability for each class"
     model = "claude-3-5-sonnet-20240620"
     print(f"Model used: {model}\n")
     max_tokens = 500
@@ -257,7 +257,8 @@ if __name__ == '__main__':
     # print(f"Total usage of the pipeline: {total_usage}\n")
     # print(f"Prompts used: {prompts}")
     result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, True, False)
-    print(f"Resulting table: {result}")
+    print("Resulting table:")
+    print(result)
     print("Total usage of the pipeline:")
     pprint(total_usage)
     print("Prompts used:")
