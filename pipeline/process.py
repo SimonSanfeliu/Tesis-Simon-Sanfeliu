@@ -109,10 +109,10 @@ def format_response(specified_format, response):
         database. A string if the specified format is 'singular', list of the 
         sub-queries if the format is 'var'
     """
-    if specified_format == "singular":
+    if specified_format == "sql":
         formatted_response = response.split("```sql")[1].split("```")[0] \
         .replace("```", "").replace("```sql", "")
-    elif specified_format == "var":
+    elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
         formatted_response = formatted_response.split("\n\n")
@@ -140,9 +140,9 @@ def run_query(specified_format, formatted_response, engine):
         the results of the subqueries and total query if specified format is 
         'var'
     """
-    if specified_format == "singular":
+    if specified_format == "sql":
         results = pd.read_sql_query(formatted_response, con=engine)
-    elif specified_format == "var":
+    elif specified_format == "python":
         results = []
         for query in formatted_response:
             exec(query)
@@ -238,7 +238,7 @@ def decomposition(label, ur_w_tables, model, format):
             )
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
-        if format == "singular":
+        if format == "sql":
             # Through SQL queries
             prompt = medium_decomp_gen_vf.format(
                 medium_query_task = medium_query_task_vf,
@@ -265,7 +265,7 @@ def decomposition(label, ur_w_tables, model, format):
         )
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
-        if format == "singular":
+        if format == "sql":
             # Through SQL queries
             prompt = adv_decomp_gen_vf.format(
                 adv_query_task = adv_query_task_vf,
