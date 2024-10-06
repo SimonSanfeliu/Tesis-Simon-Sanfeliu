@@ -238,14 +238,16 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 
 if __name__ == '__main__':
     from pprint import pprint
+    label = "medium"
     query = "Get the object identifiers and probabilities in the light curve classifier for objects classified in the light curve classifier as SNIa with ranking=1 and CV/Nova with ranking=2, where the difference between the probabilities at each ranking is lower than 0.1. Return oids, and the probability for each class"
-    model = "claude-3-5-sonnet-20240620"
+    # model = "claude-3-5-sonnet-20240620"
+    model = "gpt-4o"
     print(f"Model used: {model}\n")
     max_tokens = 500
     size = 50
     overlap = 10
     quantity = 3
-    format = "var"
+    format = "sql"
     # print("New pipeline\n")
     # table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
     # print(f"Generated SQL query: {table}")
@@ -261,5 +263,6 @@ if __name__ == '__main__':
     print(result)
     print("Total usage of the pipeline:")
     pprint(total_usage)
-    print("Prompts used:")
-    pprint(prompts)
+    # The prompts used will be in this file
+    with open(f"prompts/examples/prompts_{label}_{model}.txt", "w") as f:
+        f.write(str(prompts))
