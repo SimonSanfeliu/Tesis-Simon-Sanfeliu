@@ -515,10 +515,11 @@ medium_decomp_gen_vf_python = '''
 {medium_query_task}
 {user_request_with_tables}
 {medium_query_instructions_2}
-# Answer ONLY with the final SQL query divided in different sub-queries given by a Python script, with the following format: 
-  ```python PYTHON_SCRIPT_HERE ```
-DON'T include anything else in your answer. If you want to add comments, use the Python comment format inside the query.
-The variable that concatenates all the sub-queries MUST be named 'full_query'.
+# Generate a query for each step, resolving and analysing it, with the following format:
+```step_number [STEP QUERY HERE] ```
+# Finally, join all the steps in a final query, with the following format: 
+```sql [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answer.
 
 # Use the next decomposed planification to write the query:
 {decomp_plan}
