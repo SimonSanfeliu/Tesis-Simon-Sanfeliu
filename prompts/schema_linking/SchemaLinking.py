@@ -58,7 +58,7 @@ tables_linking_prompt_v4_1 = '''
 # Given the user request, you have to decide if the table object is needed to generate a SQL query
 # DATABASE SCHEMA
 ## Information about the table object:
-TABLE "object": contains basic filter and time–aggregated statistics such as location, number of observations, and the times of first and last detection.
+TABLE "object": contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
 columns= [
     oid VARCHAR PRIMARY KEY,  /* object identifier */
     ndethist INTEGER,  /* number of posible detections above 3 sigma */
@@ -208,16 +208,16 @@ TABLE information_schema.tables, columns=[table_catalog, table_schema, table_nam
 tables_linking_prompt_V1 = '''
 # Given the user request, select the tables needed to generate a SQL query
 # The Database has the following tables:
-TABLE object: contains basic filter and time–aggregated statistics such as location, number of observations, and the times of first and last detection.
+TABLE object: contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
 TABLE probability: contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
 TABLE feature: contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE magstat: contains time–aggregated statistics separated by filter, such as the average magnitude, or the initial magnitude change rate.
-TABLE non_detection: contains the limiting magnitudes of previous non–detections separated by filter.
+TABLE magstat: contains time-aggregated statistics separated by filter, such as the average magnitude, or the initial magnitude change rate.
+TABLE non_detection: contains the limiting magnitudes of previous non-detections separated by filter.
 TABLE detection: contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter (see Section 4.4).
 TABLE step: 
 TABLE taxonomy: contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
 TABLE feature_version: 
-TABLE xmatch: contains the object cross–matches and associated cross–match catalogs.
+TABLE xmatch: contains the object cross-matches and associated cross-match catalogs.
 TABLE allwise: 
 TABLE dataquality: detailed object information regarding the quality of the data
 TABLE gaia_ztf: GAIA objects near detected ZTF objects
@@ -237,16 +237,16 @@ TABLE information_schema: information about the database tables and columns
 tables_linking_prompt_V2 = '''
 # Given the user request, select the tables needed to generate a SQL query
 # The Database has the following tables:
-TABLE object: contains basic filter and time–aggregated statistics such as location, number of observations, and the times of first and last detection.
+TABLE object: contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
 TABLE probability: contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
 TABLE feature: contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE magstat: contains time–aggregated statistics separated by filter, such as the average magnitude, or the initial magnitude change rate.
-TABLE non_detection: contains the limiting magnitudes of previous non–detections separated by filter.
+TABLE magstat: contains time-aggregated statistics separated by filter, such as the average magnitude, or the initial magnitude change rate.
+TABLE non_detection: contains the limiting magnitudes of previous non-detections separated by filter.
 TABLE detection: contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter (see Section 4.4).
 TABLE step: 
 TABLE taxonomy: contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
 TABLE feature_version: 
-TABLE xmatch: contains the object cross–matches and associated cross–match catalogs.
+TABLE xmatch: contains the object cross-matches and associated cross-match catalogs.
 TABLE allwise: 
 TABLE dataquality: detailed object information regarding the quality of the data
 TABLE gaia_ztf: GAIA objects near detected ZTF objects

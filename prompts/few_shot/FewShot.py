@@ -163,7 +163,7 @@ CREATE TABLE detection (  /* this table contains information about the object de
     magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */
     sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -324,7 +324,7 @@ CREATE TABLE detection (  /* this table contains information about the object de
     magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */
     sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -334,9 +334,9 @@ CREATE TABLE magstat ( /* different statistics for the object divided by band or
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     fid INTEGER NOT NULL, /* band or filter identifier */
     stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */
-    corrected BOOLEAN NOT NULL, /* whether the object’s light curve has been corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's light curve has been corrected */
     ndet INTEGER NOT NULL, /* the object number of detection in the given band */
-    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don’t trust  */
+    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don't trust  */
     dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */
     dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */
     sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */

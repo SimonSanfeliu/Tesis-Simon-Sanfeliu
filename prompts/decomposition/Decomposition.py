@@ -20,10 +20,10 @@ Be thorough in understanding and addressing the user's request, taking into acco
 ## General Context of the database schema
 simple_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
@@ -44,7 +44,7 @@ simple_query_instructions = '''
 - 'probability.ranking' = 1 ; this only return the most likely probabilities.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
@@ -73,10 +73,10 @@ With the labels mark explicitly in which step you should use a sub-query, and ot
 # medium query context, including details about the database schema
 medium_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
@@ -97,7 +97,7 @@ medium_query_instructions_1 = '''
 - 'probability.ranking' = 1 ; this only return the most likely probabilities.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
@@ -128,7 +128,7 @@ medium_query_instructions_2 = '''
 - 'probability.ranking' = 1 ; this only return the most likely probabilities, if the user request all ranking probabilities, don't use it.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', if it is necessary (priority in this order).
@@ -164,10 +164,10 @@ The request is a very difficult and advanced query, so you will need to use JOIN
 # Advanced query context, including details about the database schema
 adv_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
@@ -195,7 +195,7 @@ IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
@@ -233,7 +233,7 @@ IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
@@ -368,7 +368,7 @@ IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the 'UNION' query from step III selecting only the 'oids' that are in the 'INTERSECT' query from step IV
 VI. Add the remaining conditions to the final result of step V, using the 'probability' sub-query from step I.
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
@@ -386,7 +386,7 @@ IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the 'UNION' query from step III selecting only the 'oids' that are in the 'INTERSECT' query from step IV
 VI. Add the remaining conditions to the final result of step V, using the 'probability' sub-query from step I.
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
@@ -535,7 +535,7 @@ adv_query_instructions_1_vf = '''
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
 - The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the â€œSELECT *â€ SQL statement to choose all possible columns.
+- If the user doesn't specify explicit columns, use the SELECT SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
@@ -548,7 +548,7 @@ V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the â€œSELECT *â€ SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the SELECT SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
 # Add COMMENTS IN PostgreSQL format so that the user can understand.
@@ -557,7 +557,7 @@ adv_query_instructions_2_vf = '''
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
 - The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the â€œSELECT *â€ SQL statement to choose all possible columns.
+- If the user doesn't specify explicit columns, use the SELECT SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
@@ -570,7 +570,7 @@ V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the â€œSELECT *â€ SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the SELECT SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
 # Add COMMENTS IN PostgreSQL format so that the user can understand.
@@ -658,10 +658,10 @@ Be thorough in understanding and addressing the user's request, taking into acco
 # simple query context
 simple_query_cntx_v2='''
 ## ALeRCE Pipeline Details:
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
@@ -682,7 +682,7 @@ simple_query_instructions_v2 = '''
 - 'probability.ranking' = 1 ; this only return the most likely probabilities.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object' if it is necessary (priority in this order).

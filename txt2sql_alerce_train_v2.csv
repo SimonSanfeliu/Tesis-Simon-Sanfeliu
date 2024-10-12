@@ -580,7 +580,7 @@ ORDER BY table_name;
 36,Show the features of the light curves of the object with the oid ZTF20aaelulu.,"['feature', 'object']",0,0,"
 select name, value from feature where oid = 'ZTF20aaelulu';
 ",simple,object,none,,,
-38,"Query the top 1000 active galactic nuclei and top 1000 quasi–stellar objects candidates ordered by probability in descending order, that have a probability > 0.6 and 0.5 respectively according to the light curve classifier. From those objects obtain the ones that have between 30 and 200 detections both.","['probability', 'object']","
+38,"Query the top 1000 active galactic nuclei and top 1000 quasi-stellar objects candidates ordered by probability in descending order, that have a probability > 0.6 and 0.5 respectively according to the light curve classifier. From those objects obtain the ones that have between 30 and 200 detections both.","['probability', 'object']","
 -- ndet represents the number of detections in the given band
 ",0,"
 SELECT *

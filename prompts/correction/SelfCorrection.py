@@ -15,10 +15,10 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 ## General Context of the database schema
 general_context_selfcorr_v1='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
@@ -36,7 +36,7 @@ general_context_selfcorr_v1='''
 - 'probability.ranking' = 1 ; this only return the most likely probabilities.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the “SELECT *” SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).'''
 

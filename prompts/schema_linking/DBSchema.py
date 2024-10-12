@@ -414,9 +414,9 @@ context_magstatTable_desc='''CREATE TABLE magstat ( /* different statistics for 
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     fid INTEGER NOT NULL, /* band or filter identifier */
     stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */
-    corrected BOOLEAN NOT NULL, /* whether the object’s light curve has been corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's light curve has been corrected */
     ndet INTEGER NOT NULL, /* the object number of detection in the given band */
-    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don’t trust  */
+    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don't trust  */
     dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */
     dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */
     sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */
@@ -485,7 +485,7 @@ context_DetTable_desc='''CREATE TABLE detection (  /* this table contains inform
     magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */
     sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -536,7 +536,7 @@ context_forced_photometryTable_desc = '''CREATE TABLE forced_photometry ( /* thi
     e_mag_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     e_mag_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
     isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -1234,16 +1234,16 @@ W2_W3= '''color computed using the W2 and W3 bands of AllWISE '''
 
 # database tables description
 alerce_tables_desc = '''
-TABLE "object": contains basic filter and time–aggregated statistics such as location, number of observations, and the times of first and last detection.
+TABLE "object": contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
 TABLE "probability": classification probabilities associated to a given object, classifier, and class. Contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
 TABLE "feature": contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE "magstat": contains time–aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
-TABLE "non_detection": contains the limiting magnitudes of previous non–detections separated by filter.
+TABLE "magstat": contains time-aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
+TABLE "non_detection": contains the limiting magnitudes of previous non-detections separated by filter.
 TABLE "detection": contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter.
 TABLE "step": contains the different pipeline steps and their versions.
 TABLE "taxonomy": contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
 TABLE "feature_version": contains the version of the feature extraction and preprocessing steps used to generate the features.
-TABLE "xmatch": contains the object cross–matches and associated cross–match catalogs.
+TABLE "xmatch": contains the object cross-matches and associated cross-match catalogs.
 TABLE "allwise": contains the AllWISE catalog information for the objects.
 TABLE "dataquality": detailed object information regarding the quality of the data
 TABLE "gaia_ztf": GAIA objects near detected ZTF objects
@@ -1259,13 +1259,13 @@ TABLE "forced_photometry": contains the forced photometry measurements for each 
 ## version 2
 alerce_tables_desc_v2 = '''
 TABLE "feature": contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE "magstat": contains time–aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
-TABLE "non_detection": contains the limiting magnitudes of previous non–detections separated by filter.
+TABLE "magstat": contains time-aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
+TABLE "non_detection": contains the limiting magnitudes of previous non-detections separated by filter.
 TABLE "detection": contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter.
 TABLE "step": contains the different pipeline steps and their versions.
 TABLE "taxonomy": contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
 TABLE "feature_version": contains the version of the feature extraction and preprocessing steps used to generate the features.
-TABLE "xmatch": contains the object cross–matches and associated cross–match catalogs.
+TABLE "xmatch": contains the object cross-matches and associated cross-match catalogs.
 TABLE "allwise": contains the AllWISE catalog information for the objects.
 TABLE "dataquality": detailed object information regarding the quality of the data
 TABLE "gaia_ztf": GAIA objects near detected ZTF objects
@@ -1280,13 +1280,13 @@ TABLE "forced_photometry": contains the forced photometry measurements for each 
 ## version 3
 alerce_tables_desc_v3 = '''
 TABLE "feature": contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE "magstat": contains time–aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
-TABLE "non_detection": contains the limiting magnitudes of previous non–detections separated by filter.
+TABLE "magstat": contains time-aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
+TABLE "non_detection": contains the limiting magnitudes of previous non-detections separated by filter.
 TABLE "detection": contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter.
 TABLE "step": steps Pipeline versions and information
 TABLE "taxonomy": contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
 TABLE "feature_version": feature processing version with its feature and preprocess step docker id 
-TABLE "xmatch": contains the object cross–matches and associated cross–match catalogs.
+TABLE "xmatch": contains the object cross-matches and associated cross-match catalogs.
 TABLE "allwise": AllWISE Source Catalog
 TABLE "dataquality": detailed object information regarding the quality of the data
 TABLE "gaia_ztf": GAIA objects near detected ZTF objects

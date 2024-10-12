@@ -11,7 +11,7 @@ general_task = '''Please read the following text and answer the questions below.
 
 ## version 5
 general_taskv5='''
-# Take the personality of a SQL expert with willigness to help given a user request. This is very important for the user so You’d better be sure.
+# Take the personality of a SQL expert with willigness to help given a user request. This is very important for the user so You'd better be sure.
 Your task is to write a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database.
 The database is where the information about individual spacial objects is aggregated which contains different information about its statistics, properties detections and features.
 You have to check carefully the request of the user given the following information about the given tables.
@@ -70,14 +70,14 @@ general_contextv5='''
 -- Try to avoid using JOIN clauses and use nested queries instead
 ## Default Parameters you need to carefully take in consideration
 -- the class probabilities for a given classifier and object are sorted from most to least likely as indicated by the 'ranking' column in the probability table. Thus, the most likely class for a given classifier and object should have 'ranking'=1.
--- the ALeRCE classification Pipeline consists of a Stamp  classifier and a Light Curve classifier. The Light Curve classifier use a hierarchical method, being the most general. Thus, if no classifier is specified, the query should have classifier_name=’lc_classifier’ when selecting probabilities
-–- If the user does not specify explicit columns, select all possible columns using the “SELECT *” SQL statement
+-- the ALeRCE classification Pipeline consists of a Stamp  classifier and a Light Curve classifier. The Light Curve classifier use a hierarchical method, being the most general. Thus, if no classifier is specified, the query should have classifier_name='lc_classifier' when selecting probabilities
+-- If the user does not specify explicit columns, select all possible columns using the "SELECT *" SQL statement
 -- DO NOT change the name of columns or tables, unless it is really required to do so for the SQL query
 ## ALeRCE Pipeline
--- Stamp Classifier denoted by ‘stamp_classifier’: All alerts associated to new objects undergo a stamp based classification
--- Light Curve Classifier denoted by ‘lc_classifier’ :  This classifier is a balanced hierarchical random forest classifier that uses four classification models and a total of 15 classes
--- The first “hierarchical classifier” has three classes: [periodic, stochastic, transient]; and is denoted as ‘lc_classifier_top’
--- three more classifiers are applied, each one specialized on a  different type of spatial objects: Periodic, Transient and Stochastic, one specialized for each of the previous classes. Their name are denoted as ‘lc_classifier_periodic’, ‘lc_classifier_transient’ and ‘lc_classifier_stochastic’ respectively.
+-- Stamp Classifier denoted by 'stamp_classifier': All alerts associated to new objects undergo a stamp based classification
+-- Light Curve Classifier denoted by 'lc_classifier' :  This classifier is a balanced hierarchical random forest classifier that uses four classification models and a total of 15 classes
+-- The first "hierarchical classifier" has three classes: [periodic, stochastic, transient]; and is denoted as 'lc_classifier_top'
+-- three more classifiers are applied, each one specialized on a  different type of spatial objects: Periodic, Transient and Stochastic, one specialized for each of the previous classes. Their name are denoted as 'lc_classifier_periodic', 'lc_classifier_transient' and 'lc_classifier_stochastic' respectively.
 -- The 15 classes are, separated for each type type of object: Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')]; Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')]; and Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability variables names
 -- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
@@ -98,7 +98,7 @@ general_contextv6='''
 -- Choose probability.classifier_name='lc_classifier' if not specified
 -- Select * if no columns are requested
 -- Do not rename columns or tables if it is not necessary
-– Only queries about the first or last time of detection are feasible. If you are asked to filter by a specific time of detection tell the user that this is not possible.
+- Only queries about the first or last time of detection are feasible. If you are asked to filter by a specific time of detection tell the user that this is not possible.
 ## Probability variables names
 -- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 -- classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -110,7 +110,7 @@ general_contextv6='''
 ## ALeRCE Pipeline
 -- Stamp Classification: All alerts associated to new objects undergo a stamp based classification
 -- Light Curve Classification:  This classifier is a balanced hierarchical random forest classifier that uses four classification models and a total of 15 classes
----- The first “hierarchical classifier” has three classes: periodic, stochastic or transient.
+---- The first "hierarchical classifier" has three classes: periodic, stochastic or transient.
 ---- three more classifiers are applied: Periodic, Transient and Stochastic, one specialized for each of the previous classes.
 -- The 15 classes are: Transient: SNe Ia (SNIa), SNe Ib/c (SNIbc), SNe II (SNII), and Super Luminous SNe (SLSN); Stochastic: Active Galactic Nuclei (AGN), Quasi Stellar Object (QSO), Blazar, Cataclysmic Variable/Novae (CV/Nova), and Young Stellar Object (YSO); and Periodic: Delta Scuti (DSCT), RR Lyrae (RRL), Cepheid (Ceph), Long Period Variable (LPV), Eclipsing Binary (E), and other periodic objects (Periodic-Other).
 '''
@@ -123,14 +123,14 @@ Given the following text, please thoroughly analyze and provide a detailed expla
 - Avoid JOIN clauses; instead, favor nested queries.
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical method, being the most general. If no classifier is specified, use 'classifier_name=’lc_classifier’ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the “SELECT *” SQL statement to choose all possible columns.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical method, being the most general. If no classifier is specified, use 'classifier_name='lc_classifier' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT *" SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as ‘lc_classifier_top.’
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
