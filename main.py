@@ -61,6 +61,7 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     to_classify = query + f"""\n The following tables are needed to generate the
     query: {tables}"""
     label, classify_usage = classify(to_classify, model)
+    print(label)
     
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_usage = decomposition(label, to_classify, model, format)    
@@ -179,7 +180,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
                 # TODO: Check the tab_schema variable
-                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[1]
+                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[0]
                 corr_prompt = prompt_self_correction_v2(
                     gen_task=general_context_selfcorr_v1, 
                     tab_schema=tab_schema, 
@@ -211,7 +212,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
-                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[1]
+                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[0]
                 corr_prompt = prompt_self_correction_v2(
                     gen_task=general_context_selfcorr_v1, 
                     tab_schema=tab_schema, 
@@ -239,15 +240,15 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 if __name__ == '__main__':
     from pprint import pprint
     label = "medium"
-    query = "Get the object identifiers and probabilities in the light curve classifier for objects classified in the light curve classifier as SNIa with ranking=1 and CV/Nova with ranking=2, where the difference between the probabilities at each ranking is lower than 0.1. Return oids, and the probability for each class"
-    # model = "claude-3-5-sonnet-20240620"
-    model = "gpt-4o"
+    query = "Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers."
+    model = "claude-3-5-sonnet-20240620"
+    # model = "gpt-4o"
     print(f"Model used: {model}\n")
     max_tokens = 500
     size = 50
     overlap = 10
     quantity = 3
-    format = "sql"
+    format = "python"
     # print("New pipeline\n")
     # table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
     # print(f"Generated SQL query: {table}")
@@ -258,7 +259,7 @@ if __name__ == '__main__':
     # print(f"Generated SQL query: {table}")
     # print(f"Total usage of the pipeline: {total_usage}\n")
     # print(f"Prompts used: {prompts}")
-    result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, True, False)
+    result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, True, True)
     print("Resulting table:")
     print(result)
     print("Total usage of the pipeline:")
