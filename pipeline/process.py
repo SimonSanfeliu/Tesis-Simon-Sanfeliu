@@ -198,8 +198,10 @@ def schema_linking(query, model):
         f"\nThe user request is the following: {query}"
         
     # Obtain the tables necessary for the SQL query
-    tables, usage = api_call(model, 100, prompt)  # Assuming it will only return the list of tables
-    return tables, usage
+    tables, usage = api_call(model, 100, prompt)
+    content = tables.split("[")[1].split("]")[0]
+    true_tables = f"[{content}]"
+    return true_tables, usage
 
 
 def decomposition(label, ur_w_tables, model, format):
