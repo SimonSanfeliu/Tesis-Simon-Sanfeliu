@@ -2,6 +2,12 @@ Given the user request, select the tables needed to generate a SQL query. Give t
     
 Consider that these tables are necessary to execute the query: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
 
+# # Astronomical context:
+There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
+Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
+Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
+
 The tables and their info:
 
 # ALeRCE's database schema

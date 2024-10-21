@@ -5,8 +5,8 @@ Take in consideration the advices, conditions and names from ""General Context""
 List the steps in the order in which they should be planned. Add to each numbered step a label in square brackets, like [initial planning], [join table], [replace], [condition], [join], [sub-query], etc.
 The request is a very difficult and advanced query, so you will need to use JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is very important that you give every possible detail in each step, describing the statements and the nested-queries that are required.
 
-User request: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
-Tables needed: [object, probability, detection, feature]
+User request: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in between the MJDs 60188 and 60189, and that qualify as fast risers.
+Tables needed: [object, probability, detection, magstat]
 
 # General context about the database:
 ## General Information about the Schema and Database
@@ -20,7 +20,7 @@ Tables needed: [object, probability, detection, feature]
 - Avoid JOIN clauses; instead, favor nested queries.
 - Beware of variables that are not indexed when doing the queries. Favour using nested queries where the inner queries use indexed variables.
 - Note that the typical timeout time is 2 minutes
-- Special attention needs to be paid to the feature table. In this table the name of a given feature is stored in the column 'name' and its value for a given object in the column 'value'. These columns are not indexed, so you should query this table in the outer levels of a nested query, after most of the filtering has already happened using indexed variables.
+- Special attention needs to be paid to the feature table, which, if possible, should be avoided. In this table the name of a given feature is stored in the column 'name' and its value for a given object in the column 'value'. These columns are not indexed, so you should query this table in the outer levels of a nested query, after most of the filtering has already happened using indexed variables.
 
 ## ALeRCE Pipeline Details
 - Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural network that uses as input the image stamps from a given object and that uses a 5 class taxonomy. This classifier is triggered only by the first alert of every object.
@@ -39,6 +39,12 @@ Tables needed: [object, probability, detection, feature]
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
 - Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
+
+# # Astronomical context:
+There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
+Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
+Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
 
 # # Important details about the database required for the query:
 ## Default Parameters to Consider

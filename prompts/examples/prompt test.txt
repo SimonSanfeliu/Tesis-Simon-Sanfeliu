@@ -3,7 +3,7 @@ The tables within the database are categorized into three types: time and band i
 Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 
 User request: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
-Tables needed: [object, probability, detection, feature]
+Tables needed: [object, probability, detection, magstat]
 
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
@@ -75,97 +75,64 @@ ORDER BY oid
 '''
 
 # Use the next decomposed planification to write the query:
-### 1. [Initial Planning]
-- **Objective**: Retrieve object identifiers (oids), probabilities from the stamp classifier, and light curve data (only detections) for objects with the highest probability for class 'SN' in the stamp classifier, their first detection within the first two days of September, and classified as fast risers.
-- **Main Tables Involved**: 
-  - **object**: To filter objects based on first detection date and retrieve `oid`.
-  - **probability**: To filter objects based on the highest probability for class 'SN' using the stamp classifier.
-  - **detection**: To retrieve light curve information (detections only).
-  - **feature**: To qualify objects as fast risers.
+### Decomposition Plan for Retrieving Requested Information from the ALeRCE Database
 
-### 2. [Sub-query] Filter Objects by First Detection in September
-- **Objective**: Get object identifiers (`oid`) of objects that had their first detection in the first two days of September.
-- **Table**: `object`
-- **Condition**: Use the `firstmjd` column to filter objects where the `firstmjd` corresponds to the first two days of September. You'll need to convert this to a Julian Date format to handle the dates correctly.
-- **Details**: 
-  ```sql
-  SELECT oid 
-  FROM object 
-  WHERE firstmjd BETWEEN [Julian date for September 1st] AND [Julian date for September 2nd]
-  ```
+1. **[Initial Planning] - Identify Relevant Tables and Columns**  
+   First, identify the tables and columns required for the query based on the user's request and the provided context. You need data from four tables:  
+   - `object`: to retrieve object identifiers (`oid`) and apply conditions on the `firstmjd` column (first detection).  
+   - `probability`: to filter objects based on their highest probability class from the `stamp_classifier`, selecting those classified as `SN`.  
+   - `detection`: to retrieve information about detections related to each object and light curves.  
+   - `magstat`: to determine if the objects qualify as fast risers using the condition on `dmd_dt`.  
 
-### 3. [Sub-query] Filter by Highest Probability for Class 'SN' in Stamp Classifier
-- **Objective**: Retrieve objects whose highest classification probability is for class 'SN' using the stamp classifier.
-- **Table**: `probability`
-- **Condition**: The `class_name` must be 'SN' and the `classifier_name` must be 'stamp_classifier'. Filter only the objects where the `ranking` is 1, which corresponds to the highest probability.
-- **Details**: 
-  ```sql
-  SELECT oid, probability 
-  FROM probability 
-  WHERE class_name = 'SN' 
-    AND classifier_name = 'stamp_classifier' 
-    AND ranking = 1
-  ```
+2. **[Sub-query] - Filter Objects Classified as `SN`**  
+   Create a sub-query that retrieves object identifiers (`oid`) for objects whose highest probability class in the `stamp_classifier` is `SN`. This will be done using the `probability` table, filtering by:  
+   - `classifier_name = 'stamp_classifier'`  
+   - `class = 'SN'`  
+   - `ranking = 1` (since the highest probability for a class is indicated by `ranking = 1`)  
 
-### 4. [Join] Combine First Detection and Highest Probability
-- **Objective**: Combine the results from Step 2 and Step 3 to retrieve only the `oid`s that satisfy both conditions (i.e., objects that had their first detection in the first two days of September and whose highest classification probability is 'SN').
-- **Details**: Use an INNER JOIN between the subqueries of Step 2 and Step 3.
-  ```sql
-  SELECT oid, probability 
-  FROM (Sub-query from Step 2) 
-  INNER JOIN (Sub-query from Step 3) USING (oid)
-  ```
+3. **[Condition] - Filter Based on First Detection (MJD)**  
+   Use the `object` table to retrieve only the objects whose `firstmjd` falls between 60188 and 60189. This will be an additional filter applied to the `oid` set already retrieved in the previous sub-query.  
+   - The `firstmjd` column is indexed, making this filter efficient.  
 
-### 5. [Sub-query] Filter Objects Qualifying as Fast Risers
-- **Objective**: Identify objects classified as "fast risers" based on features stored in the `feature` table.
-- **Table**: `feature`
-- **Condition**: Filter objects where the feature `name` is associated with the conditions for fast risers, such as `delta_mag_fid`, `dmag_first_det_fid`, or other features that describe a rapid rise in brightness.
-- **Details**: Create a subquery to select objects that meet these fast riser feature thresholds.
-  ```sql
-  SELECT oid 
-  FROM feature 
-  WHERE name = 'delta_mag_fid' AND value > [threshold for fast riser]
-  ```
+4. **[Join] - Filter Fast Risers Based on `dmd_dt`**  
+   Join the `magstat` table with the filtered set of `oids` from the previous sub-query to retrieve objects that are considered fast risers.  
+   - A fast riser is defined by the condition `dmd_dt < -0.25`.  
+   - The `magstat` table contains information about the `dmd_dt` value for each object in different bands.  
 
-### 6. [Intersect] Filter by Fast Riser Criteria
-- **Objective**: Narrow down the results from Step 4 to include only objects that qualify as fast risers.
-- **Details**: Perform an INTERSECT between the results of Step 4 and the subquery from Step 5 to select only those objects that meet both the first detection date, highest probability, and fast riser criteria.
-  ```sql
-  SELECT oid, probability 
-  FROM (Sub-query from Step 4) 
-  INTERSECT 
-  SELECT oid 
-  FROM (Sub-query from Step 5)
-  ```
+5. **[Sub-query] - Filter for Only Detections**  
+   Use the `detection` table to retrieve light curve information but only include rows that represent actual detections. Since all rows in the `detection` table are considered detections, no additional conditions are needed for filtering on this table.
 
-### 7. [Join] Retrieve Light Curve Data for Detections
-- **Objective**: Get the light curve data (detections) for the objects filtered in Step 6.
-- **Table**: `detection`
-- **Condition**: Retrieve the detection data (`mjd`, `magpsf`, `sigmapsf`, etc.) for the objects whose `oid` was selected in Step 6. Ensure that only positive detections (`isdiffpos = 1`) are retrieved.
-- **Details**: Use an INNER JOIN to link the filtered `oid`s with the `detection` table to retrieve the light curve data.
-  ```sql
-  SELECT d.oid, d.mjd, d.magpsf, d.sigmapsf 
-  FROM detection d 
-  INNER JOIN (Sub-query from Step 6) USING (oid) 
-  WHERE d.isdiffpos = 1
-  ```
+6. **[Join] - Combine Filtered Objects with Detections**  
+   After filtering for objects classified as `SN`, having their first detection in the given MJD range, and qualifying as fast risers, you will join this result with the `detection` table to extract relevant light curve data for each object.  
+   - You can use an INNER JOIN between the filtered object identifiers (`oid`) and the `detection` table to get the light curves.
 
-### 8. [Final Output] Aggregate the Results
-- **Objective**: Combine the object identifiers, probabilities, and detection data in the final output.
-- **Details**: The final result should include the `oid`, `probability` (from the stamp classifier), and the light curve data (`mjd`, `magpsf`, `sigmapsf`) for detections.
-  ```sql
-  SELECT d.oid, p.probability, d.mjd, d.magpsf, d.sigmapsf 
-  FROM (Sub-query from Step 7) d 
-  INNER JOIN (Sub-query from Step 6) p ON d.oid = p.oid
-  ```
+7. **[Sub-query] - Retrieve Class Probabilities**  
+   Using a sub-query, retrieve the probabilities associated with the objects in the `probability` table, particularly focusing on the `stamp_classifier` results.  
+   - Ensure the query retrieves both the object identifiers (`oid`) and their associated probabilities.  
 
-### 9. [Optimization] Ensure Indexing
-- **Objective**: To avoid performance issues, ensure the subqueries are optimized using indexed columns such as `oid` and `ranking` (for the `probability` table).
-- **Details**: The subqueries should prioritize filtering by indexed columns before any additional filtering steps (e.g., filtering on `class_name`, `ranking` in the `probability` table).
+8. **[Combine Results] - Use UNION or INTERSECT if Needed**  
+   Depending on the number of features or objects meeting all conditions, you might need to use UNION or INTERSECT to combine results from different sub-queries. For example, if multiple conditions were applied on different bands in the `magstat` table (for fast risers), an INTERSECT could ensure only objects satisfying all conditions are returned.  
 
-### 10. [Final Review]
-- **Objective**: Ensure that the query does not exceed the time limits and is structured in an optimal way by avoiding unnecessary JOINs and prioritizing nested subqueries with indexed fields.
-- **Details**: The query plan should be reviewed for performance issues, making sure no non-indexed columns are filtered before indexed ones, and avoiding excessive JOINs by focusing on subqueries.
+9. **[Final Selection] - Select the Required Columns**  
+   Select the final set of columns needed for the result, which are:  
+   - Object identifiers (`oid`) from the `object` table  
+   - The probabilities from the `probability` table for the `stamp_classifier`  
+   - The light curves (detections) from the `detection` table  
+
+10. **[Optimization] - Avoid Unnecessary Joins**  
+   Ensure that you favor sub-queries over joins when retrieving object identifiers and probabilities to avoid performance issues. Since the query involves indexed columns (`oid`, `firstmjd`), nested sub-queries will help minimize unnecessary processing time.
+
+### Summary of Steps:
+1. **[Initial Planning]**: Identify relevant tables (`object`, `probability`, `detection`, `magstat`) and columns (`oid`, `firstmjd`, `dmd_dt`, etc.).
+2. **[Sub-query]**: Retrieve `oid`s of objects classified as `SN` using the `stamp_classifier` from the `probability` table.
+3. **[Condition]**: Filter for objects whose `firstmjd` is between 60188 and 60189 in the `object` table.
+4. **[Join]**: Filter fast risers by joining the `magstat` table, applying the condition `dmd_dt < -0.25`.
+5. **[Sub-query]**: Use the `detection` table to retrieve light curves and relevant detection data.
+6. **[Join]**: Combine filtered objects with their detections using INNER JOINs.
+7. **[Sub-query]**: Retrieve probabilities for the filtered objects from the `stamp_classifier`.
+8. **[Combine Results]**: Use UNION or INTERSECT to combine sub-query results if necessary.
+9. **[Final Selection]**: Select final columns (`oid`, probabilities, detections) for the output.
+10. **[Optimization]**: Prioritize sub-queries to avoid unnecessary joins, ensuring efficient use of indexed columns.
 
 # If there is SQL code, use it only as reference, changing the conditions you consider necessary.
 # You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
