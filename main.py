@@ -1,9 +1,11 @@
 import requests
 import sqlalchemy as sa
 
-from pipeline.process import api_call, format_response, schema_linking, classify, decomposition, run_query
+from pipeline.process import api_call, format_response, schema_linking, \
+    classify, decomposition_v2, run_query
 from pipeline.ragStep import rag_step
-from prompts.correction.SelfCorrection import prompt_self_correction_v2, general_context_selfcorr_v1
+from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
+    general_context_selfcorr_v1
 from secret.config import SQL_URL
 
 # Setup params for query engine
@@ -52,19 +54,26 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     table2, ...]. For example, if the answer is table object and table 
     taxonomy, then you should type: [object, taxonomy].
     
-    Consider that these tables are necessary to execute the query: {rag_info}"""
+    Consider that these tables are necessary to execute the query: {rag_info}
+    """
     
     # Calling the LLM
     tables, schema_usage = api_call(model, max_tokens, rag_prompt)
+    content = tables.split("[")[1].split("]")[0]
+    true_tables = f"[{content}]"
     
     # Classify the query
-    to_classify = query + f"""\n The following tables are needed to generate the
-    query: {tables}"""
+    to_classify = query + f"""\n The following tables are needed to generate 
+    the query: {true_tables}"""
     label, classify_usage = classify(to_classify, model)
     print(label)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify, model, format)    
+    prompt, decomp_usage = decomposition_v2(label, 
+                                            query, 
+                                            true_tables, 
+                                            model, 
+                                            format)    
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
@@ -117,7 +126,11 @@ def recreated_pipeline(query, model, max_tokens, format):
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition(label, to_classify, model, format)
+    prompt, decomp_usage = decomposition_v2(label, 
+                                            query, 
+                                            tables, 
+                                            model, 
+                                            format)
     
     # Obtaining the SQL query
     table, usage = api_call(model, max_tokens, prompt)
@@ -143,7 +156,8 @@ def recreated_pipeline(query, model, max_tokens, format):
     return table, total_usage, prompts
 
 
-def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, new_pipe, self_corr):
+def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, 
+                 engine, new_pipe, self_corr):
     """Function to run the entire pipeline. This pipeline could be the 
        original one or the new one. Here the self-correction is applied.
 
@@ -171,7 +185,8 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
     """
     # Check if the new pipeline is being used
     if new_pipe:
-        table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
+        table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
+                                               overlap, quantity, format)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
@@ -180,7 +195,9 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
                 # TODO: Check the tab_schema variable
-                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[0]
+                tab_schema = prompts["Classification"]\
+                    .split("\n The following tables are needed to generate \
+                        the query: ")[0]
                 corr_prompt = prompt_self_correction_v2(
                     gen_task=general_context_selfcorr_v1, 
                     tab_schema=tab_schema, 
@@ -204,7 +221,8 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
 
     # Using the recreated pipeline
     else:
-        table, total_usage, prompts = recreated_pipeline(query, model, max_tokens, format)
+        table, total_usage, prompts = recreated_pipeline(query, model, 
+                                                         max_tokens, format)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
@@ -212,7 +230,9 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engi
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
-                tab_schema = prompts["Classification"].split("\n The following tables are needed to generate the query: ")[0]
+                tab_schema = prompts["Classification"]\
+                    .split("\n The following tables are needed to generate \
+                        the query: ")[0]
                 corr_prompt = prompt_self_correction_v2(
                     gen_task=general_context_selfcorr_v1, 
                     tab_schema=tab_schema, 

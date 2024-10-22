@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pandas as pd
 import openai
 import anthropic
@@ -6,16 +10,19 @@ import google.generativeai as genai
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
+
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
-simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
+    simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
 from prompts.decomposition.Decomposition import medium_decomp_prompt_vf, \
-medium_decomp_gen_vf, medium_decomp_gen_vf_python, medium_query_task_vf, \
-medium_query_cntx_vf, medium_query_instructions_1_vf, \
-medium_query_instructions_2_vf, medium_decomp_task_vf
+    medium_decomp_gen_vf, medium_decomp_gen_vf_python, medium_query_task_vf, \
+    medium_query_cntx_vf, medium_query_instructions_1_vf, \
+    medium_query_instructions_2_vf, medium_decomp_task_vf
 from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
-adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
-adv_query_cntx_vf, adv_query_instructions_1_vf, adv_query_instructions_2_vf, \
-adv_decomp_task_vf
+    adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
+    adv_query_cntx_vf, adv_query_instructions_1_vf, \
+    adv_query_instructions_2_vf, adv_decomp_task_vf
+
+from prompts.final_prompts import *
 
 
 def api_call(model, max_tokens, prompt):
@@ -212,8 +219,8 @@ def decomposition(label, ur_w_tables, model, format):
         ur_w_tables (str): User request with the needed tables from the DB
         model (str): Name of the model (LLM)
         format (str): The type of formatting to use. It can be 
-        'singular' for a singular query string or 'var' for the 
-        decomposition in variables
+        'sql' for a singular query string or 'python' for the 
+        decomposition in Python variables
         
     Returns:
         prompt (str): Prompt to use in the decomposition task of a NL query
@@ -282,6 +289,83 @@ def decomposition(label, ur_w_tables, model, format):
                 user_request_with_tables = ur_w_tables,
                 adv_query_instructions_2 = adv_query_instructions_2_vf,
                 decomp_plan = decomp_plan_true
+            )
+        
+    else:
+        raise Exception("No valid label difficulty")
+    
+    return prompt, usage
+
+
+def decomposition_v2(label, ur, tables, model, format):
+    """Function to create the decomposition prompts
+
+    Args:
+        label (str): Difficulty label
+        ur_w_tables (str): User request
+        tables (str): Tables from the DB needed for the request
+        model (str): Name of the model (LLM)
+        format (str): The type of formatting to use. It can be 
+        'sql' for a singular query string or 'python' for the 
+        decomposition in Python variables
+        
+    Returns:
+        prompt (str): Prompt to use in the query generation task of a NL query
+        usage (dict): LLM API usage
+    """
+    if label == "simple":
+        # Simple queries don't need decomposition
+        prompt = query_sql_simple.format(
+            ur = ur,
+            tables = tables
+        )
+        # No usage needed for the simple query. There is no decomposition
+        usage = None
+        
+    elif label == "medium":
+        # Getting the decomposition plan
+        decomp_plan = decomp_medium.format(
+            ur = ur,
+            tables = tables
+        )
+        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        # Creating the final prompt with the decomposition plan
+        if format == "sql":
+            # Through SQL queries
+            prompt = query_sql_medium.format(
+                ur = ur,
+                tables = tables,
+                decomp_plan = decomp_plan
+            )
+        else:
+            # Through Python variables
+            prompt = query_python_medium.format(
+                ur = ur,
+                tables = tables,
+                decomp_plan = decomp_plan
+            )
+            
+    elif label == "advanced":
+        # Getting the decomposition plan
+        decomp_plan = decomp_advanced.format(
+            ur = ur,
+            tables = tables
+        )
+        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        # Creating the final prompt with the decomposition plan
+        if format == "sql":
+            # Through SQL queries
+            prompt = query_sql_advanced.format(
+                ur = ur,
+                tables = tables,
+                decomp_plan = decomp_plan
+            )
+        else:
+            # Through Python variables
+            prompt = query_python_advanced.format(
+                ur = ur,
+                tables = tables,
+                decomp_plan = decomp_plan
             )
         
     else:
