@@ -1,15 +1,30 @@
 ### Schema linking prompt
 
 sch_linking = """
-Given the user request, select the tables needed to generate a SQL query. Give the answer in the following format: [table1, table2, ...]. For example, if the answer is table object and table taxonomy, then you should type: [object, taxonomy].
+Given the user request, select the tables needed to generate a SQL query. Give 
+the answer in the following format: [table1, table2, ...]. For example, if the 
+answer is table object and table taxonomy, then you should type: [object, 
+taxonomy].
     
-Consider that these tables are necessary to execute the query: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
+Consider that these tables are necessary to execute the query: Get the object 
+identifiers, probabilities in the stamp classifier and light curves (only 
+detections) for objects whose highest probability in the stamp classifier is 
+obtained for class SN, that had their first detection in the first 2 days of 
+september, and that qualify as fast risers.
 
 ## Astronomical context:
-There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
-Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
-Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
+There are two main types of variable objects: those that have persistent 
+variability and those that have a transient nature. In the case of persistent 
+variability sources (Periodic or Stochastic), the relevant light curve 
+magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
+sources (Transient), the relevant light curve is the uncorrected magnitude 
+(magpsf). Objects that are transient are considered to be fast risers if 
+dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+refers to the first detection of a given object, you should use the firstmjd 
+indexed column (in object). When possible, avoid adding restrictions on the 
+mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, 
+you don't need to ask for additional constraints.
 
 The tables and their info:
 
@@ -17,117 +32,191 @@ The tables and their info:
 
 ## Available tables
 
-"object", "probability", "feature", "magstat", "non_detection", "detection", "step", "taxonomy", "feature_version", "xmatch", "allwise", "dataquality", "gaia_ztf", "ss_ztf", "ps1_ztf", "reference", "pipeline", "information_schema", "forced_photometry"
+"object", "probability", "feature", "magstat", "non_detection", "detection", 
+"step", "taxonomy", "feature_version", "xmatch", "allwise", "dataquality", 
+"gaia_ztf", "ss_ztf", "ps1_ztf", "reference", "pipeline", "information_schema", 
+"forced_photometry"
 
 ## Table descriptions
 
-TABLE "object": contains basic filter and time–aggregated statistics such as location, number of observations, and the times of first and last detection.
-TABLE "probability": classification probabilities associated to a given object, classifier, and class. Contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
-TABLE "feature": contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE "magstat": contains time–aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
-TABLE "non_detection": contains the limiting magnitudes of previous non–detections separated by filter.
-TABLE "detection": contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter.
+TABLE "object": contains basic filter and time-aggregated statistics such as 
+  location, number of observations, and the times of first and last detection.
+TABLE "probability": classification probabilities associated to a given object, 
+  classifier, and class. Contain the object classification probabilities, 
+  including those from the stamp and light curve classifiers, and from different 
+  versions of these classifiers.
+TABLE "feature": contains the object light curve statistics and other features 
+  used for ML classification and which are stored as json files in our database.
+TABLE "magstat": contains time-aggregated statistics separated by filter, such 
+  as the average magnitude, the initial magnitude change rate, number of 
+  detections, etc.
+TABLE "non_detection": contains the limiting magnitudes of previous 
+  non-detections separated by filter.
+TABLE "detection": contains the object light curves including their difference 
+  and corrected magnitudes and associated errors separated by filter.
 TABLE "step": contains the different pipeline steps and their versions.
-TABLE "taxonomy": contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
-TABLE "feature_version": contains the version of the feature extraction and preprocessing steps used to generate the features.
-TABLE "xmatch": contains the object cross–matches and associated cross–match catalogs.
+TABLE "taxonomy": contains details about the different taxonomies used in our 
+  stamp and light curve classifiers, which can evolve with time.
+TABLE "feature_version": contains the version of the feature extraction and 
+  preprocessing steps used to generate the features.
+TABLE "xmatch": contains the object cross-matches and associated cross-match 
+  catalogs.
 TABLE "allwise": contains the AllWISE catalog information for the objects.
 TABLE "dataquality": detailed object information regarding the quality of the data
 TABLE "gaia_ztf": GAIA objects near detected ZTF objects
 TABLE "ss_ztf": known solar system objects near detected objects
 TABLE "ps1_ztf": PanSTARRS objects near detected ZTF objects
 TABLE "reference": properties of the reference images used to build templates
-TABLE "pipeline": information about the different pipeline steps and their versions
-TABLE "information_schema.tables": information about the database tables and columns
-TABLE "forced_photometry": contains the forced photometry measurements for each object, including the object position, magnitude, and associated errors, and the photometry of the reference image.
+TABLE "pipeline": information about the different pipeline steps and their 
+  versions
+TABLE "information_schema.tables": information about the database tables and 
+  columns
+TABLE "forced_photometry": contains the forced photometry measurements for each 
+  object, including the object position, magnitude, and associated errors, and 
+  the photometry of the reference image.
 
 ## Feature descriptions
 
-Amplitude: Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes
-AndersonDarling: Test of whether a sample of data comes from a population with a specific distribution (in this case a normal distribution)
-Autocor_length: Lag value where the auto-correlation function becomes smaller than Eta_e
-Beyond1Std: Percentage of points with photometric mag that lie beyond 1 sigma from the mean
-Con: Number of three consecutive data points brighter/fainter than 2 sigma of the light curve
-delta_mag_fid: Difference between maximum and minimum observed magnitude in a given band
+Amplitude: Half of the difference between the median of the maximum 5% and of 
+  the minimum 5% magnitudes
+AndersonDarling: Test of whether a sample of data comes from a population with 
+  a specific distribution (in this case a normal distribution)
+Autocor_length: Lag value where the auto-correlation function becomes smaller 
+  than Eta_e
+Beyond1Std: Percentage of points with photometric mag that lie beyond 1 sigma 
+  from the mean
+Con: Number of three consecutive data points brighter/fainter than 2 sigma of 
+  the light curve
+delta_mag_fid: Difference between maximum and minimum observed magnitude in a 
+  given band
 delta_mjd_fid: Total timespan of the light curve in a given band
-delta_period: Absolute value of the difference between the Multiband_period and the MHAOV period obtained using a single band
-dmag_first_det_fid: Difference between the last non-detection diffmaglim in band "x" before the first detection in any band and the first detected magnitude in band "x"'
-dmag_non_det_fid: Difference between the median non-detection diffmaglim in the "x" band before the first detection and the minimum detected magnitude (peak) in the "x" band
-Eta_e: Ratio of the mean of the squares of successive mag differences to the variance of the light curve
-ExcessVar: Measure of the intrinsic variability amplitude [(Std - average photometric error)/Mean]
+delta_period: Absolute value of the difference between the Multiband_period 
+  and the MHAOV period obtained using a single band
+dmag_first_det_fid: Difference between the last non-detection diffmaglim in 
+  band "x" before the first detection in any band and the first detected 
+  magnitude in band "x"'
+dmag_non_det_fid: Difference between the median non-detection diffmaglim in the
+  "x" band before the first detection and the minimum detected magnitude (peak) 
+  in the "x" band
+Eta_e: Ratio of the mean of the squares of successive mag differences to the 
+  variance of the light curve
+ExcessVar: Measure of the intrinsic variability amplitude [(Std - average 
+  photometric error)/Mean]
 first_mag: magnitude of the first alert in a given band
-g-r_max: g-r color obtained using the brightest lc_diff (difference light curve) magnitude in each band
-g-r_max_corr: g-r color obtained using the brightest lc_corr (corrected light curve or total magnitude light curve) magnitude in each band
+g-r_max: g-r color obtained using the brightest lc_diff (difference light 
+  curve) magnitude in each band
+g-r_max_corr: g-r color obtained using the brightest lc_corr (corrected light 
+  curve or total magnitude light curve) magnitude in each band
 g-r_mean: g-r color obtained using the mean lc_diff magnitude of each band
 g-r_mean_corr: g-r color obtained using the mean lc_corr magnitude of each band
-g-W2: color computed using the mean lc_corr g band magnitude (or the mean g band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
-g-W3: color computed using the mean lc_corr g band magnitude (or the mean g band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
+g-W2: color computed using the mean lc_corr g band magnitude (or the mean g 
+  band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
+g-W3: color computed using the mean lc_corr g band magnitude (or the mean g 
+  band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
 gal_b: Galactic latitude
 gal_l: Galactic longitude
-GP_DRW_sigma: Amplitude of the variability at short timescales (t << tau), from DRW modeling
+GP_DRW_sigma: Amplitude of the variability at short timescales (t << tau), from
+  DRW modeling
 GP_DRW_tau: Relaxation time (tau) from DRW modeling
 Gskew: Median-based measure of the skew
-Harmonics_mag_1: Amplitude of the 1st component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_2: Amplitude of the 2nd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_3: Amplitude of the 3rd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_4: Amplitude of the 4th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_5: Amplitude of the 5th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_6: Amplitude of the 6th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mag_7: Amplitude of the 7th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_mse: Mean squarre error of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_2: Phase of the 2nd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_3: Phase of the 3rd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_4: Phase of the 4th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_5: Phase of the 5th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_6: Phase of the 6tth component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-Harmonics_phase_7: Phase of the 7th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
-IAR_phi: Level of autocorrelation using a  discrete-time representation of a DRW model
-last_diffmaglim_before_fid: Last non-detection diffmaglim in the ''x'' band before the first detection in any band
-last_mjd_before_fid: Last non-detection Modified Julian Date (MJD) in the ''x'' band before the first detection in any band.
+Harmonics_mag_1: Amplitude of the 1st component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_2: Amplitude of the 2nd component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_3: Amplitude of the 3rd component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_4: Amplitude of the 4th component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_5: Amplitude of the 5th component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_6: Amplitude of the 6th component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mag_7: Amplitude of the 7th component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_mse: Mean squarre error of the harmonics series (obtained by fitting 
+  a harmonic series up to the seventh harmonic)
+Harmonics_phase_2: Phase of the 2nd component of the harmonics series (obtained 
+  by fitting a harmonic series up to the seventh harmonic)
+Harmonics_phase_3: Phase of the 3rd component of the harmonics series (obtained 
+  by fitting a harmonic series up to the seventh harmonic)
+Harmonics_phase_4: Phase of the 4th component of the harmonics series (obtained 
+  by fitting a harmonic series up to the seventh harmonic)
+Harmonics_phase_5: Phase of the 5th component of the harmonics series (obtained 
+  by fitting a harmonic series up to the seventh harmonic)
+Harmonics_phase_6: Phase of the 6tth component of the harmonics series 
+  (obtained by fitting a harmonic series up to the seventh harmonic)
+Harmonics_phase_7: Phase of the 7th component of the harmonics series (obtained 
+  by fitting a harmonic series up to the seventh harmonic)
+IAR_phi: Level of autocorrelation using a  discrete-time representation of a 
+  DRW model
+last_diffmaglim_before_fid: Last non-detection diffmaglim in the ''x'' band 
+  before the first detection in any band
+last_mjd_before_fid: Last non-detection Modified Julian Date (MJD) in the ''x'' 
+  band before the first detection in any band.
 LinearTrend: Slope of a linear fit to the light curve
-max_diffmaglim_after_fid: Maximum non-detection diffmaglim in the ''x'' band after the first detection in any band
-max_diffmaglim_before_fid: Maximum non-detection diffmaglim in the ''x'' band before the first detection in any band
+max_diffmaglim_after_fid: Maximum non-detection diffmaglim in the ''x'' band 
+  after the first detection in any band
+max_diffmaglim_before_fid: Maximum non-detection diffmaglim in the ''x'' band 
+  before the first detection in any band
 MaxSlope: Maximum absolute magnitude slope between two consecutive observations
 Mean: Mean lc_corr magnitude (or mean lc_diff if the source cannot be corrected)
 Meanvariance: Ratio of the standard deviation to the mean magnitude
-median_diffmaglim_after_fid: Median non-detection diffmaglim in the ''x'' band after the first detection in any band
-median_diffmaglim_before_fid: Median non-detection diffmaglim in the ''x'' band before the first detection in any band
+median_diffmaglim_after_fid: Median non-detection diffmaglim in the ''x'' band 
+  after the first detection in any band
+median_diffmaglim_before_fid: Median non-detection diffmaglim in the ''x'' band 
+  before the first detection in any band
 MedianAbsDev: Median discrepancy of the data from the median data
 MedianBRP: Fraction of photometric points within amplitude/10 of the median mag
 MHPS_high: Variance associated with a 10 day timescale obtained from a MHPS analysis
 MHPS_low: Variance associated with a 100 day timescale obtained from a MHPS analysis
 MHPS_non_zero: Number of points in the light curve used for the MHPS analysis
-MHPS_PN_flag: Flag that reports whether the Poisson Noise is higher than the MHPS_high variance
+MHPS_PN_flag: Flag that reports whether the Poisson Noise is higher than the 
+  MHPS_high variance
 MHPS_ratio: Ratio between the MHPS_low and MHPS_high variances for a given band
 min_mag: minimun magnitude of the alert light curve in a given band
 Multiband_period: Period obtained using the multiband MHAOV periodogram
 n_det: number of detections in the alert light curve of a given band
 n_neg: number of negative detections in the alert light curve (isdiffpos=-1)
-n_non_det_after_fid: Number of non-detections in the ''x'' band after the first detection in any band
-n_non_det_before_fid: Number of non-detections in the ''x'' band before the first detection in any band
+n_non_det_after_fid: Number of non-detections in the ''x'' band after the first
+  detection in any band
+n_non_det_before_fid: Number of non-detections in the ''x'' band before the 
+  first detection in any band
 n_pos: number of positive detections in the alert light curve (isdiffpos=+1)
-PairSlopeTrend: Fraction of increasing first differences minus fraction of decreasing first differences over the last 30 time-sorted mag measures
+PairSlopeTrend: Fraction of increasing first differences minus fraction of 
+  decreasing first differences over the last 30 time-sorted mag measures
 PercentAmplitude: Largest percentage difference between either max or min mag and median mag
-Period_band: Single band period computed using a Multi Harmonic Analysis of Variance (MHAOV) periodogram
-positive_fraction: Fraction of detections in the difference-images of a given band which are brighter than the template image
-Power_rate_1/2: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/2
-Power_rate_1/3: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/3
-Power_rate_1/4: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/4
-Power_rate_2: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 2*P
-Power_rate_3: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 3*P
-Power_rate_4: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 4*P
+Period_band: Single band period computed using a Multi Harmonic Analysis of 
+  Variance (MHAOV) periodogram
+positive_fraction: Fraction of detections in the difference-images of a given 
+  band which are brighter than the template image
+Power_rate_1/2: Ratio between the power of the multiband periodogram obtained 
+  for the best period candidate (P) and for P/2
+Power_rate_1/3: Ratio between the power of the multiband periodogram obtained 
+  for the best period candidate (P) and for P/3
+Power_rate_1/4: Ratio between the power of the multiband periodogram obtained 
+  for the best period candidate (P) and for P/4
+Power_rate_2: Ratio between the power of the multiband periodogram obtained for 
+  the best period candidate (P) and for 2*P
+Power_rate_3: Ratio between the power of the multiband periodogram obtained for 
+  the best period candidate (P) and for 3*P
+Power_rate_4: Ratio between the power of the multiband periodogram obtained for 
+  the best period candidate (P) and for 4*P
 PPE: Multiband Periodogram Pseudo Entropy
 Psi_CS: Range of a cumulative sum applied to the phase-folded light curve
 Psi_eta: Eta_e index calculated from the folded light curve
 Pvar: Probability that the source is intrinsically variable
 Q31: Difference between the 3rd and the 1st quartile of the light curve
-r-W2: Color computed using the mean lc_corr r band magnitude (or the mean r band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
-r-W3: Color computed using the mean lc_corr r band magnitude (or the mean r band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
+r-W2: Color computed using the mean lc_corr r band magnitude (or the mean r 
+  band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
+r-W3: Color computed using the mean lc_corr r band magnitude (or the mean r 
+  band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
 rb: Median rb (real-bogus) parameter from the ZTF alerts
 Rcs: Range of a cumulative sum
 SF_ML_amplitude: Rms magnitude difference of the structure function, computed over a 1 yr timescale
-SF_ML_gamma: Logarithmic gradient of the mean change in magnitude (computed from the structure function)
-sgscore1: Morphological star/galaxy score of the closest source from PanSTARRS1 (values closer to 1 imply a higher likelihood of the source being a star)
+SF_ML_gamma: Logarithmic gradient of the mean change in magnitude (computed 
+  from the structure function)
+sgscore1: Morphological star/galaxy score of the closest source from PanSTARRS1 
+  (values closer to 1 imply a higher likelihood of the source being a star)
 Skew: Skewness measure
 SmallKurtosis: Small sample kurtosis of the magnitudes
 SPM_A: Supernova parametric model  A
@@ -216,9 +305,9 @@ CREATE TABLE magstat ( /* different statistics for the object divided by band or
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     fid INTEGER NOT NULL, /* band or filter identifier */
     stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */
-    corrected BOOLEAN NOT NULL, /* whether the object’s light curve has been corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's light curve has been corrected */
     ndet INTEGER NOT NULL, /* the object number of detection in the given band */
-    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don’t trust  */
+    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don't trust  */
     dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */
     dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */
     sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */
@@ -255,7 +344,8 @@ CREATE TABLE non_detection (
 
 ### detection
 
-CREATE TABLE detection (  /* this table contains information about the object detections, or its light curve. Avoid doing filters on this table in any parameter other than oid */
+CREATE TABLE detection (  /* this table contains information about the object 
+    detections, or its light curve. Avoid doing filters on this table in any parameter other than oid */
     candid BIGINT PRIMARY KEY, /* unique candidate identifier */
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */
@@ -281,9 +371,10 @@ CREATE TABLE detection (  /* this table contains information about the object de
     magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */
     sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
-    parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does) */
+    parent_candid BIGINT, /* identifier of the candidate where this information 
+      was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does) */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before) */
     step_id_corr VARCHAR NOT NULL /* identifier of the correction step */
 );
@@ -328,21 +419,36 @@ CREATE TABLE xmatch (
 ### allwise
 
 CREATE TABLE allwise (
-    oid_catalog VARCHAR PRIMARY KEY, /* object Id inside catalog, correspond to column: designation  in ALLWISE : Sexagesimal, equatorial position-based source name in the form: hhmmss.ss+ddmmss.s. The full naming convention for AllWISE Source Catalog sources has the form "WISEA  Jhhmmss.ss+ddmmss.s," where "WISEA" indicates the source is from the AllWISE Source Catalog, and "J" indicates the position is J2000. The "WISEA" acronym is not listed explicitly in the designation column. */
+    oid_catalog VARCHAR PRIMARY KEY, /* object Id inside catalog, correspond to
+      column: designation  in ALLWISE : Sexagesimal, equatorial position-based 
+      source name in the form: hhmmss.ss+ddmmss.s. The full naming convention 
+      for AllWISE Source Catalog sources has the form "WISEA  
+      Jhhmmss.ss+ddmmss.s," where "WISEA" indicates the source is from the 
+      AllWISE Source Catalog, and "J" indicates the position is J2000. The 
+      "WISEA" acronym is not listed explicitly in the designation column. */
     ra DOUBLE PRECISION NOT NULL, /* J2000 right ascension with respect to the 2MASS PSC reference frame from the non-moving source extraction. */
     dec DOUBLE PRECISION NOT NULL, /* J2000 declination with respect to the 2MASS PSC reference frame from the non-moving source extraction. */
-    w1mpro DOUBLE PRECISION, /* W1 magnitude measured with profile-fitting photometry, or the magnitude of the 95% confidence brightness upper limit if the W1 flux measurement has SNR<2. This column is null if the source is nominally detected in W1, but no useful brightness estimate could be made. */
+    w1mpro DOUBLE PRECISION, /* W1 magnitude measured with profile-fitting 
+      photometry, or the magnitude of the 95% confidence brightness upper limit
+      if the W1 flux measurement has SNR<2. This column is null if the source 
+      is nominally detected in W1, but no useful brightness estimate could be made. */
     w2mpro DOUBLE PRECISION, /* analogous to w1mpro */
     w3mpro DOUBLE PRECISION, /* analogous to w1mpro */
     w4mpro DOUBLE PRECISION, /* analogous to w1mpro */
-    w1sigmpro DOUBLE PRECISION, /* W1 profile-fit photometric measurement uncertainty in mag units. This column is null if the W1 profile-fit magnitude is a 95% confidence upper limit or if the source is not measurable. */
+    w1sigmpro DOUBLE PRECISION, /* W1 profile-fit photometric measurement 
+      uncertainty in mag units. This column is null if the W1 profile-fit 
+      magnitude is a 95% confidence upper limit or if the source is not measurable. */
     w2sigmpro DOUBLE PRECISION, /* analogous to w1sigmpro */
     w3sigmpro DOUBLE PRECISION, /* analogous to w1sigmpro */
     w4sigmpro DOUBLE PRECISION, /* analogous to w1sigmpro */
-    j_m_2mass DOUBLE PRECISION, /* 2MASS J-band magnitude or magnitude upper limit of the associated 2MASS PSC source. This column is "null" if there is no associated 2MASS PSC source or if the 2MASS PSC J-band magnitude entry is "null". */
+    j_m_2mass DOUBLE PRECISION, /* 2MASS J-band magnitude or magnitude upper 
+      limit of the associated 2MASS PSC source. This column is "null" if there 
+      is no associated 2MASS PSC source or if the 2MASS PSC J-band magnitude entry is "null". */
     h_m_2mass DOUBLE PRECISION, /* analogous to j_m_2mass */
     k_m_2mass DOUBLE PRECISION, /* analogous to j_m_2mass */
-    j_msig_2mass DOUBLE PRECISION, /* 2MASS J-band corrected photometric uncertainty of the associated 2MASS PSC source. This column is "null" if there is no associated 2MASS PSC source or if the 2MASS PSC J-band uncertainty entry is "null". */
+    j_msig_2mass DOUBLE PRECISION, /* 2MASS J-band corrected photometric 
+      uncertainty of the associated 2MASS PSC source. This column is "null" if 
+      there is no associated 2MASS PSC source or if the 2MASS PSC J-band uncertainty entry is "null". */
     h_msig_2mass DOUBLE PRECISION, /* analogous to j_msig_2mass */
     k_msig_2mass DOUBLE PRECISION /* analogous to j_msig_2mass */
 );
@@ -373,13 +479,16 @@ CREATE TABLE dataquality (
     ssnrms DOUBLE PRECISION, /* Ratio: S/stddev(S) on event position where S = image of convolution: D (x) PSF(D) */
     magzpsci DOUBLE PRECISION, /* Magnitude zero point for photometry estimates [mag] */
     magzpsciunc DOUBLE PRECISION, /* Magnitude zero point uncertainty (in magzpsci) [mag] */
-    magzpscirms DOUBLE PRECISION, /* RMS (deviation from average) in all differences between instrumental photometry and matched photometric calibrators from science image processing [mag] */
+    magzpscirms DOUBLE PRECISION, /* RMS (deviation from average) in all 
+      differences between instrumental photometry and matched photometric calibrators from science image processing [mag] */
     nmatches INTEGER, /* Number of PS1 photometric calibrators used to calibrate science image from science image processing */
     clrcoeff DOUBLE PRECISION, /* Color coefficient from linear fit from photometric calibration of science image */
     clrcounc DOUBLE PRECISION, /* Color coefficient uncertainty from linear fit (corresponding to clrcoeff) */
     zpclrcov DOUBLE PRECISION, /* Covariance in magzpsci and clrcoeff from science image processing [mag^2] */
-    zpmed DOUBLE PRECISION, /* Magnitude zero point from median of all differences between instrumental photometry and matched photometric calibrators from science image processing [mag] */
-    clrmed DOUBLE PRECISION, /* Median color of all PS1 photometric calibrators used from science image processing [mag]: for filter (fid) = 1, 2, 3, PS1 color used = g-r, g-r, r-i respectively */
+    zpmed DOUBLE PRECISION, /* Magnitude zero point from median of all 
+      differences between instrumental photometry and matched photometric calibrators from science image processing [mag] */
+    clrmed DOUBLE PRECISION, /* Median color of all PS1 photometric calibrators 
+      used from science image processing [mag]: for filter (fid) = 1, 2, 3, PS1 color used = g-r, g-r, r-i respectively */
     clrrms DOUBLE PRECISION, /* RMS color (deviation from average) of all PS1 photometric calibrators used from science image processing [mag] */
     exptime DOUBLE PRECISION /* Integration time of camera exposure [sec] */
     FOREIGN KEY (candid, oid) REFERENCES detection(candid, oid)
@@ -426,14 +535,16 @@ CREATE TABLE ps1_ztf ( /* information about the three closest sources in Pan STA
     srmag2 DOUBLE PRECISION, /* r-band PSF magnitude of second closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     simag2 DOUBLE PRECISION, /* i-band PSF magnitude of second closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     szmag2 DOUBLE PRECISION, /* z-band PSF magnitude of second closest source from PS1 catalog; if exists within 30 arcsec [mag] */
-    sgscore2 DOUBLE PRECISION, /* Star/Galaxy score of second closest source from PS1 catalog; if exists within 30 arcsec: 0 <= sgscore <= 1 where closer to 1 implies higher likelihood of being a star */
+    sgscore2 DOUBLE PRECISION, /* Star/Galaxy score of second closest source 
+      from PS1 catalog; if exists within 30 arcsec: 0 <= sgscore <= 1 where closer to 1 implies higher likelihood of being a star */
     distpsnr2 DOUBLE PRECISION, /* Distance to second closest source from PS1 catalog; if exists within 30 arcsec [arcsec] */
     objectidps3 DOUBLE PRECISION, /* Object ID of third closest source from PS1 catalog; if exists within 30 arcsec */
     sgmag3 DOUBLE PRECISION, /* g-band PSF magnitude of third closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     srmag3 DOUBLE PRECISION, /* r-band PSF magnitude of third closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     simag3 DOUBLE PRECISION, /* i-band PSF magnitude of third closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     szmag3 DOUBLE PRECISION, /* z-band PSF magnitude of third closest source from PS1 catalog; if exists within 30 arcsec [mag] */
-    sgscore3 DOUBLE PRECISION, /* Star/Galaxy score of third closest source from PS1 catalog; if exists within 30 arcsec: 0 <= sgscore <= 1 where closer to 1 implies higher likelihood of being a star */
+    sgscore3 DOUBLE PRECISION, /* Star/Galaxy score of third closest source 
+      from PS1 catalog; if exists within 30 arcsec: 0 <= sgscore <= 1 where closer to 1 implies higher likelihood of being a star */
     distpsnr3 DOUBLE PRECISION, /* Distance to third closest source from PS1 catalog; if exists within 30 arcsec [arcsec] */
     nmtchps INTEGER NOT NULL, /* Number of source matches from PS1 catalog falling within 30 arcsec */
     unique1 BOOLEAN NOT NULL, /* Whether the first closest object has changed w.r.t the first alert */
@@ -492,9 +603,10 @@ CREATE TABLE forced_photometry ( /* this table contains information about the fo
     e_mag_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     e_mag_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
     isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */
-    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
-    parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does) */
+    parent_candid BIGINT, /* identifier of the candidate where this information 
+      was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does) */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before) */
     field INTEGER, /* field identifier */
     rcid INTEGER, /* reference catalog identifier */
@@ -528,42 +640,80 @@ CREATE TABLE forced_photometry ( /* this table contains information about the fo
 ## Medium
 
 decomp_medium = """
-# Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database.
-For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries. 
-Be careful to put all the information and details needed in the description, like conditions, the table and column names, etc.
-Take in consideration the advices, conditions and names from ""General Context"" and details of the database, or the query will not be optimal.
-List the steps in the order in which they should be planned. Add to each numbered step a label in square brackets, like [initial planning], [join table], [replace], [condition], [join], [sub-query], etc.
-With the labels mark explicitly in which step you should use a sub-query, and other statements.
+# Your task is to DECOMPOSE the user request into a series of steps required to
+generate a PostgreSQL query that will be used for retrieving requested 
+information from the ALeRCE database.
+For this, outline a detailed decomposition plan for its systematic resolution, 
+describing and breaking down the problem into subtasks and/or subqueries. 
+Be careful to put all the information and details needed in the description, 
+like conditions, the table and column names, etc.
+Take in consideration the advices, conditions and names from ""General 
+Context"" and details of the database, or the query will not be optimal.
+List the steps in the order in which they should be planned. Add to each 
+numbered step a label in square brackets, like [initial planning], [join 
+table], [replace], [condition], [join], [sub-query], etc.
+With the labels mark explicitly in which step you should use a sub-query, and 
+other statements.
 
 User request: {ur}
 Tables needed: {tables}
 
 # General context about the database:
 ## General Information about the Schema and Database
-- An object is uniquely identified by its object identifier or 'oid' index, used in most tables
-- A detection from an object is identified by the candidate identifier or 'candid' index, used only in the detection table
-- A given band is identified by the filter identifier or 'fid' index, used in the magstats, feature, and detection tables
+- An object is uniquely identified by its object identifier or 'oid' index, 
+used in most tables
+- A detection from an object is identified by the candidate identifier or 
+'candid' index, used only in the detection table
+- A given band is identified by the filter identifier or 'fid' index, used in 
+the magstats, feature, and detection tables
 - In most cases you will need to use information from the object table
-- When particular astronomical classes are requested, you will need to use the probability table 
+- When particular astronomical classes are requested, you will need to use the 
+probability table 
 - Prioritize obtaining oids in a subquery to optimize the main query.
-- Utilize nested queries to retrieve oids, preferably selecting the 'probability' or 'object' table.
+- Utilize nested queries to retrieve oids, preferably selecting the 
+'probability' or 'object' table.
 - Avoid JOIN clauses; instead, favor nested queries.
-- Beware of variables that are not indexed when doing the queries. Favour using nested queries where the inner queries use indexed variables.
+- Beware of variables that are not indexed when doing the queries. Favour using 
+nested queries where the inner queries use indexed variables.
 - Note that the typical timeout time is 2 minutes
-- Special attention needs to be paid to the feature table, which, if possible, should be avoided. In this table the name of a given feature is stored in the column 'name' and its value for a given object in the column 'value'. These columns are not indexed, so you should query this table in the outer levels of a nested query, after most of the filtering has already happened using indexed variables.
+- Special attention needs to be paid to the feature table, which, if possible, 
+should be avoided. In this table the name of a given feature is stored in the 
+column 'name' and its value for a given object in the column 'value'. These 
+columns are not indexed, so you should query this table in the outer levels of 
+a nested query, after most of the filtering has already happened using indexed 
+variables.
 
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural network that uses as input the image stamps from a given object and that uses a 5 class taxonomy. This classifier is triggered only by the first alert of every object.
-- Light Curve Classifier (denoted as ""lc_classifier""): A balanced hierarchical random forest classifier that uses as input object features and that consists of four models with a taxonomy of 15 classes in total. This classifier is triggered with every new alert of an object with at least six detections in a given band.
-- The first hierarchical classifier of the Light Curve Classifier has three classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
-- Three additional classifiers of the Light Curve Classifier specialize in different types of object: Periodic, Transient, and Stochastic, denoted as ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and ""lc_classifier_stochastic,"" respectively.
+- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural 
+  network that uses as input the image stamps from a given object and that uses 
+  a 5 class taxonomy. This classifier is triggered only by the first alert of 
+  every object.
+- Light Curve Classifier (denoted as ""lc_classifier""): A balanced 
+  hierarchical random forest classifier that uses as input object features and 
+  that consists of four models with a taxonomy of 15 classes in total. This 
+  classifier is triggered with every new alert of an object with at least six 
+  detections in a given band.
+- The first hierarchical classifier of the Light Curve Classifier has three 
+  classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
+- Three additional classifiers of the Light Curve Classifier specialize in 
+  different types of object: Periodic, Transient, and Stochastic, denoted as 
+  ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and 
+  ""lc_classifier_stochastic,"" respectively.
 - The 15 classes are separated for each object type:
-  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
-  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super 
+    Luminous SNe ('SLSN')].
+  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 
+    'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object 
+    ('YSO')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long 
+    Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects 
+    ('Periodic-Other')].
 ## Probability Variable Names
-- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- classifier_name=('lc_classifier', 'lc_classifier_top', 
+  'lc_classifier_transient', 'lc_classifier_stochastic', 
+  'lc_classifier_periodic', 'stamp_classifier')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 
+  'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
@@ -571,15 +721,28 @@ Tables needed: {tables}
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
 ## Astronomical context:
-There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
-Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
-Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
+There are two main types of variable objects: those that have persistent 
+variability and those that have a transient nature. In the case of persistent 
+variability sources (Periodic or Stochastic), the relevant light curve 
+magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
+sources (Transient), the relevant light curve is the uncorrected magnitude 
+(magpsf). Objects that are transient are considered to be fast risers if 
+dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+refers to the first detection of a given object, you should use the firstmjd 
+indexed column (in object). When possible, avoid adding restrictions on the 
+mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, 
+you don't need to ask for additional constraints.
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=""lc_classifier""' when selecting probabilities.
+- Class probabilities for a given classifier and object are sorted from most to
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name=""lc_classifier""' when selecting probabilities.
 - If the user doesn't specify explicit columns, use the "SELECT" SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
@@ -592,42 +755,82 @@ Note that all the rows in the detection table are by definition detections, you 
 ## Advanced
 
 decomp_advanced = """
-# Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database.
-For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries.
-Be careful to put all the information and details needed in the description, like conditions, the table and column names, etc.
-Take in consideration the advices, conditions and names from ""General Context"" and details of the database, or the query will not be optimal.
-List the steps in the order in which they should be planned. Add to each numbered step a label in square brackets, like [initial planning], [join table], [replace], [condition], [join], [sub-query], etc.
-The request is a very difficult and advanced query, so you will need to use JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is very important that you give every possible detail in each step, describing the statements and the nested-queries that are required.
+# Your task is to DECOMPOSE the user request into a series of steps required to 
+generate a PostgreSQL query that will be used for retrieving requested 
+information from the ALeRCE database.
+For this, outline a detailed decomposition plan for its systematic resolution, 
+describing and breaking down the problem into subtasks and/or subqueries.
+Be careful to put all the information and details needed in the description, 
+like conditions, the table and column names, etc.
+Take in consideration the advices, conditions and names from 
+""General Context"" and details of the database, or the query will not be 
+optimal. List the steps in the order in which they should be planned. Add to 
+each numbered step a label in square brackets, like [initial planning], [join 
+table], [replace], [condition], [join], [sub-query], etc.
+The request is a very difficult and advanced query, so you will need to use 
+JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is 
+very important that you give every possible detail in each step, describing the 
+statements and the nested-queries that are required.
 
 User request: {ur}
 Tables needed: {tables}
 
 # General context about the database:
 ## General Information about the Schema and Database
-- An object is uniquely identified by its object identifier or 'oid' index, used in most tables
-- A detection from an object is identified by the candidate identifier or 'candid' index, used only in the detection table
-- A given band is identified by the filter identifier or 'fid' index, used in the magstats, feature, and detection tables
+- An object is uniquely identified by its object identifier or 'oid' index, 
+used in most tables
+- A detection from an object is identified by the candidate identifier or 
+'candid' index, used only in the detection table
+- A given band is identified by the filter identifier or 'fid' index, used in 
+the magstats, feature, and detection tables
 - In most cases you will need to use information from the object table
-- When particular astronomical classes are requested, you will need to use the probability table 
+- When particular astronomical classes are requested, you will need to use the 
+probability table 
 - Prioritize obtaining oids in a subquery to optimize the main query.
-- Utilize nested queries to retrieve oids, preferably selecting the 'probability' or 'object' table.
+- Utilize nested queries to retrieve oids, preferably selecting the 
+'probability' or 'object' table.
 - Avoid JOIN clauses; instead, favor nested queries.
-- Beware of variables that are not indexed when doing the queries. Favour using nested queries where the inner queries use indexed variables.
+- Beware of variables that are not indexed when doing the queries. Favour using 
+nested queries where the inner queries use indexed variables.
 - Note that the typical timeout time is 2 minutes
-- Special attention needs to be paid to the feature table, which, if possible, should be avoided. In this table the name of a given feature is stored in the column 'name' and its value for a given object in the column 'value'. These columns are not indexed, so you should query this table in the outer levels of a nested query, after most of the filtering has already happened using indexed variables.
+- Special attention needs to be paid to the feature table, which, if possible, 
+should be avoided. In this table the name of a given feature is stored in the 
+column 'name' and its value for a given object in the column 'value'. These 
+columns are not indexed, so you should query this table in the outer levels of 
+a nested query, after most of the filtering has already happened using indexed 
+variables.
 
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural network that uses as input the image stamps from a given object and that uses a 5 class taxonomy. This classifier is triggered only by the first alert of every object.
-- Light Curve Classifier (denoted as ""lc_classifier""): A balanced hierarchical random forest classifier that uses as input object features and that consists of four models with a taxonomy of 15 classes in total. This classifier is triggered with every new alert of an object with at least six detections in a given band.
-- The first hierarchical classifier of the Light Curve Classifier has three classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
-- Three additional classifiers of the Light Curve Classifier specialize in different types of object: Periodic, Transient, and Stochastic, denoted as ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and ""lc_classifier_stochastic,"" respectively.
+- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural 
+  network that uses as input the image stamps from a given object and that uses 
+  a 5 class taxonomy. This classifier is triggered only by the first alert of 
+  every object.
+- Light Curve Classifier (denoted as ""lc_classifier""): A balanced 
+  hierarchical random forest classifier that uses as input object features and 
+  that consists of four models with a taxonomy of 15 classes in total. This 
+  classifier is triggered with every new alert of an object with at least six 
+  detections in a given band.
+- The first hierarchical classifier of the Light Curve Classifier has three 
+  classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
+- Three additional classifiers of the Light Curve Classifier specialize in 
+  different types of object: Periodic, Transient, and Stochastic, denoted as 
+  ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and 
+  ""lc_classifier_stochastic,"" respectively.
 - The 15 classes are separated for each object type:
-  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
-  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super 
+    Luminous SNe ('SLSN')].
+  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 
+    'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object 
+    ('YSO')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long 
+    Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects 
+    ('Periodic-Other')].
 ## Probability Variable Names
-- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- classifier_name=('lc_classifier', 'lc_classifier_top', 
+  'lc_classifier_transient', 'lc_classifier_stochastic', 
+  'lc_classifier_periodic', 'stamp_classifier')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 
+  'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
@@ -635,28 +838,47 @@ Tables needed: {tables}
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
 ## Astronomical context:
-There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
-Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
-Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
+There are two main types of variable objects: those that have persistent 
+variability and those that have a transient nature. In the case of persistent 
+variability sources (Periodic or Stochastic), the relevant light curve 
+magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
+sources (Transient), the relevant light curve is the uncorrected magnitude 
+(magpsf). Objects that are transient are considered to be fast risers if 
+dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+refers to the first detection of a given object, you should use the firstmjd 
+indexed column (in object). When possible, avoid adding restrictions on the 
+mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, 
+you don't need to ask for additional constraints.
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=""lc_classifier""' when selecting probabilities.
-- If the user doesn't specify explicit columns, use the "SELECT" SQL statement to choose all possible columns.
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name=""lc_classifier""' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT" SQL statement 
+to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take 
+the following steps, because it is a transposed table (each feature is in a different row).
 I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
-II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, including an INNER JOIN with the 'probability' sub-query to retrieve only the features associated with the desired spatial objects.
+II. For each feature, you have to make a sub-query retrieving the specific 
+    feature adding the condition of its value, including an INNER JOIN with the 
+    'probability' sub-query to retrieve only the features associated with the desired spatial objects.
 III. Make an UNION between the sub-queries of each feature from step II
 IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 
-# If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
+# If you need to use 2 or 3 tables, try using a sub-query over 'probability' 
+  TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', 
+  or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
 # Add COMMENTS IN PostgreSQL format so that the user can understand.
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 """
@@ -668,39 +890,84 @@ VI. Add to the final result from step V the remaining conditions
 # Simple
 
 query_sql_simple = """
-# As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) database. This database serves as a repository for information about astronomical variable objects. The information for every variable object originates from a sequence of one or more astronomical alerts, data packets streamed when an astronomical object shows a significant variation with respect to a reference image. The database information includes flux variations as a function of time (known as light curve), basic object properties such as the coordinates, and advanced features or statistics computed for each object.
-The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
-Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+# As a SQL expert with a willingness to assist users, you are tasked with 
+crafting a PostgreSQL query for the Automatic Learning for the Rapid 
+Classification of Events (ALeRCE) database. This database serves as a 
+repository for information about astronomical variable objects. The information 
+for every variable object originates from a sequence of one or more 
+astronomical alerts, data packets streamed when an astronomical object shows a 
+significant variation with respect to a reference image. The database 
+information includes flux variations as a function of time (known as light 
+curve), basic object properties such as the coordinates, and advanced features 
+or statistics computed for each object.
+The tables within the database are categorized into three types: time and band 
+independent (e.g., object and probability), time-independent (e.g., magstats), 
+and time and band-dependent (e.g., detection, forced-photometry). Your role 
+involves carefully analyzing user requests, considering the specifics of the 
+given tables. It is crucial to pay attention to explicit conditions outlined by 
+the user and always maintain awareness of the broader context. Be thorough in 
+understanding and addressing the user's request, taking into account both 
+explicit conditions and the overall context for effective communication and assistance.
 
 User request: {ur}
 Tables needed: {tables}
 
 # General context about the database:
 ## General Information about the Schema and Database
-- An object is uniquely identified by its object identifier or 'oid' index, used in most tables
-- A detection from an object is identified by the candidate identifier or 'candid' index, used only in the detection table
-- A given band is identified by the filter identifier or 'fid' index, used in the magstats, feature, and detection tables
+- An object is uniquely identified by its object identifier or 'oid' index, 
+used in most tables
+- A detection from an object is identified by the candidate identifier or 
+'candid' index, used only in the detection table
+- A given band is identified by the filter identifier or 'fid' index, used in 
+the magstats, feature, and detection tables
 - In most cases you will need to use information from the object table
-- When particular astronomical classes are requested, you will need to use the probability table 
+- When particular astronomical classes are requested, you will need to use the 
+probability table 
 - Prioritize obtaining oids in a subquery to optimize the main query.
-- Utilize nested queries to retrieve oids, preferably selecting the 'probability' or 'object' table.
+- Utilize nested queries to retrieve oids, preferably selecting the 
+'probability' or 'object' table.
 - Avoid JOIN clauses; instead, favor nested queries.
-- Beware of variables that are not indexed when doing the queries. Favour using nested queries where the inner queries use indexed variables.
+- Beware of variables that are not indexed when doing the queries. Favour using 
+nested queries where the inner queries use indexed variables.
 - Note that the typical timeout time is 2 minutes
-- Special attention needs to be paid to the feature table, which, if possible, should be avoided. In this table the name of a given feature is stored in the column 'name' and its value for a given object in the column 'value'. These columns are not indexed, so you should query this table in the outer levels of a nested query, after most of the filtering has already happened using indexed variables.
+- Special attention needs to be paid to the feature table, which, if possible, 
+should be avoided. In this table the name of a given feature is stored in the 
+column 'name' and its value for a given object in the column 'value'. These 
+columns are not indexed, so you should query this table in the outer levels of 
+a nested query, after most of the filtering has already happened using indexed 
+variables.
 
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural network that uses as input the image stamps from a given object and that uses a 5 class taxonomy. This classifier is triggered only by the first alert of every object.
-- Light Curve Classifier (denoted as ""lc_classifier""): A balanced hierarchical random forest classifier that uses as input object features and that consists of four models with a taxonomy of 15 classes in total. This classifier is triggered with every new alert of an object with at least six detections in a given band.
-- The first hierarchical classifier of the Light Curve Classifier has three classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
-- Three additional classifiers of the Light Curve Classifier specialize in different types of object: Periodic, Transient, and Stochastic, denoted as ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and ""lc_classifier_stochastic,"" respectively.
+- Stamp Classifier (denoted as ""stamp_classifier""): A convolutional neural 
+  network that uses as input the image stamps from a given object and that uses 
+  a 5 class taxonomy. This classifier is triggered only by the first alert of 
+  every object.
+- Light Curve Classifier (denoted as ""lc_classifier""): A balanced 
+  hierarchical random forest classifier that uses as input object features and 
+  that consists of four models with a taxonomy of 15 classes in total. This 
+  classifier is triggered with every new alert of an object with at least six 
+  detections in a given band.
+- The first hierarchical classifier of the Light Curve Classifier has three 
+  classes: [periodic, stochastic, transient], denoted as ""lc_classifier_top.""
+- Three additional classifiers of the Light Curve Classifier specialize in 
+  different types of object: Periodic, Transient, and Stochastic, denoted as 
+  ""lc_classifier_periodic,"" ""lc_classifier_transient,"" and 
+  ""lc_classifier_stochastic,"" respectively.
 - The 15 classes are separated for each object type:
-  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
-  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super 
+    Luminous SNe ('SLSN')].
+  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 
+    'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object 
+    ('YSO')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long 
+    Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects 
+    ('Periodic-Other')].
 ## Probability Variable Names
-- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- classifier_name=('lc_classifier', 'lc_classifier_top', 
+  'lc_classifier_transient', 'lc_classifier_stochastic', 
+  'lc_classifier_periodic', 'stamp_classifier')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 
+  'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
@@ -708,16 +975,30 @@ Tables needed: {tables}
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
 ## Astronomical context:
-There are two main types of variable objects: those that have persistent variability and those that have a transient nature. In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf). 
-Objects that are transient are considered to be fast risers if dmd_dt < -0.25 mag per day (in magstats) in any band. 
-Note that when the user refers to the first detection of a given object, you should use the firstmjd indexed column (in object). When possible, avoid adding restrictions on the mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, you don't need to ask for additional constraints.
+There are two main types of variable objects: those that have persistent 
+variability and those that have a transient nature. In the case of persistent 
+variability sources (Periodic or Stochastic), the relevant light curve 
+magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
+sources (Transient), the relevant light curve is the uncorrected magnitude 
+(magpsf). Objects that are transient are considered to be fast risers if 
+dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+refers to the first detection of a given object, you should use the firstmjd 
+indexed column (in object). When possible, avoid adding restrictions on the 
+mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, 
+you don't need to ask for additional constraints.
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=""lc_classifier""' when selecting probabilities.
-- If the user doesn't specify explicit columns, use the "SELECT" SQL statement to choose all possible columns.
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name=""lc_classifier""' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT" SQL statement 
+to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
@@ -729,22 +1010,42 @@ DON'T include anything else in your answer.
 # Medium
 
 query_sql_medium = """
-# As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) database. This database serves as a repository for information about astronomical variable objects. The information for every variable object originates from a sequence of one or more astronomical alerts, data packets streamed when an astronomical object shows 
-a significant variation with respect to a reference image. The database information includes flux variations as a function of time (known as light curve), basic object properties such as the coordinates, and advanced features or statistics computed for each object.
-The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
-Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+# As a SQL expert with a willingness to assist users, you are tasked with 
+crafting a PostgreSQL query for the Automatic Learning for the Rapid 
+Classification of Events (ALeRCE) database. This database serves as a 
+repository for information about astronomical variable objects. The information 
+for every variable object originates from a sequence of one or more 
+astronomical alerts, data packets streamed when an astronomical object shows 
+a significant variation with respect to a reference image. The database 
+information includes flux variations as a function of time (known as light 
+curve), basic object properties such as the coordinates, and advanced features 
+or statistics computed for each object. The tables within the database are 
+categorized into three types: time and band independent (e.g., object and 
+probability), time-independent (e.g., magstats), and time and band-dependent 
+(e.g., detection, forced-photometry). Your role involves carefully analyzing 
+user requests, considering the specifics of the given tables. It is crucial to 
+pay attention to explicit conditions outlined by the user and always maintain 
+awareness of the broader context. Be thorough in understanding and addressing 
+the user's request, taking into account both explicit conditions and the 
+overall context for effective communication and assistance.
 
 User request: {ur}
 Tables needed: {tables}
 
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the â€œSELECT *â€
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name="lc_classifier"' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT *"
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object' if it is necessary (in this order).
+# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query 
+over 'probability' or 'object' if it is necessary (in this order).
 # Add COMMENTS IN PostgreSQL format so that the user can understand.
 
 # Generate a query for each step, resolving and analysing it, with the following format:
@@ -754,7 +1055,11 @@ Tables needed: {tables}
 DON'T include anything else inside and after your FINAL answer.
 
 # Guide yourself by this example for the next query
-## Query: Get the object identifiers and probabilities in the light curve classifier for objects classified in the light curve classifier as SNIa with ranking=1 and CV/Nova with ranking=2, where the difference between the probabilities at each ranking is lower than 0.1. Return oids, and the probability for each class
+## Query: Get the object identifiers and probabilities in the light curve 
+classifier for objects classified in the light curve classifier as SNIa with 
+ranking=1 and CV/Nova with ranking=2, where the difference between the 
+probabilities at each ranking is lower than 0.1. Return oids, and the 
+probability for each class
 ## Resulting SQL code:
 SELECT
   sq1.oid, sq1.probability as SN_prob, sq2.probability as CV_prob
@@ -791,38 +1096,66 @@ WHERE
 {decomp_plan}
 
 # If there is SQL code, use it only as reference, changing the conditions you consider necessary.
-# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+# You can join some of the steps if you consider it better for the query. For 
+example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
 """
 
 # Advanced
 
 query_sql_advanced = """
-# As a SQL you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) database. This database serves as a repository for information about astronomical variable objects. The database information includes flux variations as a function of time (known as light curve), basic object properties such as the coordinates, and advanced features or statistics computed for each object.
-The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
-Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+# As a SQL expert with a willingness to assist users, you are tasked with 
+crafting a PostgreSQL query for the Automatic Learning for the Rapid 
+Classification of Events (ALeRCE) database. This database serves as a 
+repository for information about astronomical variable objects. The information 
+for every variable object originates from a sequence of one or more 
+astronomical alerts, data packets streamed when an astronomical object shows 
+a significant variation with respect to a reference image. The database 
+information includes flux variations as a function of time (known as light 
+curve), basic object properties such as the coordinates, and advanced features 
+or statistics computed for each object. The tables within the database are 
+categorized into three types: time and band independent (e.g., object and 
+probability), time-independent (e.g., magstats), and time and band-dependent 
+(e.g., detection, forced-photometry). Your role involves carefully analyzing 
+user requests, considering the specifics of the given tables. It is crucial to 
+pay attention to explicit conditions outlined by the user and always maintain 
+awareness of the broader context. Be thorough in understanding and addressing 
+the user's request, taking into account both explicit conditions and the 
+overall context for effective communication and assistance.
 
 User request: {ur}
 Tables needed: {tables}
 
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the "SELECT" SQL statement to choose all possible columns.
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name="lc_classifier"' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT *"
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take 
+the following steps, because it is a transposed table (each feature is in a different row).
 I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
-II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, including an INNER JOIN with the 'probability' sub-query to retrieve only the features associated with the desired spatial objects.
+II. For each feature, you have to make a sub-query retrieving the specific 
+    feature adding the condition of its value, including an INNER JOIN with the 
+    'probability' sub-query to retrieve only the features associated with the 
+    desired spatial objects.
 III. Make an UNION between the sub-queries of each feature from step II
 IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT" SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a 
+  column, choose all the columns, for example by using the "SELECT" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
-# If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
+# If you need to use 2 or 3 tables, try using a sub-query over 'probability' 
+TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', 
+or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
 # Add COMMENTS IN Python format so that the user can understand.
 
 # Generate a query for each step, resolving and analysing it, with the following format:
@@ -832,7 +1165,10 @@ VI. Add to the final result from step V the remaining conditions
 DON'T include anything else inside and after your FINAL answer.
 
 # Guide yourself by this example for the next query
-## Query: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
+## Query: Get the object identifiers, probabilities in the stamp classifier and 
+light curves (only detections) for objects whose highest probability in the 
+stamp classifier is obtained for class SN, that had their first detection in 
+the first 2 days of september, and that qualify as fast risers.
 ## Resulting SQL code:
 SELECT
     sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
@@ -870,7 +1206,8 @@ ORDER BY oid
 {decomp_plan}
 
 # If there is SQL code, use it only as reference, changing the conditions you consider necessary.
-# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+# You can join some of the steps if you consider it better for the query. For 
+example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
 """
 
 ## Python
@@ -878,18 +1215,37 @@ ORDER BY oid
 # Medium
 
 query_python_medium = """
-# As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) database. This database serves as a repository for information about astronomical variable objects. The information for every variable object originates from a sequence of one or more astronomical alerts, data packets streamed when an astronomical object shows 
-a significant variation with respect to a reference image. The database information includes flux variations as a function of time (known as light curve), basic object properties such as the coordinates, and advanced features or statistics computed for each object.
-The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
-Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+# As a SQL expert with a willingness to assist users, you are tasked with 
+crafting a PostgreSQL query for the Automatic Learning for the Rapid 
+Classification of Events (ALeRCE) database. This database serves as a 
+repository for information about astronomical variable objects. The information 
+for every variable object originates from a sequence of one or more 
+astronomical alerts, data packets streamed when an astronomical object shows 
+a significant variation with respect to a reference image. The database 
+information includes flux variations as a function of time (known as light 
+curve), basic object properties such as the coordinates, and advanced features 
+or statistics computed for each object. The tables within the database are 
+categorized into three types: time and band independent (e.g., object and 
+probability), time-independent (e.g., magstats), and time and band-dependent 
+(e.g., detection, forced-photometry). Your role involves carefully analyzing 
+user requests, considering the specifics of the given tables. It is crucial to 
+pay attention to explicit conditions outlined by the user and always maintain 
+awareness of the broader context. Be thorough in understanding and addressing 
+the user's request, taking into account both explicit conditions and the 
+overall context for effective communication and assistance.
 
 User request: {ur}
 Tables needed: {tables}
 
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the â€œSELECT *â€
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name="lc_classifier"' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT *"
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
@@ -903,7 +1259,10 @@ Tables needed: {tables}
 DON'T include anything else inside and after your FINAL answer.
 
 # Guide yourself by this example for the next query
-## Query: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
+## Query: Get the object identifiers, probabilities in the stamp classifier and 
+light curves (only detections) for objects whose highest probability in the 
+stamp classifier is obtained for class SN, that had their first detection in 
+the first 2 days of september, and that qualify as fast risers.
 ## Resulting Python code:
 sub_query_object_1='''
 SELECT
@@ -946,38 +1305,65 @@ WHERE
 {decomp_plan}
 
 # If there is SQL code, use it only as reference, changing the conditions you consider necessary.
-# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+# You can join some of the steps if you consider it better for the query. For 
+example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
 """
 
 # Advanced
 
 query_python_advanced = """
-# As a SQL you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) database. This database serves as a repository for information about astronomical variable objects. The database information includes flux variations as a function of time (known as light curve), basic object properties such as the coordinates, and advanced features or statistics computed for each object.
-The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
-Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+# As a SQL expert with a willingness to assist users, you are tasked with 
+crafting a PostgreSQL query for the Automatic Learning for the Rapid 
+Classification of Events (ALeRCE) database. This database serves as a 
+repository for information about astronomical variable objects. The information 
+for every variable object originates from a sequence of one or more 
+astronomical alerts, data packets streamed when an astronomical object shows 
+a significant variation with respect to a reference image. The database 
+information includes flux variations as a function of time (known as light 
+curve), basic object properties such as the coordinates, and advanced features 
+or statistics computed for each object. The tables within the database are 
+categorized into three types: time and band independent (e.g., object and 
+probability), time-independent (e.g., magstats), and time and band-dependent 
+(e.g., detection, forced-photometry). Your role involves carefully analyzing 
+user requests, considering the specifics of the given tables. It is crucial to 
+pay attention to explicit conditions outlined by the user and always maintain 
+awareness of the broader context. Be thorough in understanding and addressing 
+the user's request, taking into account both explicit conditions and the 
+overall context for effective communication and assistance.
 
 User request: {ur}
 Tables needed: {tables}
 
 ## Default Parameters to Consider
-- Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the "SELECT" SQL statement to choose all possible columns.
+- Class probabilities for a given classifier and object are sorted from most to 
+  least likely, where the relative position is indicated by the 'ranking' 
+  column in the probability table. Hence, the most probable class should have 'ranking'=1.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light 
+  Curve Classifier. The Light Curve classifier employs a hierarchical 
+  classification. If no classifier is specified, use 
+  'classifier_name="lc_classifier"' when selecting probabilities.
+- If the user doesn't specify explicit columns, use the "SELECT *"
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take 
+the following steps, because it is a transposed table (each feature is in a different row).
 I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
-II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, including an INNER JOIN with the 'probability' sub-query to retrieve only the features associated with the desired spatial objects.
+II. For each feature, you have to make a sub-query retrieving the specific 
+    feature adding the condition of its value, including an INNER JOIN with the 
+    'probability' sub-query to retrieve only the features associated with the desired spatial objects.
 III. Make an UNION between the sub-queries of each feature from step II
 IV. Make an INTERSECT between the sub-queries of each feature from step II
 V. Filter the UNION query selecting the 'oids' in the INTERSECT query
 VI. Add to the final result from step V the remaining conditions
 
 ### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT" SQL statement.
+- If the user doesn't specify explicit columns or information that is not in a 
+  column, choose all the columns, for example by using the "SELECT" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
-# If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
+# If you need to use 2 or 3 tables, try using a sub-query over 'probability' 
+TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', 
+or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
 # Add COMMENTS IN Python format so that the user can understand.
 
 # Generate a query for each step, resolving and analysing it, with the following format:
@@ -987,7 +1373,10 @@ VI. Add to the final result from step V the remaining conditions
 DON'T include anything else inside and after your FINAL answer.
 
 # Guide yourself by this example for the next query
-## Query: Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.
+## Query: Get the object identifiers, probabilities in the stamp classifier and 
+light curves (only detections) for objects whose highest probability in the 
+stamp classifier is obtained for class SN, that had their first detection in 
+the first 2 days of september, and that qualify as fast risers.
 ## Resulting Python code:
 sub_query_object=f'''
 SELECT
@@ -1032,5 +1421,6 @@ ORDER BY oid
 {decomp_plan}
 
 # If there is SQL code, use it only as reference, changing the conditions you consider necessary.
-# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+# You can join some of the steps if you consider it better for the query. For 
+example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
 """
