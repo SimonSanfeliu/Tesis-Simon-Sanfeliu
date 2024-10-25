@@ -41,32 +41,40 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
         context = file.read()
         
     # Creating the RAG instruction
-    ragInstruction = f""" Given the user request, search for the tables needed
-    to generate a SQL query in the ALeRCE database (PostgreSQL).
-    \n Request: {query}"""
+    ragInstruction = f"""
+    Given the user request, select the tables needed to generate a SQL query. 
+    Give the answer in the following format: [table1, table2, ...]. For 
+    example, if the answer is table object and table taxonomy, then you should 
+    type: [object, taxonomy].
+    
+    User request: {query}
+    
+    ## Astronomical context:
+    There are two main types of variable objects: those that have persistent 
+    variability and those that have a transient nature. In the case of 
+    persistent variability sources (Periodic or Stochastic), the relevant light 
+    curve magnitude is the corrected magnitude (magpsf_corr). In the case of 
+    transient sources (Transient), the relevant light curve is the uncorrected 
+    magnitude (magpsf). Objects that are transient are considered to be fast 
+    risers if dmd_dt < -0.25 mag per day (in magstats) in any band. Note that 
+    when the user refers to the first detection of a given object, you should 
+    use the firstmjd indexed column (in object). When possible, avoid adding 
+    restrictions on the mjd column in the detection table, try putting them in 
+    the object table first. Note that all the rows in the detection table are 
+    by definition detections, you don't need to ask for additional constraints.
+    """
     
     # Initiating RAG
     rag_info = rag_step(size, overlap, context, ragInstruction, quantity)
-    
-    # Creating the prompt
-    rag_prompt = f"""Given the user request, select the tables needed to 
-    generate a SQL query. Give the answer in the following format: [table1, 
-    table2, ...]. For example, if the answer is table object and table 
-    taxonomy, then you should type: [object, taxonomy].
-    
-    Consider that these tables are necessary to execute the query: {rag_info}
-    """
-    
-    # Calling the LLM
-    tables, schema_usage = api_call(model, max_tokens, rag_prompt)
-    content = tables.split("[")[1].split("]")[0]
+    content = rag_info.split("[")[1].split("]")[0]
     true_tables = f"[{content}]"
+    print(f"Tables needed: {true_tables}")
     
     # Classify the query
     to_classify = query + f"""\n The following tables are needed to generate 
     the query: {true_tables}"""
     label, classify_usage = classify(to_classify, model)
-    print(label)
+    print(f"Difficulty: {label}")
     
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_usage = decomposition_v2(label, 
@@ -80,10 +88,11 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     
     # Formatting the response
     table = format_response(format, response)
+    print(f"Resulting query: {table}")
     
     # Obtaining the total usage of the pipeline
     total_usage = {
-        "Schema Linking": schema_usage,
+        #"Schema Linking": schema_usage,
         "Classification": classify_usage,
         "Decompostion": decomp_usage,
         "Query generation": usage
@@ -91,10 +100,7 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     
     # Adding up the prompts used
     prompts = {
-        "Schema Linking": {
-            "ragInstruction": ragInstruction,
-            "Used prompt": rag_prompt
-        },
+        "Schema Linking": ragInstruction,
         "Classification": to_classify,
         "Decomposition": prompt
     }
@@ -255,35 +261,4 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format,
                 raise Exception(f"Raised exception: {e}")
             
     return result, total_usage, prompts
-
-
-if __name__ == '__main__':
-    from pprint import pprint
-    label = "medium"
-    query = "Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers."
-    model = "claude-3-5-sonnet-20240620"
-    # model = "gpt-4o"
-    print(f"Model used: {model}\n")
-    max_tokens = 500
-    size = 50
-    overlap = 10
-    quantity = 3
-    format = "python"
-    # print("New pipeline\n")
-    # table, total_usage, prompts = pipeline(query, model, max_tokens, size, overlap, quantity, format)
-    # print(f"Generated SQL query: {table}")
-    # print(f"Total usage of the pipeline: {total_usage}\n")
-    # print(f"Prompts used: {prompts}\n")
-    # print("Original pipeline\n")
-    # table, total_usage, prompts = recreated_pipeline(query, model, max_tokens, format)
-    # print(f"Generated SQL query: {table}")
-    # print(f"Total usage of the pipeline: {total_usage}\n")
-    # print(f"Prompts used: {prompts}")
-    result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, overlap, quantity, format, engine, True, True)
-    print("Resulting table:")
-    print(result)
-    print("Total usage of the pipeline:")
-    pprint(total_usage)
-    # The prompts used will be in this file
-    with open(f"prompts/examples/prompts_{label}_{model}.txt", "w") as f:
-        f.write(str(prompts))
+    
