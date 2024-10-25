@@ -122,7 +122,6 @@ def format_response(specified_format, response):
     elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
-        formatted_response = formatted_response.split("\n\n")
     else:
         raise Exception("No valid format specified")
     
@@ -150,13 +149,11 @@ def run_query(specified_format, formatted_response, engine):
     if specified_format == "sql":
         results = pd.read_sql_query(formatted_response, con=engine)
     elif specified_format == "python":
-        results = []
-        for query in formatted_response:
-            exec(query)
-            try:
-                results.append(pd.read_sql_query(full_query, con=engine))
-            except:
-                Exception("No 'full_query' variable generated")
+        try:
+            exec(formatted_response, globals())
+            results = pd.read_sql_query(full_query, con=engine)
+        except:
+           raise Exception("No 'full_query' variable generated")
     else:
         raise Exception("No valid format specified")
     
@@ -335,14 +332,14 @@ def decomposition_v2(label, ur, tables, model, format):
             prompt = query_sql_medium.format(
                 ur = ur,
                 tables = tables,
-                decomp_plan = decomp_plan
+                decomp_plan = decomp_plan_true
             )
         else:
             # Through Python variables
             prompt = query_python_medium.format(
                 ur = ur,
                 tables = tables,
-                decomp_plan = decomp_plan
+                decomp_plan = decomp_plan_true
             )
             
     elif label == "advanced":
@@ -358,14 +355,14 @@ def decomposition_v2(label, ur, tables, model, format):
             prompt = query_sql_advanced.format(
                 ur = ur,
                 tables = tables,
-                decomp_plan = decomp_plan
+                decomp_plan = decomp_plan_true
             )
         else:
             # Through Python variables
             prompt = query_python_advanced.format(
                 ur = ur,
                 tables = tables,
-                decomp_plan = decomp_plan
+                decomp_plan = decomp_plan_true
             )
         
     else:
