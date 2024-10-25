@@ -5,12 +5,8 @@ Given the user request, select the tables needed to generate a SQL query. Give
 the answer in the following format: [table1, table2, ...]. For example, if the 
 answer is table object and table taxonomy, then you should type: [object, 
 taxonomy].
-    
-Consider that these tables are necessary to execute the query: Get the object 
-identifiers, probabilities in the stamp classifier and light curves (only 
-detections) for objects whose highest probability in the stamp classifier is 
-obtained for class SN, that had their first detection in the first 2 days of 
-september, and that qualify as fast risers.
+
+User request: {ur}
 
 ## Astronomical context:
 There are two main types of variable objects: those that have persistent 
