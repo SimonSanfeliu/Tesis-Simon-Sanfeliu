@@ -5,6 +5,10 @@
 # The structure of the prompt can be modified to include more information or to change the order of the sections using the prompt functions.
 ###
 
+# Setting up astronomical context
+with open("astrocontext.txt", "r") as f:
+    astro_context = f.read()
+
 # General Self-Correction Prompt
 ## Self-correcting task prompt
 general_task_selfcorr_v1='''
@@ -13,7 +17,7 @@ The tables within the database are categorized into three types: time and band i
 The user values the personality of a knowledgeable SQL expert, so ensuring accuracy is paramount. Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 '''
 ## General Context of the database schema
-general_context_selfcorr_v1='''
+general_context_selfcorr_v1=f'''
 ## ALeRCE Pipeline Details
 - Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
 - Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
@@ -38,7 +42,44 @@ general_context_selfcorr_v1='''
 ### GENERAL
 - If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
-# If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).'''
+# If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
+
+{astro_context}
+
+REMEMBER: The corrected query you give must be in SQL format
+'''
+
+general_context_selfcorr_v1_python=f'''
+## ALeRCE Pipeline Details
+- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
+- The 15 classes are separated for each object type:
+  - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
+  - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+## Spatial Object Types by Classifier
+- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
+- Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+- Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities.
+- 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
+### GENERAL
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
+- Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+# If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
+
+{astro_context}
+
+REMEMBER: The corrected query you give must be in Python format, with sub-queries as Python variables
+'''
 
 # Final Instructions, emphasizing the importance to correct the query and the format to answer
 ## version 1
@@ -419,7 +460,7 @@ def prompt_self_correction_vf(gen_task, tab_schema, gen_cntx, final_instructions
     return self_correction_schema_prompt_vf.format(Self_correction_task= gen_task, request= req, tab_schema=tab_schema, sql_query=sql_pred, sql_error=error)
   
 # version 2 schema vs timeout
-def prompt_self_correction_v2(gen_task: str, tab_schema: str, gen_cntx: str, final_instructions: str, req: str, sql_pred: str, error):
+def prompt_self_correction_v2(gen_task: str, tab_schema: str, req: str, sql_pred: str, error):
   '''
   Fill the variables of the prompt with the specific information of the request, to generate the self-correction prompt.
   Three types of errors are considered: timeout, schema error, and no exist error, given the error returned when executing the query in the database.
@@ -427,8 +468,6 @@ def prompt_self_correction_v2(gen_task: str, tab_schema: str, gen_cntx: str, fin
   Parameters:
   gen_task (str): General task description for the self-correction task.
   tab_schema (str): Tables schema required for the query.
-  gen_cntx (str): Not used in this version.
-  final_instructions (str): Not used in this version.
   req (str): User request.
   sql_pred (str): SQL query that needs to be corrected.
   error (str): Error returned when executing the query in the ALeRCE database, in string format.

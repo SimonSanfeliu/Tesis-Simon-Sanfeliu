@@ -5,7 +5,7 @@ from pipeline.process import api_call, format_response, schema_linking, \
     classify, decomposition_v2, run_query
 from pipeline.ragStep import rag_step
 from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
-    general_context_selfcorr_v1
+    general_context_selfcorr_v1, general_context_selfcorr_v1_python
 from secret.config import SQL_URL
 
 # Setup params for query engine
@@ -65,7 +65,8 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     """
     
     # Initiating RAG
-    rag_info = rag_step(size, overlap, context, ragInstruction, quantity)
+    rag_info, schema_usage = rag_step(size, overlap, context, ragInstruction, 
+                                      quantity)
     content = rag_info.split("[")[1].split("]")[0]
     true_tables = f"[{content}]"
     print(f"Tables needed: {true_tables}")
@@ -77,22 +78,22 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     print(f"Difficulty: {label}")
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition_v2(label, 
-                                            query, 
-                                            true_tables, 
-                                            model, 
-                                            format)    
+    prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
+                                                         query, 
+                                                        true_tables, 
+                                                        model, 
+                                                        format)    
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
     
     # Formatting the response
     table = format_response(format, response)
-    print(f"Resulting query: {table}")
+    print(f"Resulting {format} query: {table}")
     
     # Obtaining the total usage of the pipeline
     total_usage = {
-        #"Schema Linking": schema_usage,
+        "Schema Linking": schema_usage,
         "Classification": classify_usage,
         "Decompostion": decomp_usage,
         "Query generation": usage
@@ -102,7 +103,8 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     prompts = {
         "Schema Linking": ragInstruction,
         "Classification": to_classify,
-        "Decomposition": prompt
+        "Decomposition": decomp_plan,
+        "Generation": prompt 
     }
     
     return table, total_usage, prompts
@@ -200,23 +202,44 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format,
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
-                # TODO: Check the tab_schema variable
+                
                 tab_schema = prompts["Classification"]\
                     .split("\n The following tables are needed to generate \
                         the query: ")[0]
-                corr_prompt = prompt_self_correction_v2(
-                    gen_task=general_context_selfcorr_v1, 
-                    tab_schema=tab_schema, 
-                    req=query, 
-                    sql_pred=table, 
-                    error=str(e))
-                new, new_usage = api_call(model, max_tokens, corr_prompt)
-                total_usage["Self-correction"] = new_usage
-                prompts["Self-correction"] = corr_prompt
-                try:
-                    result = run_query(format, new, engine)
-                except Exception as e:
-                    raise Exception(f"Failed again: {e}")
+                    
+                if format == "sql":
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(e))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result = run_query(format, new, engine)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {e}")
+                    
+                else:
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1_python, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(e))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result = run_query(format, new, engine)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
@@ -236,22 +259,44 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format,
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
+                
                 tab_schema = prompts["Classification"]\
                     .split("\n The following tables are needed to generate \
                         the query: ")[0]
-                corr_prompt = prompt_self_correction_v2(
-                    gen_task=general_context_selfcorr_v1, 
-                    tab_schema=tab_schema, 
-                    req=query, 
-                    sql_pred=table, 
-                    error=str(e))
-                new, new_usage = api_call(model, max_tokens, corr_prompt)
-                total_usage["Self-correction"] = new_usage
-                prompts["Self-correction"] = corr_prompt
-                try:
-                    result = run_query(format, new, engine)
-                except Exception as e:
-                    raise Exception(f"Failed again: {e}")
+                    
+                if format == "sql":
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(e))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result = run_query(format, new, engine)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {e}")
+                    
+                else:
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1_python, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(e))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result = run_query(format, new, engine)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
