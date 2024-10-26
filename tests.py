@@ -2,17 +2,23 @@
 This is a file for running tests on the pipeline with different queries
 """
 
+# TODO: Dar request ID o una query x
+
 import pandas as pd
 from pprint import pprint
 from main import run_pipeline, engine
 engine.begin()
 
 # Query to process
-query = "Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers."
+query = """Query objects within 10 degress of the next positions: ('source_1',
+    160.18301441363647, 33.0164673528409), ('source_2', 174.21524897555543, 
+    44.83789535222221), that have their first detection the first 7 days of
+    February 2023, with SN probabilities > 0.4, and ranking=1 in the stamp 
+    classifier"""
 
-# Corresponding request ID for the query
-df = pd.read_csv("txt2sql_alerce_train_v2.csv")
-req_id = df.loc[df["request"] == query].reset_index(drop=True)["req_id"][0]
+# # Corresponding request ID for the query (if it exists)
+# df = pd.read_csv("txt2sql_alerce_train_v2.csv")
+# req_id = df.loc[df["request"] == query].reset_index(drop=True)["req_id"]
 
 # Model to use
 #model = "claude-3-5-sonnet-20240620"
@@ -37,5 +43,5 @@ print("Total usage of the pipeline:")
 pprint(total_usage)
 
 # The prompts used will be saved in this file
-with open(f"prompts/examples/prompts_query_{req_id}_{model}.txt", "w") as f:
+with open(f"prompts/examples/prompts_query_{model}.txt", "w") as f:
     f.write(str(prompts))
