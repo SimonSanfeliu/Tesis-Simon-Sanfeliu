@@ -24,6 +24,10 @@ from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
 
 from prompts.final_prompts import *
 
+# Setting up astronomical context
+with open("astrocontext.txt", "r") as f:
+    astro_context = f.read()
+
 
 def api_call(model, max_tokens, prompt):
     """Create the API calls for the LLM to use.
@@ -318,12 +322,14 @@ def decomposition_v2(label, ur, tables, model, format):
         )
         # No usage needed for the simple query. There is no decomposition
         usage = None
+        decomp_plan = None
         
     elif label == "medium":
         # Getting the decomposition plan
         decomp_plan = decomp_medium.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
@@ -346,7 +352,8 @@ def decomposition_v2(label, ur, tables, model, format):
         # Getting the decomposition plan
         decomp_plan = decomp_advanced.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
         decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
         # Creating the final prompt with the decomposition plan
@@ -368,4 +375,4 @@ def decomposition_v2(label, ur, tables, model, format):
     else:
         raise Exception("No valid label difficulty")
     
-    return prompt, usage
+    return prompt, decomp_plan, usage

@@ -1,6 +1,26 @@
-To look for matches between the object table and a given set of coordinates and a radius, you should use the q3c_join function as shown below. Note that in this example we also return the distance to the given coordinates using the q3c_dist function, as well as other properties from the object table. Note that radius variable should be in degrees and that values corresponds to the list of coordinates using the following format, e.g. "(id1,ra1,dec1),\n(id2,ra2,dec2)\n":
-# prepare the query
-query = """
+## Astronomical context:
+There are two main types of variable objects: those that have persistent 
+variability and those that have a transient nature. In the case of persistent 
+variability sources (Periodic or Stochastic), the relevant light curve 
+magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
+sources (Transient), the relevant light curve is the uncorrected magnitude 
+(magpsf). Objects that are transient are considered to be fast risers if 
+dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+refers to the first detection of a given object, you should use the firstmjd 
+indexed column (in object). When possible, avoid adding restrictions on the 
+mjd column in the detection table, try putting them in the object table first.
+Note that all the rows in the detection table are by definition detections, 
+you don't need to ask for additional constraints.
+
+To look for matches between the object table and a given set of coordinates and
+a radius, you should use the q3c_join function as shown below. Note that in 
+this example we also return the distance to the given coordinates using the 
+q3c_dist function, as well as other properties from the object table. Note that
+radius variable should be in degrees and that values corresponds to the list of 
+coordinates using the following format, e.g. '(id1,ra1,dec1),\n(id2,ra2,dec2)\n':
+
+### Prepare the query
+query = '''
 WITH catalog ( source_id, ra, dec) AS (
     VALUES
         {values}
@@ -15,4 +35,4 @@ FROM object o, catalog c
      */
 WHERE
     q3c_join(c.ra, c.dec,o.meanra, o.meandec, {radius})
-"""
+'''

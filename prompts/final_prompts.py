@@ -8,19 +8,7 @@ taxonomy].
 
 User request: {ur}
 
-## Astronomical context:
-There are two main types of variable objects: those that have persistent 
-variability and those that have a transient nature. In the case of persistent 
-variability sources (Periodic or Stochastic), the relevant light curve 
-magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
-sources (Transient), the relevant light curve is the uncorrected magnitude 
-(magpsf). Objects that are transient are considered to be fast risers if 
-dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
-refers to the first detection of a given object, you should use the firstmjd 
-indexed column (in object). When possible, avoid adding restrictions on the 
-mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, 
-you don't need to ask for additional constraints.
+{astro_context}
 
 The tables and their info:
 
@@ -716,19 +704,7 @@ variables.
 - Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
-## Astronomical context:
-There are two main types of variable objects: those that have persistent 
-variability and those that have a transient nature. In the case of persistent 
-variability sources (Periodic or Stochastic), the relevant light curve 
-magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
-sources (Transient), the relevant light curve is the uncorrected magnitude 
-(magpsf). Objects that are transient are considered to be fast risers if 
-dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
-refers to the first detection of a given object, you should use the firstmjd 
-indexed column (in object). When possible, avoid adding restrictions on the 
-mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, 
-you don't need to ask for additional constraints.
+{astro_context}
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
@@ -833,19 +809,7 @@ variables.
 - Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
-## Astronomical context:
-There are two main types of variable objects: those that have persistent 
-variability and those that have a transient nature. In the case of persistent 
-variability sources (Periodic or Stochastic), the relevant light curve 
-magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
-sources (Transient), the relevant light curve is the uncorrected magnitude 
-(magpsf). Objects that are transient are considered to be fast risers if 
-dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
-refers to the first detection of a given object, you should use the firstmjd 
-indexed column (in object). When possible, avoid adding restrictions on the 
-mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, 
-you don't need to ask for additional constraints.
+{astro_context}
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
@@ -970,19 +934,7 @@ variables.
 - Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
-## Astronomical context:
-There are two main types of variable objects: those that have persistent 
-variability and those that have a transient nature. In the case of persistent 
-variability sources (Periodic or Stochastic), the relevant light curve 
-magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
-sources (Transient), the relevant light curve is the uncorrected magnitude 
-(magpsf). Objects that are transient are considered to be fast risers if 
-dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
-refers to the first detection of a given object, you should use the firstmjd 
-indexed column (in object). When possible, avoid adding restrictions on the 
-mjd column in the detection table, try putting them in the object table first.
-Note that all the rows in the detection table are by definition detections, 
-you don't need to ask for additional constraints.
+{astro_context}
 
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
