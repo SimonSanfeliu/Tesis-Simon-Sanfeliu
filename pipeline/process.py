@@ -23,9 +23,8 @@ from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
 from final_prompts.final_prompts import *
 
 # Setting up astronomical context
-with open("final_prompts\astrocontext.txt", "r") as f:
+with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
-
 
 def api_call(model, max_tokens, prompt):
     """Create the API calls for the LLM to use.
