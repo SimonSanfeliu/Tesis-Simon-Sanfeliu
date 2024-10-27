@@ -181,7 +181,7 @@ def run_pipeline(query, model, max_tokens, size, overlap, quantity, format,
         RAG process
         format (str): The type of formatting to use. It can be 'singular' for
         a singular query string or 'var' for the decomposition in variables
-        engine (SQL engine): SQL database engine  TODO: Check datatype
+        engine (sqlalchemy.engine.base.Engine): SQL database engine
         new_pipe (bool): Condition to use the new pipeline
         self_corr (bool): Condition to use self-correction
         
