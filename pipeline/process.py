@@ -10,7 +10,6 @@ import google.generativeai as genai
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
-
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
 from prompts.decomposition.Decomposition import medium_decomp_prompt_vf, \
@@ -21,11 +20,10 @@ from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
     adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
     adv_query_cntx_vf, adv_query_instructions_1_vf, \
     adv_query_instructions_2_vf, adv_decomp_task_vf
-
-from prompts.final_prompts import *
+from final_prompts.final_prompts import *
 
 # Setting up astronomical context
-with open("astrocontext.txt", "r") as f:
+with open("final_prompts\astrocontext.txt", "r") as f:
     astro_context = f.read()
 
 
@@ -140,15 +138,12 @@ def run_query(specified_format, formatted_response, engine):
         'singular' for a singular query string or 'var' for the 
         decomposition in variables
         formatted_response (str or list): The response ready to be used in the
-        database. A string if the specified format is 'singular', list of the 
-        sub-queries if the format is 'var'
-        engine (SQL object): The engine to access the database
+        database
+        engine (sqlalchemy.engine.base.Engine): The engine to access the 
+        database
         
     Returns:
-        results (pd.DataFrame or list): Pandas DataFrame with the results of 
-        the query if specified format is 'singular'. List of DataFrames with 
-        the results of the subqueries and total query if specified format is 
-        'var'
+        results (pd.DataFrame): Pandas DataFrame with the results of the query
     """
     if specified_format == "sql":
         results = pd.read_sql_query(formatted_response, con=engine)
@@ -204,6 +199,32 @@ def schema_linking(query, model):
     # Make the schema linking prompt
     prompt = tables_linking_prompt_V2 + \
         f"\nThe user request is the following: {query}"
+        
+    # Obtain the tables necessary for the SQL query
+    tables, usage = api_call(model, 100, prompt)
+    content = tables.split("[")[1].split("]")[0]
+    true_tables = f"[{content}]"
+    return true_tables, usage
+
+
+def schema_linking_v2(query, model):
+    """Function to make the schema linking of a NL query. This means it will
+    obtain the tables necessary to create the corresponding SQL query 
+
+    Args:
+        query (str): NL query
+        model (str): LLM to obtain the necessary tables
+        
+    Returns:
+        tables (str): A string of a list of the tables needed to create the 
+        query
+        usage (dict): LLM API usage
+    """
+    # Make the schema linking prompt
+    prompt = sch_linking.format(
+        ur = query,
+        astro_context = astro_context
+    )
         
     # Obtain the tables necessary for the SQL query
     tables, usage = api_call(model, 100, prompt)
