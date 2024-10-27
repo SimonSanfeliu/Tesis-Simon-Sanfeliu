@@ -6,6 +6,7 @@ import pandas as pd
 import openai
 import anthropic
 import google.generativeai as genai
+import sqlalchemy
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt
@@ -27,7 +28,7 @@ with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
 
 
-def api_call(model, max_tokens, prompt):
+def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
     """Create the API calls for the LLM to use.
 
     Args:
@@ -104,7 +105,7 @@ def api_call(model, max_tokens, prompt):
     return response, usage
 
 
-def format_response(specified_format, response):
+def format_response(specified_format: str, response: str) -> str:
     """Format the response accordingly
 
     Args:
@@ -114,9 +115,7 @@ def format_response(specified_format, response):
         response (str): The response from the LLM
         
     Returns:
-        formatted_response (str or list): The response ready to be used in the
-        database. A string if the specified format is 'singular', list of the 
-        sub-queries if the format is 'var'
+        formatted_response (str): The response ready to be used in the database
     """
     if specified_format == "sql":
         formatted_response = response.split("```sql")[1].split("```")[0] \
@@ -130,20 +129,21 @@ def format_response(specified_format, response):
     return formatted_response
 
 
-def run_query(specified_format, formatted_response, engine):
+def run_query(specified_format: str, formatted_response: str, 
+              engine: sqlalchemy.engine.base.Engine) -> pd.DataFrame:
     """Function to run the SQL query in the database
 
     Args:
         specified_format (str): The type of formatting to use. It can be 
         'singular' for a singular query string or 'var' for the 
         decomposition in variables
-        formatted_response (str or list): The response ready to be used in the
-        database
+        formatted_response (str): The response ready to be used in the database
         engine (sqlalchemy.engine.base.Engine): The engine to access the 
         database
         
     Returns:
-        results (pd.DataFrame): Pandas DataFrame with the results of the query
+        results (pandas.DataFrame): Pandas DataFrame with the results of the 
+        query
     """
     if specified_format == "sql":
         results = pd.read_sql_query(formatted_response, con=engine)
@@ -159,7 +159,7 @@ def run_query(specified_format, formatted_response, engine):
     return results
 
 
-def classify(query, model):
+def classify(query: str, model: str) -> tuple[str, dict]:
     """Function to classify the difficulty of a NL query
 
     Args:
@@ -183,7 +183,7 @@ def classify(query, model):
     return label, usage
 
 
-def schema_linking(query, model):
+def schema_linking(query: str, model: str) -> tuple[str, dict]:
     """Function to make the schema linking of a NL query. This means it will
     obtain the tables necessary to create the corresponding SQL query 
 
@@ -207,7 +207,7 @@ def schema_linking(query, model):
     return true_tables, usage
 
 
-def schema_linking_v2(query, model):
+def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
     """Function to make the schema linking of a NL query. This means it will
     obtain the tables necessary to create the corresponding SQL query 
 
@@ -233,7 +233,8 @@ def schema_linking_v2(query, model):
     return true_tables, usage
 
 
-def decomposition(label, ur_w_tables, model, format):
+def decomposition(label: str, ur_w_tables: str, model: str, 
+                  format: str) -> tuple[str, dict]:
     """Function to create the decomposition prompts
 
     Args:
@@ -319,7 +320,8 @@ def decomposition(label, ur_w_tables, model, format):
     return prompt, usage
 
 
-def decomposition_v2(label, ur, tables, model, format):
+def decomposition_v2(label: str, ur: str, tables: str, model: str, 
+                     format: str) -> tuple[str, dict]:
     """Function to create the decomposition prompts
 
     Args:
@@ -399,7 +401,7 @@ def decomposition_v2(label, ur, tables, model, format):
     return prompt, decomp_plan, usage
 
 
-def pricing(usage, model):
+def pricing(usage: dict, model: str) -> dict:
     """Function to obtain the cost of the usage of the LLMs in the pipeline
 
     Args:

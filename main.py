@@ -1,5 +1,6 @@
 import requests
 import sqlalchemy as sa
+import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking_v2, \
     classify, decomposition_v2, run_query, pricing
@@ -14,7 +15,8 @@ engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['pass
 engine.begin()
 
 
-def pipeline(query, model, max_tokens, size, overlap, quantity, format):
+def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 
+             quantity: int, format: str) -> tuple[str, dict, dict]:
     """Pipeline of the LLM process using RAG to get the SQL query.
 
     Args:
@@ -113,7 +115,8 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
     return table, total_usage, prompts
 
 
-def recreated_pipeline(query, model, max_tokens, format):
+def recreated_pipeline(query: str, model: str, max_tokens: int, 
+                       format: str) -> tuple[str, dict, dict]:
     """Recreated pipeline from the original work
 
     Args:
@@ -171,8 +174,10 @@ def recreated_pipeline(query, model, max_tokens, format):
     return table, total_usage, prompts
 
 
-def run_pipeline(query, model, max_tokens, size, overlap, quantity, format, 
-                 engine, new_pipe, self_corr):
+def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
+                 overlap: int, quantity: int, format: int, 
+                 engine: sa.engine.base.Engine, new_pipe: bool, 
+                 self_corr: bool) -> tuple[pd.DataFrame, dict, dict]:
     """Function to run the entire pipeline. This pipeline could be the 
        original one or the new one. Here the self-correction is applied.
 
