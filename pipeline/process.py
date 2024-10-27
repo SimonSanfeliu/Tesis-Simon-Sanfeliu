@@ -26,11 +26,12 @@ from final_prompts.final_prompts import *
 with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
 
+
 def api_call(model, max_tokens, prompt):
     """Create the API calls for the LLM to use.
 
     Args:
-        model (str): Name of the model
+        model (str): Name of the model (LLM)
         max_tokens (int): The maximum number of tokens used for the response 
         of the API
         prompt (str): Prompt for the model
@@ -92,7 +93,7 @@ def api_call(model, max_tokens, prompt):
             response = chat_session.send_message(prompt)
             usage = {"input_tokens": response.usage_metadata.prompt_token_count,
                      "output_tokens": response.usage_metadata.candidates_token_count,
-                     "total_tokens": response.usage_metadata.total_token_count}  # 'prompt_token_count', 'candidates_token_count' and 'total_token_count'
+                     "total_tokens": response.usage_metadata.total_token_count}
             response = response.text
         except Exception as e:
             print(f"The following exception occured: {e}")
@@ -396,3 +397,58 @@ def decomposition_v2(label, ur, tables, model, format):
         raise Exception("No valid label difficulty")
     
     return prompt, decomp_plan, usage
+
+
+def pricing(usage, model):
+    """Function to obtain the cost of the usage of the LLMs in the pipeline
+
+    Args:
+        usage (dict): Dictionary with all the tokens used in the pipeline
+        model (str): Name of the model (LLM)
+        
+    Returns:
+        usage (dict): Augmented the token dictionary with the respective costs
+    """
+    # Prices dictionary (hard-coded)
+    # The prices are in US dollars and for every 1M tokens
+    prices = {
+        "gpt-4o": {
+            "input": 2.50,
+            "output": 10
+        },
+        "gpt-4o-mini": {
+            "input": 0.15,
+            "output": 0.6
+        },
+        "o1-preview": {
+            "input": 15,
+            "output": 60
+        },
+        "o1-mini": {
+            "input": 3,
+            "output": 12
+        },
+        "claude-3-5-sonnet": {
+            "input": 3,
+            "output": 15
+        }
+    }
+    
+    # Checking the corresponding model
+    for m in prices.keys():
+        if m in model:
+            for key in usage.keys():
+                # Obtaining the respective costs
+                input_cost = prices[m]["input"] * usage[key]["input_tokens"] / 1e6
+                output_cost = prices[m]["output"] * usage[key]["output_tokens"] / 1e6
+                total_cost = input_cost + output_cost
+                
+                # Augmenting the usage dictionary
+                usage[key]["input_cost"] = input_cost
+                usage[key]["output_cost"] = output_cost
+                if "total_cost" in usage[key].keys():
+                    usage[key]["new_total_cost"] = total_cost
+                else:
+                    usage[key]["total_cost"] = total_cost
+                    
+    return usage

@@ -1,8 +1,8 @@
 import requests
 import sqlalchemy as sa
 
-from pipeline.process import api_call, format_response, schema_linking, \
-    classify, decomposition_v2, run_query
+from pipeline.process import api_call, format_response, schema_linking_v2, \
+    classify, decomposition_v2, run_query, pricing
 from pipeline.ragStep import rag_step
 from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
     general_context_selfcorr_v1, general_context_selfcorr_v1_python
@@ -99,12 +99,15 @@ def pipeline(query, model, max_tokens, size, overlap, quantity, format):
         "Query generation": usage
     }
     
+    # Obtaining its costs
+    total_usage = pricing(total_usage, model)
+    
     # Adding up the prompts used
     prompts = {
         "Schema Linking": ragInstruction,
         "Classification": to_classify,
         "Decomposition": decomp_plan,
-        "Generation": prompt 
+        "Query generation": prompt 
     }
     
     return table, total_usage, prompts
@@ -127,18 +130,18 @@ def recreated_pipeline(query, model, max_tokens, format):
         pipeline
     """
     # Schema linking to obtain the tables needed for the query
-    tables, schema_usage = schema_linking(query, model)
+    tables, schema_usage = schema_linking_v2(query, model)
     
     # Classify the query
     to_classify = query + f"\n The following tables are needed: {tables}"
     label, classify_usage = classify(to_classify, model)
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_usage = decomposition_v2(label, 
-                                            query, 
-                                            tables, 
-                                            model, 
-                                            format)
+    prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
+                                                         query,
+                                                         tables, 
+                                                         model, 
+                                                         format)
     
     # Obtaining the SQL query
     table, usage = api_call(model, max_tokens, prompt)
@@ -154,11 +157,15 @@ def recreated_pipeline(query, model, max_tokens, format):
         "Query generation": usage
     }
     
+    # Obtaining its costs
+    total_usage = pricing(total_usage, model)
+    
     # Adding up the prompts used
     prompts = {
         "Schema Linking": tables,
         "Classification": to_classify,
-        "Decomposition": prompt
+        "Decomposition": decomp_plan,
+        "Query generation": prompt
     }
     
     return table, total_usage, prompts
