@@ -51,7 +51,7 @@ VI. Add to the final result from step V the remaining conditions
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' 
 TABLE, 'object' TABLE, over an INNER JOIN between 'probability' and 'object', 
 or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (in this order).
-# Add COMMENTS IN Python format so that the user can understand.
+# Add COMMENTS IN PostgreSQL format so that the user can understand.
 
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```step_number [STEP QUERY HERE] ```

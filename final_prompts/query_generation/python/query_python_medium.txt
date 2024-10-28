@@ -33,7 +33,7 @@ Tables needed: {tables}
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
 # If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object' if it is necessary (in this order).
-# Add COMMENTS IN PostgreSQL format so that the user can understand.
+# Add COMMENTS IN Python format so that the user can understand.
 
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```python [VARIABLE SUB-QUERY HERE] ```

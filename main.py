@@ -176,7 +176,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
 
 def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
                  overlap: int, quantity: int, format: int, 
-                 engine: sa.engine.base.Engine, new_pipe: bool, 
+                 engine: sa.engine.base.Engine, rag_pipe: bool, 
                  self_corr: bool) -> tuple[pd.DataFrame, dict, dict]:
     """Function to run the entire pipeline. This pipeline could be the 
        original one or the new one. Here the self-correction is applied.
@@ -194,7 +194,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         format (str): The type of formatting to use. It can be 'singular' for
         a singular query string or 'var' for the decomposition in variables
         engine (sqlalchemy.engine.base.Engine): SQL database engine
-        new_pipe (bool): Condition to use the new pipeline
+        rag_pipe (bool): Condition to use the new pipeline (uses RAG)
         self_corr (bool): Condition to use self-correction
         
     Returns:
@@ -204,7 +204,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         pipeline
     """
     # Check if the new pipeline is being used
-    if new_pipe:
+    if rag_pipe:
         table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format)
         # If self-correction is enabled, use the respective prompts to correct

@@ -100,4 +100,5 @@ to choose all possible columns.
 
 # Answer ONLY with a SQL query, with the following format: 
 ```sql SQL_QUERY_HERE ```
+
 DON'T include anything else in your answer.

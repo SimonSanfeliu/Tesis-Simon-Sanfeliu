@@ -437,20 +437,20 @@ def pricing(usage: dict, model: str) -> dict:
     }
     
     # Checking the corresponding model
-    for m in prices.keys():
-        if m in model:
-            for key in usage.keys():
-                # Obtaining the respective costs
-                input_cost = prices[m]["input"] * usage[key]["input_tokens"] / 1e6
-                output_cost = prices[m]["output"] * usage[key]["output_tokens"] / 1e6
-                total_cost = input_cost + output_cost
+    m = [key for key in prices.keys() if key in model][0]
+    
+    for key in usage.keys():
+        # Obtaining the respective costs
+        input_cost = prices[m]["input"] * usage[key]["input_tokens"] / 1e6
+        output_cost = prices[m]["output"] * usage[key]["output_tokens"] / 1e6
+        total_cost = input_cost + output_cost
                 
-                # Augmenting the usage dictionary
-                usage[key]["input_cost"] = input_cost
-                usage[key]["output_cost"] = output_cost
-                if "total_cost" in usage[key].keys():
-                    usage[key]["new_total_cost"] = total_cost
-                else:
-                    usage[key]["total_cost"] = total_cost
+        # Augmenting the usage dictionary
+        usage[key]["input_cost"] = input_cost
+        usage[key]["output_cost"] = output_cost
+        if "total_cost" in usage[key].keys():
+            usage[key]["new_total_cost"] = total_cost
+        else:
+            usage[key]["total_cost"] = total_cost
                     
     return usage
