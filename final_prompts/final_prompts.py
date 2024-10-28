@@ -26,15 +26,25 @@ with open("final_prompts/decomposition/decomp_advanced.txt", "r") as f:
 with open("final_prompts/query_generation/sql/query_sql_simple.txt", "r") as f:
   query_sql_simple = f.read()
 
-# Medium
+# Medium decomp
 
 with open("final_prompts/query_generation/sql/query_sql_medium.txt", "r") as f:
   query_sql_medium = f.read()
+  
+# Medium direct
 
-# Advanced
+with open("final_prompts/query_generation/sql/query_direct_sql_medium.txt", "r") as f:
+  query_direct_sql_medium = f.read()
+
+# Advanced decomp
 
 with open("final_prompts/query_generation/sql/query_sql_advanced.txt", "r") as f:
   query_sql_advanced = f.read()
+  
+# Advanced direct
+
+with open("final_prompts/query_generation/sql/query_direct_sql_advanced.txt", "r") as f:
+  query_direct_sql_advanced = f.read()
 
 ## Python
 
