@@ -1,4 +1,5 @@
 ## Astronomical context:
+
 There are two main types of variable objects: those that have persistent 
 variability and those that have a transient nature. In the case of persistent 
 variability sources (Periodic or Stochastic), the relevant light curve 
@@ -12,8 +13,10 @@ mjd column in the detection table, try putting them in the object table first.
 Note that all the rows in the detection table are by definition detections, 
 you don't need to ask for additional constraints.
 
-To look for matches between the object table and a set of coordinates given a crossmatch radius, you should use the q3c_join function as shown below:
-### Prepare the query
+To look for matches between the object table and a set of coordinates given a 
+crossmatch radius, you should use the q3c_join function as shown below:
+```python
+# Prepare the query
 query = '''
 WITH catalog ( source_id, ra, dec) AS (
     VALUES
@@ -30,14 +33,99 @@ FROM object o, catalog c
 WHERE
     q3c_join(c.ra, c.dec,o.meanra, o.meandec, {radius})
 '''
+```
 
-Note that in this example we also return the distance to the given coordinates using the 
-q3c_dist function, as well as other properties from the object table. The
-radius variable should be in degrees and the values variable should correspond to the list of 
-coordinates using the following format, e.g. '(id1,ra1,dec1),\n(id2,ra2,dec2)\n', e.g., '(ZTF24aabbcc,120.345677,-30.45774)\n,(ZTF24aabbcd,65.346829,12.73474)\n'.
+Note that in this example we also return the distance to the given coordinates 
+using the q3c_dist function, as well as other properties from the object table. 
+The radius variable should be in degrees and the values variable should 
+correspond to the list of coordinates using the following format, e.g. 
+'(id1,ra1,dec1),\n(id2,ra2,dec2)\n', e.g., '(ZTF24aabbcc,120.345677,-30.45774)\n,(ZTF24aabbcd,65.346829,12.73474)\n'.
+
 If the variables are in a dataframe, you could use the following code to get this formatted list:
-### starting with a dataframe df with the columns id_source, ra and dec, get the formatted list of coordinates ready for SQL
+```python
+# starting with a dataframe df with the columns id_source, ra and dec, get the formatted list of coordinates ready for SQL
 objects = []
 for _,row in df.iterrows():
     objects.append(f"(\'{row.id_source}\', {row.ra}, {row.dec})")
 objects_str = ",\n".join(objects)
+```
+
+The ps1_ztf table contains information about the closest sources in the 
+PanSTARRS catalog. Variables ending in 1 refer to the closest object, variables 
+ending in 2 refer to the second closest object, and variables ending in 3 refer 
+to third closest object. For example, the variables associated to these closest 
+objects are sgscore1, which is the star galaxy classication score; distpsnr1, 
+which is the distance to the source; sgmag1, srmag1, simag1, szmag1 which are 
+the magnitudes in the g, r, i, and z bands, respectively; and objectidps1, 
+which is the PanSTARRS unique identifier of the object.
+
+In general, if you need to query data from the detection and feature table, it 
+is recommended to use nested subqueries that do the filtering with information 
+not contained in the detection or feature table first, using the WHERE 
+statement and requesting the oid column to be inside a given list. For example, 
+use WHERE oid in {subquery}, where subquery returns a list of oids.
+
+The xmatch table has three identifiers that are indexed columns: oid, which 
+corresponds to the unique ZTF identifier; catid, which corresponds to the 
+catalog identifier; and oid_catalog, which is the unique identifier for a given 
+source in the catalog nomenclature. If you want to associate objects in xmatch 
+with one of the available xmatch catalogs, e.g. allwise, you should first do an 
+inner join between xmatch and allwise using the oid_catalog identifier. If you 
+want to restrict the query to some objects based on other properties, you 
+should use two nested queries that first select the oid_catalog identifiers and 
+second innermost query that uses the oid column to apply additional 
+restrictions, e.g.
+```python
+innermostquery = '''
+SELECT
+    oid
+FROM
+    object
+WHERE
+    ndet>1
+'''
+subquery = '''
+SELECT
+   oid_catalog
+FROM
+   xmatch
+WHERE
+   oid IN {innermostquery}
+'''
+final_query = '''
+SELECT
+   *
+FROM
+   xmatch INNER JOIN allwise
+   ON xmatch.oid_catalog=allwise.oid_catalog
+WHERE
+   allwise.oid_catalog IN {subquery}
+'''
+```
+
+If you are querying the probability table to get a list of oids, you want to 
+get only one result for a given classifier, and you don't care about the 
+version of the classifier, use the DISTINCT command, e.g. 'SELECT DISTINCT oid'.
+
+If you want to select objects based on restrictions on the feature table, we 
+recommend that you use nested subqueries, where the innermost query defines the 
+sample based on restrictions in the feature or other tables, and where the 
+upper levels do inner joins between the different tables and select the 
+necessary columns. If you are asked to provide a sample of a given number of 
+objects, you can do this with only one query using multiple inner joins, as 
+long as you use the LIMIT command.
+
+### More considerations
+- You should avoid using the feature table as much as possible, since it is not indexed.
+- Avoid using the feature or detection table to get the time of first detection, use the firstmjd column from the object table instead.
+- Use the ranking=1 column in the probability table to get the highest probability class.
+- You need to convert dates (if given) into mjd before doing the queries
+- When a user referes to a time of classification, use the firstmjd time from the object table, which is an indexed variable.
+- The initial rise rate is indicated by the dmdt column in the magstat table, separated by band. You need to use the filter id (fid) column to get the given band.
+- The number of detections is the ndet variable located in the object table.
+- If the year is not specified, assume it refers to the current year (2024).
+- If you want to check that an object is periodic, you could check whether the probability of being in the periodic branch (lc_classifier_periodic) has the largest value (ranking=1).
+- Take in mind that sometimes a probability is referred to as a "posibility".
+- When you are asked to find 'at most' a number of cases, use the 'LIMIT {n}' command in SQL.
+- The probability table has the column "classifier_version", that indicates the version of the classifier used. Use this column to specifiy the version of the classifier for the particular query.
+- The galactic latitude is obtained from the feature table, for name='gal_b'.
