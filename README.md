@@ -5,5 +5,4 @@ Repositorio para el desarrollo de mi proyecto de tesis.
 - Arreglar SelfCorrection
 - Crear métodos de evaluación (con gráficos)
 - Agregar costos de Gemini
-- Agregar enfoque directo aparte de descomposición
 - Investigar human in the loop

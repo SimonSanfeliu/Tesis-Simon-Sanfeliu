@@ -3,7 +3,7 @@ import sqlalchemy as sa
 import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking_v2, \
-    classify, decomposition_v2, run_query, pricing
+    classify, decomposition_v2, run_query, pricing, direct_prompts
 from pipeline.ragStep import rag_step
 from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
     general_context_selfcorr_v1, general_context_selfcorr_v1_python
@@ -16,7 +16,7 @@ engine.begin()
 
 
 def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 
-             quantity: int, format: str) -> tuple[str, dict, dict]:
+             quantity: int, format: str, direct: bool) -> tuple[str, dict, dict]:
     """Pipeline of the LLM process using RAG to get the SQL query.
 
     Args:
@@ -31,6 +31,8 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
         RAG process
         format (str): The type of formatting to use. It can be 'singular' for
         a singular query string or 'var' for the decomposition in variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
         
     Returns:
         table (str): Resulting SQL query
@@ -79,12 +81,43 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
     label, classify_usage = classify(to_classify, model)
     print(f"Difficulty: {label}")
     
+    # If the direct approach is chosen, do not use the decomposition process
+    if direct:
+        # Creating the prompt based on the difficulty of the query
+        prompt = direct_prompts(label, query, true_tables)
+        
+        # Obtaining the SQL query
+        response, usage = api_call(model, max_tokens, prompt)
+        
+        # Formatting the response
+        table = format_response(format, response)
+        print(f"Resulting {format} query: {table}")
+        
+        # Obtaining the total usage of the pipeline
+        total_usage = {
+            "Schema Linking": schema_usage,
+            "Classification": classify_usage,
+            "Query generation": usage
+        }
+        
+        # Obtaining its costs
+        total_usage = pricing(total_usage, model)
+        
+        # Adding up the prompts used
+        prompts = {
+            "Schema Linking": ragInstruction,
+            "Classification": to_classify,
+            "Query generation": prompt 
+        }
+        
+        return table, total_usage, prompts
+    
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
                                                          query, 
-                                                        true_tables, 
-                                                        model, 
-                                                        format)    
+                                                         true_tables, 
+                                                         model, 
+                                                         format)    
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
@@ -116,7 +149,7 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
 
 
 def recreated_pipeline(query: str, model: str, max_tokens: int, 
-                       format: str) -> tuple[str, dict, dict]:
+                       format: str, direct: bool) -> tuple[str, dict, dict]:
     """Recreated pipeline from the original work
 
     Args:
@@ -125,6 +158,8 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         max_tokens (int): Maximum amount of output tokens of the LLM
         format (str): The type of formatting to use. It can be 'singular' for
         a singular query string or 'var' for the decomposition in variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
         
     Returns:
         table (str): Resulting SQL query
@@ -138,6 +173,37 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
     # Classify the query
     to_classify = query + f"\n The following tables are needed: {tables}"
     label, classify_usage = classify(to_classify, model)
+    
+    # If the direct approach is chosen, do not use the decomposition process
+    if direct:
+        # Creating the prompt based on the difficulty of the query
+        prompt = direct_prompts(label, query, tables)
+        
+        # Obtaining the SQL query
+        response, usage = api_call(model, max_tokens, prompt)
+        
+        # Formatting the response
+        table = format_response(format, response)
+        print(f"Resulting {format} query: {table}")
+        
+        # Obtaining the total usage of the pipeline
+        total_usage = {
+            "Schema Linking": schema_usage,
+            "Classification": classify_usage,
+            "Query generation": usage
+        }
+        
+        # Obtaining its costs
+        total_usage = pricing(total_usage, model)
+        
+        # Adding up the prompts used
+        prompts = {
+            "Schema Linking": tables,
+            "Classification": to_classify,
+            "Query generation": prompt 
+        }
+        
+        return table, total_usage, prompts
     
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
@@ -175,7 +241,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
 
 
 def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
-                 overlap: int, quantity: int, format: int, 
+                 overlap: int, quantity: int, format: int, direct: bool,
                  engine: sa.engine.base.Engine, rag_pipe: bool, 
                  self_corr: bool) -> tuple[pd.DataFrame, dict, dict]:
     """Function to run the entire pipeline. This pipeline could be the 
@@ -193,6 +259,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         RAG process
         format (str): The type of formatting to use. It can be 'singular' for
         a singular query string or 'var' for the decomposition in variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
         engine (sqlalchemy.engine.base.Engine): SQL database engine
         rag_pipe (bool): Condition to use the new pipeline (uses RAG)
         self_corr (bool): Condition to use self-correction
@@ -206,7 +274,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     # Check if the new pipeline is being used
     if rag_pipe:
         table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
-                                               overlap, quantity, format)
+                                               overlap, quantity, format, 
+                                               direct)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
@@ -263,7 +332,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     # Using the recreated pipeline
     else:
         table, total_usage, prompts = recreated_pipeline(query, model, 
-                                                         max_tokens, format)
+                                                         max_tokens, format, 
+                                                         direct)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:

@@ -326,7 +326,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
 
     Args:
         label (str): Difficulty label
-        ur_w_tables (str): User request
+        ur (str): User request
         tables (str): Tables from the DB needed for the request
         model (str): Name of the model (LLM)
         format (str): The type of formatting to use. It can be 
@@ -454,3 +454,35 @@ def pricing(usage: dict, model: str) -> dict:
             usage[key]["total_cost"] = total_cost
                     
     return usage
+
+
+def direct_prompts(label: str, ur: str, tables: str) -> str:
+    """Creating simple direct prompts for query generation
+
+    Args:
+        label (str): Difficulty label
+        ur (str): User request
+        tables (str): Tables from the DB needed for the request
+        
+    Returns:
+        direct_prompt (str): Prompt for query generation (direct approach)
+    """
+    if label == "simple":
+        direct_prompt = query_sql_simple.format(
+            ur = ur,
+            tables = tables
+        )
+    elif label == "medium":
+        direct_prompt = query_direct_sql_medium.format(
+            ur = ur,
+            tables = tables
+        )
+    elif label == "medium":
+        direct_prompt = query_direct_sql_advanced.format(
+            ur = ur,
+            tables = tables
+        )
+    else:
+        raise Exception("No valid label difficulty")
+    
+    return direct_prompt
