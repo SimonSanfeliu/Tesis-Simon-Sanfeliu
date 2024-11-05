@@ -35,8 +35,9 @@ quantity = 10
 
 # Running the pipeline
 result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, 
-                                            overlap, quantity, format, engine, 
-                                            True, True)
+                                            overlap, quantity, format, False, 
+                                            engine, rag_pipe=True, 
+                                            self_corr=True)
 print("Resulting table:")
 print(result)
 print("Total usage of the pipeline:")

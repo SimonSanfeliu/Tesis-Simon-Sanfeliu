@@ -31,7 +31,7 @@ FROM object o, catalog c
      * It is REALLY important to first use the catalog then the object ra,dec for speed. The radius is in degrees.
      */
 WHERE
-    q3c_join(c.ra, c.dec,o.meanra, o.meandec, {radius})
+    q3c_join(c.ra, c.dec, o.meanra, o.meandec, {radius})
 '''
 ```
 
@@ -40,6 +40,9 @@ using the q3c_dist function, as well as other properties from the object table.
 The radius variable should be in degrees and the values variable should 
 correspond to the list of coordinates using the following format, e.g. 
 '(id1,ra1,dec1),\n(id2,ra2,dec2)\n', e.g., '(ZTF24aabbcc,120.345677,-30.45774)\n,(ZTF24aabbcd,65.346829,12.73474)\n'.
+
+Remember that the table object does not have the features ra and dec, only their mean values. This values are stored
+in the catalog table, so if you need them, use that table.
 
 If the variables are in a dataframe, you could use the following code to get this formatted list:
 ```python
