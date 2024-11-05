@@ -6,7 +6,7 @@
 ###
 
 # Setting up astronomical context
-with open("astrocontext.txt", "r") as f:
+with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
 
 # General Self-Correction Prompt
@@ -46,7 +46,11 @@ general_context_selfcorr_v1=f'''
 
 {astro_context}
 
-REMEMBER: The corrected query you give must be in SQL format
+# Generate a query for each step, resolving and analysing it, with the following format:
+```step_number [STEP QUERY HERE] ```
+# Finally, join all the steps in a final query, with the following format: 
+```sql [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answe
 '''
 
 general_context_selfcorr_v1_python=f'''
@@ -78,7 +82,11 @@ general_context_selfcorr_v1_python=f'''
 
 {astro_context}
 
-REMEMBER: The corrected query you give must be in Python format, with sub-queries as Python variables
+# Generate a query for each step, resolving and analysing it, with the following format:
+```python sub_queries = [VARIABLE SUB-QUERY HERE] ```
+# Finally, join all the steps in a final query like so: 
+```python full_query = [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answer.
 '''
 
 # Final Instructions, emphasizing the importance to correct the query and the format to answer
