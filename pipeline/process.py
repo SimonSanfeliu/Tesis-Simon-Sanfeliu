@@ -146,13 +146,16 @@ def run_query(specified_format: str, formatted_response: str,
         query
     """
     if specified_format == "sql":
-        results = pd.read_sql_query(formatted_response, con=engine)
+        try: 
+            results = pd.read_sql_query(formatted_response, con=engine)
+        except Exception as e:
+            raise Exception(f"Running SQL exception: {e}")
     elif specified_format == "python":
         try:
             exec(formatted_response, globals())
             results = pd.read_sql_query(full_query, con=engine)
-        except:
-           raise Exception("No 'full_query' variable generated")
+        except Exception as e:
+           raise Exception(f"Running SQL exception: {e}")
     else:
         raise Exception("No valid format specified")
     
