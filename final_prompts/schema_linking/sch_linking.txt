@@ -1,7 +1,9 @@
-Given the user request, select the tables needed to generate a SQL query. Give 
-the answer in the following format: [table1, table2, ...]. For example, if the 
-answer is table object and table taxonomy, then you should type: [object, 
-taxonomy].
+Given the user request, select the tables needed to generate a SQL query. 
+Give the answer in the following format: [table1, table2, ...]. 
+For example, if the answer is table object and table taxonomy, then you should 
+type: [object, taxonomy].
+
+ONLY ANSWER IN THE FORMAT SPECIFIED BEFORE
 
 User request: {ur}
 
