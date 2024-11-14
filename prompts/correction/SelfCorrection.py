@@ -18,6 +18,10 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 '''
 ## General Context of the database schema
 general_context_selfcorr_v1=f'''
+As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+The user values the personality of a knowledgeable SQL expert, so ensuring accuracy is paramount. Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+
 ## ALeRCE Pipeline Details
 - Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
 - Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
@@ -50,10 +54,14 @@ general_context_selfcorr_v1=f'''
 ```step_number [STEP QUERY HERE] ```
 # Finally, join all the steps in a final query, with the following format: 
 ```sql [FINAL QUERY HERE] ```
-DON'T include anything else inside and after your FINAL answe
+DON'T include anything else inside and after your FINAL answer.
 '''
 
 general_context_selfcorr_v1_python=f'''
+As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+The user values the personality of a knowledgeable SQL expert, so ensuring accuracy is paramount. Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+
 ## ALeRCE Pipeline Details
 - Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
 - Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
@@ -268,17 +276,16 @@ self_correction_timeout_prompt_v2='''{Self_correction_task}
 {sql_error}
 
 # Follow the next advices to correct the query:
-- Check if the SQL code includes the necessary conditions to optimize the query, and if the query is using the correct database schema or nested queries to optimize.
+- Check if the SQL or Python code includes the necessary conditions to optimize the query, and if the query is using the correct database schema or nested queries to optimize.
     - It is possible that the query is too complex and it is necessary to use nested queries to optimize the query.
     - If there is a JOIN or a sub-query between some table and probability, check if the condition 'ranking=1' is set in the probability table, unless the request said otherwise.
 - If there are conditions involving dates or times, check if the dates are not too far away, or are in a reasonable range.
 # If the probability table is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
 - Check if are at least 3 conditions over the probability table, because if not, the query is too general. Add more conditions if necessary.
 
-# Check the query and correct the query modifying the SQL code where the error is found.
-# Add COMMENTS IN PostgreSQL format so that the user can understand.
-# Answer ONLY with the SQL query
-# SQL:
+# Check the query and correct the query modifying the SQL or Python code where the error is found.
+# Add COMMENTS so that the user can understand.
+# Answer ONLY with the SQL query or the Python sub-queries
 '''
 
 ## No Exist Self-Correction Prompt
@@ -299,16 +306,15 @@ self_correction_no_exist_prompt_v2='''{Self_correction_task}
 # The query is not working because the table or column does not exist in the database schema. Check the table or column name and correct the query.
 # Follow the next advices to correct the query:
 - Check if the query is using the correct tables and columns provided, and if the conditions are correct, given the user request.
-- Check if the SQL code includes all the requested conditions.
+- Check if the SQL or Python code includes all the requested conditions.
 - If the error is due to a table or column that does not exist, check the table or column name and correct the query using the correct database schema provided.
 - If the error is due to a function that does not exist, try to modify the query using only the information given in the database schema.
 - If the error is due to a relation that does not exist, check the relation name and correct the query using the correct database schema.
 # All the information needed is in the database schema, use only the information provided in the database schema to correct the query. If it is not explicitly provided, go for the most common sense approach.
 
-# Check the query and correct it modifying the SQL code where the error is found.
-# Add COMMENTS IN PostgreSQL format so that the user can understand.
-# Answer ONLY with the SQL query
-# SQL:
+# Check the query and correct the query modifying the SQL or Python code where the error is found.
+# Add COMMENTS so that the user can understand.
+# Answer ONLY with the SQL query or the Python sub-queries
 '''
 
 ## Schema Error Self-Correction Prompt
@@ -332,10 +338,9 @@ self_correction_schema_prompt_v2='''{Self_correction_task}
 - If there is a "missing FROM-clause entry", check where the table or sub-query is used in the query and add the correct name of the table or sub-query.
 - Use only the information provided in the database schema to correct the query. If it is not explicitly provided, go for the most common sense approach.
 
-# Check the query and correct it modifying the SQL code where the error is found.
-# Add COMMENTS IN PostgreSQL format so that the user can understand.
-# Answer ONLY with the SQL query
-# SQL:
+# Check the query and correct the query modifying the SQL or Python code where the error is found.
+# Add COMMENTS so that the user can understand.
+# Answer ONLY with the SQL query or the Python sub-queries
 '''
 
 
