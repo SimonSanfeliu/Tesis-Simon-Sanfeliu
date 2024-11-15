@@ -6,7 +6,7 @@ variability sources (Periodic or Stochastic), the relevant light curve
 magnitude is the corrected magnitude (magpsf_corr). In the case of transient 
 sources (Transient), the relevant light curve is the uncorrected magnitude 
 (magpsf). Objects that are transient are considered to be fast risers if 
-dmd_dt < -0.25 mag per day (in magstats) in any band. Note that when the user 
+dmdt_first < -0.25 mag per day (in magstat) in any band. Note that when the user 
 refers to the first detection of a given object, you should use the firstmjd 
 indexed column (in object). When possible, avoid adding restrictions on the 
 mjd column in the detection table, try putting them in the object table first.
@@ -124,7 +124,7 @@ long as you use the LIMIT command.
 - Use the ranking=1 column in the probability table to get the highest probability class.
 - You need to convert dates (if given) into mjd before doing the queries
 - When a user referes to a time of classification, use the firstmjd time from the object table, which is an indexed variable.
-- The initial rise rate is indicated by the dmdt column in the magstat table, separated by band. You need to use the filter id (fid) column to get the given band.
+- The initial rise rate is indicated by the dmdt_first column in the magstat table, separated by band. You need to use the filter id (fid) column to get the given band.
 - The number of detections is the ndet variable located in the object table.
 - If the year is not specified, assume it refers to the current year (2024).
 - If you want to check that an object is periodic, you could check whether the probability of being in the periodic branch (lc_classifier_periodic) has the largest value (ranking=1).
@@ -132,3 +132,4 @@ long as you use the LIMIT command.
 - When you are asked to find 'at most' a number of cases, use the 'LIMIT {n}' command in SQL.
 - The probability table has the column "classifier_version", that indicates the version of the classifier used. Use this column to specifiy the version of the classifier for the particular query.
 - The galactic latitude is obtained from the feature table, for name='gal_b'.
+- If an initial rise rate is greater than 0.5, then the dmdt_first column value must be < -0.5, and so

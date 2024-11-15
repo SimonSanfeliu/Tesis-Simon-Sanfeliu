@@ -310,7 +310,14 @@ self_correction_no_exist_prompt_v2='''{Self_correction_task}
 - If the error is due to a table or column that does not exist, check the table or column name and correct the query using the correct database schema provided.
 - If the error is due to a function that does not exist, try to modify the query using only the information given in the database schema.
 - If the error is due to a relation that does not exist, check the relation name and correct the query using the correct database schema.
+- Remember to optimize the corrected query, trying to avoid the timeouts.
 # All the information needed is in the database schema, use only the information provided in the database schema to correct the query. If it is not explicitly provided, go for the most common sense approach.
+
+Here are some common missconceptions and their correct values:
+magstats must be magstat
+mag_max must be magmax
+dmdt mut be dmdt_first
+magpsf_corr must be sigmapsf
 
 # Check the query and correct the query modifying the SQL or Python code where the error is found.
 # Add COMMENTS so that the user can understand.
