@@ -300,6 +300,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     print("Corrected query:")
                     print(new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -319,6 +320,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     print(new)
                     new = format_response(format, new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -362,6 +364,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     print("Corrected query:")
                     print(new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -381,6 +384,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     print(new)
                     new = format_response(format, new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
