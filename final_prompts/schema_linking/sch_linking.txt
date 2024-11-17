@@ -1,7 +1,9 @@
-Given the user request, select the tables needed to generate a SQL query. Give 
-the answer in the following format: [table1, table2, ...]. For example, if the 
-answer is table object and table taxonomy, then you should type: [object, 
-taxonomy].
+Given the user request, select the tables needed to generate a SQL query. 
+Give the answer in the following format: [table1, table2, ...]. 
+For example, if the answer is table object and table taxonomy, then you should 
+type: [object, taxonomy].
+
+ONLY ANSWER IN THE FORMAT SPECIFIED BEFORE
 
 User request: {ur}
 
@@ -340,7 +342,7 @@ CREATE TABLE detection (  /* this table contains information about the object
     magpsf DOUBLE PRECISION NOT NULL, /* point spread function (psf) difference magnitude */
     sigmapsf DOUBLE PRECISION NOT NULL, /* psf difference magnitude error */
     magap DOUBLE PRECISION, /* aperture difference magnitude */
-    sigmagap DOUBLE PRECISION, /* aperture difference magnitud error */
+    sigmagap DOUBLE PRECISION, /* aperture difference magnitude error */
     distnr DOUBLE PRECISION, /* distance to the nearest source in the reference image */
     rb DOUBLE PRECISION, /* ZTF real bogus score */
     rbversion VARCHAR, /* version of the ZTF real bogus score */

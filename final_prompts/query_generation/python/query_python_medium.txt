@@ -84,6 +84,9 @@ WHERE
   sq1.probability - sq2.probability < 0.1
 '''
 
+Remeber to always add the f before a string in the variable sub-queries when
+they need to use other variables.
+
 # Use the next decomposed planification to write the query:
 {decomp_plan}
 

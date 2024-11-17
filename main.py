@@ -297,7 +297,10 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                         error=str(e))
                     new, new_usage = api_call(model, max_tokens, corr_prompt)
                     new = format_response(format, new)
+                    print("Corrected query:")
+                    print(new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -313,8 +316,11 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                         sql_pred=table, 
                         error=str(e))
                     new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    print("Corrected query:")
+                    print(new)
                     new = format_response(format, new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -355,7 +361,10 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                         error=str(e))
                     new, new_usage = api_call(model, max_tokens, corr_prompt)
                     new = format_response(format, new)
+                    print("Corrected query:")
+                    print(new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
@@ -371,8 +380,11 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                         sql_pred=table, 
                         error=str(e))
                     new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    print("Corrected query:")
+                    print(new)
                     new = format_response(format, new)
                     total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
                     prompts["Self-correction"] = corr_prompt
                     
                     try:

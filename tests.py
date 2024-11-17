@@ -10,11 +10,7 @@ from main import run_pipeline, engine
 engine.begin()
 
 # Query to process
-query = """Query objects within 10 degress of the next positions: ('source_1',
-    160.18301441363647, 33.0164673528409), ('source_2', 174.21524897555543, 
-    44.83789535222221), that have their first detection the first 7 days of
-    February 2023, with SN probabilities > 0.4, and ranking=1 in the stamp 
-    classifier"""
+query = """Get the object identifier, candidate identifier, psf magnitudes, magnitude errors, and band identifiers as a function of time of the objects classified as SN II with probability larger than 0.6, number of detections greater than 50 and difference between minimum and maximum magnitudes in ZTF g-band greater than 2 mag."""
 
 # # Corresponding request ID for the query (if it exists)
 # df = pd.read_csv("txt2sql_alerce_train_v2.csv")
@@ -35,8 +31,9 @@ quantity = 10
 
 # Running the pipeline
 result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, 
-                                            overlap, quantity, format, engine, 
-                                            True, True)
+                                            overlap, quantity, format, False, 
+                                            engine, rag_pipe=False, 
+                                            self_corr=True)
 print("Resulting table:")
 print(result)
 print("Total usage of the pipeline:")
