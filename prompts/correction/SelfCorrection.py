@@ -317,7 +317,7 @@ Here are some common missconceptions and their correct values:
 magstats must be magstat
 mag_max must be magmax
 dmdt mut be dmdt_first
-magpsf_corr must be sigmapsf
+magpsf_err must be sigmapsf
 
 # Check the query and correct the query modifying the SQL or Python code where the error is found.
 # Add COMMENTS so that the user can understand.

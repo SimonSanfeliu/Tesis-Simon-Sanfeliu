@@ -132,4 +132,6 @@ long as you use the LIMIT command.
 - When you are asked to find 'at most' a number of cases, use the 'LIMIT {n}' command in SQL.
 - The probability table has the column "classifier_version", that indicates the version of the classifier used. Use this column to specifiy the version of the classifier for the particular query.
 - The galactic latitude is obtained from the feature table, for name='gal_b'.
-- If an initial rise rate is greater than 0.5, then the dmdt_first column value must be < -0.5, and so
+- If the user requests an initial rise rate greater than some value what they mean is that the rise rate should be less than the negative of that value, because in astronomy magnitudes are lower for brighter objects, so when an object is rising its magnitudes are decreasing
+- When asked for magnitude errors, the user is refering to the columns sigmapsf_corr and sigmapsf_corr_ext from the detection table
+- When asked for the band identifiers, return both the fid from the magstat and detection tables
