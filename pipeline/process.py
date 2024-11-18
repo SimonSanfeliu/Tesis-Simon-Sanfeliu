@@ -135,7 +135,7 @@ def run_query(specified_format: str, formatted_response: str,
 
     Args:
         specified_format (str): The type of formatting to use. It can be 
-        'singular' for a singular query string or 'var' for the 
+        'sql' for a singular query string or 'python' for the 
         decomposition in variables
         formatted_response (str): The response ready to be used in the database
         engine (sqlalchemy.engine.base.Engine): The engine to access the 
@@ -149,17 +149,17 @@ def run_query(specified_format: str, formatted_response: str,
         try: 
             results = pd.read_sql_query(formatted_response, con=engine)
         except Exception as e:
-            raise Exception(f"Running SQL exception: {e}")
+            print(f"Running SQL exception: {e}")
     elif specified_format == "python":
         try:
             exec(formatted_response, globals())
             results = pd.read_sql_query(full_query, con=engine)
         except Exception as e:
-           raise Exception(f"Running SQL exception: {e}")
+           print(f"Running SQL exception: {e}")
     else:
         raise Exception("No valid format specified")
     
-    return results
+    return results, e
 
 
 def classify(query: str, model: str) -> tuple[str, dict]:

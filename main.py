@@ -279,7 +279,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
-                result = run_query(format, table, engine)
+                result, _ = run_query(format, table, engine)
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
@@ -304,7 +304,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result = run_query(format, new, engine)
+                        result, _ = run_query(format, new, engine)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
                     
@@ -324,14 +324,14 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result = run_query(format, new, engine)
+                        result, _ = run_query(format, new, engine)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
             try:
-                result = run_query(format, table, engine)
+                result, _ = run_query(format, table, engine)
             except Exception as e:
                 raise Exception(f"Raised exception: {e}")
 
@@ -343,7 +343,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
-                result = run_query(format, table, engine)
+                result, _ = run_query(format, table, engine)
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
@@ -368,7 +368,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result = run_query(format, new, engine)
+                        result, _ = run_query(format, new, engine)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
                     
@@ -388,14 +388,14 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result = run_query(format, new, engine)
+                        result, _ = run_query(format, new, engine)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
             try:
-                result = run_query(format, table, engine)
+                result, _ = run_query(format, table, engine)
             except Exception as e:
                 raise Exception(f"Raised exception: {e}")
             
