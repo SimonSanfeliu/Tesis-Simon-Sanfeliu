@@ -12,7 +12,8 @@ class OpenAIError(Exception):
     pass
 
 
-def rag_step(size, overlap, context, ragInstruction, quantity):
+def rag_step(size: int, overlap: int, context: str, ragInstruction: str, 
+             quantity: int) -> tuple[str, dict]:
     """Makes the RAG step for the given process
     
     Args:
