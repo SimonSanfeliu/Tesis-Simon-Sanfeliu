@@ -94,7 +94,7 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 ```python sub_queries = [VARIABLE SUB-QUERY HERE] ```
 # Finally, join all the steps in a final query like so: 
 ```python full_query = [FINAL QUERY HERE] ```
-DON'T include anything else inside and after your FINAL answer.
+DON'T include anything else inside and after your FINAL answer. Remember to always add the f in the string of the final query to add up all the sub-queries
 '''
 
 # Final Instructions, emphasizing the importance to correct the query and the format to answer
