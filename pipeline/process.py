@@ -60,6 +60,24 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
             print(f"The following exception occured: {e}")
             raise Exception(e)
         
+    elif "o1" in model:
+        try:
+            client = openai.OpenAI(api_key=OPENAI_KEY)
+            response = client.chat.completions.create(
+                model=model,
+                max_completion_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            usage = {"input_tokens": response.usage.prompt_tokens,
+                     "output_tokens": response.usage.completion_tokens,
+                     "total_tokens": response.usage.total_tokens}
+            response = response.choices[0].message.content
+        except Exception as e:
+            print(f"The following exception occured: {e}")
+            raise Exception(e)
+        
     elif "claude" in model:
         try:
             client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
@@ -145,6 +163,8 @@ def run_query(specified_format: str, formatted_response: str,
         results (pandas.DataFrame): Pandas DataFrame with the results of the 
         query
     """
+    results = None
+    e = None
     if specified_format == "sql":
         try: 
             results = pd.read_sql_query(formatted_response, con=engine)
@@ -157,7 +177,7 @@ def run_query(specified_format: str, formatted_response: str,
         except Exception as e:
            print(f"Running SQL exception: {e}")
     else:
-        raise Exception("No valid format specified")
+        e = "No valid format specified"
     
     return results, e
 
@@ -179,7 +199,7 @@ def classify(query: str, model: str) -> tuple[str, dict]:
     f"\nThe request to classify is the following: {query}"
     
     # Obtain the difficulty label
-    label, usage = api_call(model, 20, prompt)
+    label, usage = api_call(model, 1000, prompt)
     labels = ["simple", "medium", "advanced"]
     true_label = [l for l in labels if l in label]
     label = true_label[0]
@@ -204,7 +224,7 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         f"\nThe user request is the following: {query}"
         
     # Obtain the tables necessary for the SQL query
-    tables, usage = api_call(model, 100, prompt)
+    tables, usage = api_call(model, 1000, prompt)
     content = tables.split("[")[1].split("]")[0]
     true_tables = f"[{content}]"
     return true_tables, usage
@@ -230,7 +250,7 @@ def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
     )
         
     # Obtain the tables necessary for the SQL query
-    tables, usage = api_call(model, 100, prompt)
+    tables, usage = api_call(model, 1000, prompt)
     content = tables.split("[")[1].split("]")[0]
     true_tables = f"[{content}]"
     return true_tables, usage
@@ -271,7 +291,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
                 user_request_with_tables = ur_w_tables,
                 medium_query_instructions_1 = medium_query_instructions_1_vf
             )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -298,7 +318,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
             user_request_with_tables = ur_w_tables,
             adv_query_instructions_1 = adv_query_instructions_1_vf
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -357,7 +377,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             tables = tables,
             astro_context = astro_context
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -381,7 +401,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             tables = tables,
             astro_context = astro_context
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
