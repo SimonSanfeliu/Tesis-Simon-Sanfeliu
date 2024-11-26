@@ -276,6 +276,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format, 
                                                direct)
+        print(table)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
@@ -340,6 +341,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         table, total_usage, prompts = recreated_pipeline(query, model, 
                                                          max_tokens, format, 
                                                          direct)
+        print(table)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:

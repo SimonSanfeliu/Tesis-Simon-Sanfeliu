@@ -118,6 +118,12 @@ necessary columns. If you are asked to provide a sample of a given number of
 objects, you can do this with only one query using multiple inner joins, as 
 long as you use the LIMIT command.
 
+The dataquality table contains information related to the quality of every detection in the database. It has information for every object (with index oid) and candidate detection (with index candid) that is not available in the detection table. Some of the most relevant columns are the reduced chi-square for PSF-fit (chipsf), the full width half maximum (fwhm), the star galaxy classification score from SEXtractor (classtar), or the magnitude zero point estimate and its error (magzpsci, magzpunc).
+
+Sometimes it is necessary to use an INNER JOIN between tables to get all the 
+requested columns. When this happens, make sure ONLY to use the inner join 
+clause when it is ABSOLUTELY necessary.
+
 ### More considerations
 - You should avoid using the feature table as much as possible, since it is not indexed.
 - Avoid using the feature or detection table to get the time of first detection, use the firstmjd column from the object table instead.

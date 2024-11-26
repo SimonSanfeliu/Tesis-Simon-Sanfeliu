@@ -512,7 +512,7 @@ CREATE TABLE ps1_ztf ( /* information about the three closest sources in Pan STA
     simag1 DOUBLE PRECISION, /* ps i band magnitude */
     szmag1 DOUBLE PRECISION, /* ps z band magnitude */
     sgscore1 DOUBLE PRECISION, /* ps star galaxy score */
-    distpsnr1 DOUBLE PRECISION, /* distance to closest source in panstarrs */
+    distpsnr1 DOUBLE PRECISION, /* distance to closest source in panstarrs in arcseconds */
     objectidps2 DOUBLE PRECISION,  /* identifier of the second closest source in pan starrs (ps) */
     sgmag2 DOUBLE PRECISION, /* g-band PSF magnitude of second closest source from PS1 catalog; if exists within 30 arcsec [mag] */
     srmag2 DOUBLE PRECISION, /* r-band PSF magnitude of second closest source from PS1 catalog; if exists within 30 arcsec [mag] */

@@ -500,7 +500,7 @@ def direct_prompts(label: str, ur: str, tables: str) -> str:
             ur = ur,
             tables = tables
         )
-    elif label == "medium":
+    elif label == "advanced":
         direct_prompt = query_direct_sql_advanced.format(
             ur = ur,
             tables = tables
