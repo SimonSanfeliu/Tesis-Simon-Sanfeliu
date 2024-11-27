@@ -1,4 +1,3 @@
-import requests
 import sqlalchemy as sa
 import pandas as pd
 
@@ -7,12 +6,6 @@ from pipeline.process import api_call, format_response, schema_linking_v2, \
 from pipeline.ragStep import rag_step
 from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
     general_context_selfcorr_v1, general_context_selfcorr_v1_python
-from secret.config import SQL_URL
-
-# Setup params for query engine
-params = requests.get(SQL_URL).json()['params']
-engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}/{params['dbname']}")
-engine.begin()
 
 
 def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 

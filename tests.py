@@ -2,11 +2,15 @@
 This is a file for running tests on the pipeline with different queries
 """
 
-# TODO: Dar request ID o una query x
-
-import pandas as pd
+import requests
+import sqlalchemy as sa
 from pprint import pprint
-from main import run_pipeline, engine
+from pipeline.main import run_pipeline
+from secret.config import SQL_URL
+
+# Setup params for query engine
+params = requests.get(SQL_URL).json()['params']
+engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}/{params['dbname']}")
 engine.begin()
 
 # Query to process
