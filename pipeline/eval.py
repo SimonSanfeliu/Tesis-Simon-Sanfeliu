@@ -1,12 +1,14 @@
-import os, time, psutil
-import requests, psycopg2
-import pandas as pd, numpy as np
+import time
+import requests
+import pandas as pd
 import multiprocessing as mp
 import pickle, json
 import sqlalchemy as sa
+from typing import Callable
 
 from secret.config import SQL_URL, USER_10, PASS_10
 from pipeline.process import run_query
+from pipeline.main import run_pipeline
 
 # Setup params for query engine
 params = requests.get(SQL_URL).json()['params']
@@ -275,7 +277,7 @@ def error_handler(e: str) -> None:
   
 
 def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame, 
-                      result_funct: function, format: str, num_cpus: int = 1, 
+                      result_funct: Callable, format: str, num_cpus: int = 1, 
                       min: int = 2) -> None:
   """Run the SQL queries in parallel
   
@@ -300,81 +302,97 @@ def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame,
 
 
 def run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, save_path: str, 
-                 format: str, n_exps: int = 10, num_cpus: int = 10, 
-                 db_min: int = 2, selfcorr: bool = False) -> list[dict]:
-    """Evaluate the generated SQL queries with the true/gold SQL queries
-    
-    Args:
-      db_eval (pandas.DataFrame): Dataframe with the true/gold SQL queries
-      experiment_path (str): Path to the predictions in pickle format
-      save_path (str): Path to save the evaluations in pickle format
-      format (str): The type of formatting to use. It can be 'sql' for a singular 
-      query string or 'python' for the decomposition in variables
-      n_exps (int, optional): Number of experiments to evaluate. Defaults to 10
-      num_cpus (int, optional): Number of CPUs to use for multiprocessing. Defaults to 10
-      db_min (int, optional): Timeout limit for the database connection. Defaults to 2
-      
-    Returns:
-      exec_result (list[dict]): List of dictionaries with the evaluation results
+                 model: str, max_tokens: int, format: str, 
+                 num_cpus: int = 1, db_min: int = 2, self_corr: bool = False, 
+                 rag_pipe: bool = False, direct: bool = False, 
+                 size: int = 0, overlap: int = 0, quantity: int = 0) -> list[dict]:
     """
+    Evaluate the generated SQL queries with the true/gold SQL queries using `run_sqls_parallel` and `run_pipeline`.
 
-    # load the predictions
+    Args:
+        db_eval (pd.DataFrame): Dataframe with the true/gold SQL queries.
+        experiment_path (str): Path to the predictions in pickle format.
+        save_path (str): Path to save the evaluations in pickle format.
+        model (str): LLM model to use.
+        max_tokens (int): Maximum output tokens of the LLM.
+        format (str): The format for SQL queries ('singular' or 'var').
+        num_cpus (int): Number of CPUs for parallel processing. Defaults to 1.
+        db_min (int): Timeout limit for database connection. Defaults to 2.
+        self_corr (bool): Enable self-correction. Defaults to False.
+        rag_pipe (bool): Use the RAG pipeline. Defaults to False.
+        direct (bool): Use direct query generation. Defaults to False.
+        size (int): Chunk size for RAG. Defaults to 0.
+        overlap (int): Overlap size for RAG chunks. Defaults to 0.
+        quantity (int): Number of similar chunks for RAG. Defaults to 0.
+
+    Returns:
+        exec_result (list[dict]): List of dictionaries with evaluation results.
+    """
+    # Load predictions from pickled files
     sql_pred_list_temp = []
-    for i in range(n_exps):
-        with open(experiment_path+f"_{i}", "rb") as fp:   # Unpickling
-            if selfcorr:
-              # TODO: fix try except to know if the pickle file is in the new format or the old one
-              # check keys in the pickle file to know if it is the new format or the old one
-              
-              try: 
-                sql_pred_list_temp.append([eval["original_pred_query"] if eval["selfcorr_query"] is None else eval["selfcorr_query"] for eval in pickle.load(fp)])
-              except:
-                sql_pred_list_temp.append([eval["pred_query"] if eval["selfcorr_query"] is None else eval["selfcorr_query"] for eval in pickle.load(fp)])
-                
-            else: sql_pred_list_temp.append([eval["pred_query"] for eval in pickle.load(fp)])
-        
-    print(db_eval.req_id.values)
-    
-    # Define function to save the results during the parallel execution
+    for i in range(len(db_eval)):
+        with open(f"{experiment_path}_{i}", "rb") as fp:
+            sql_pred_list_temp.append(pickle.load(fp))
+
+    # Define the evaluation function to be used with `run_sqls_parallel`
+    def evaluate_queries(predictions, db_row, index, format, min):
+        results = []
+        gold_query = db_row['gold_query']
+        req_id, difficulty, query_type = db_row['req_id'], db_row['difficulty'], db_row['type']
+        for pred_query in predictions:
+            try:
+                # Evaluate the predicted query
+                pred_result, pred_usage, pred_prompts = run_pipeline(
+                    pred_query, model, max_tokens, size, overlap, quantity, 
+                    format, direct, engine=None, rag_pipe=rag_pipe, 
+                    self_corr=self_corr
+                )
+
+                # Evaluate the gold query
+                gold_result, _, _ = run_pipeline(
+                    gold_query, model, max_tokens, size, overlap, quantity, 
+                    format, direct, engine=None, rag_pipe=rag_pipe, 
+                    self_corr=self_corr
+                )
+
+                # Compare results and store the output
+                results.append({
+                    "req_id": req_id,
+                    "difficulty": difficulty,
+                    "query_type": query_type,
+                    "pred_result": pred_result,
+                    "gold_result": gold_result,
+                    "pred_usage": pred_usage,
+                    "pred_prompts": pred_prompts,
+                })
+            except Exception as e:
+                results.append({
+                    "req_id": req_id,
+                    "difficulty": difficulty,
+                    "query_type": query_type,
+                    "error": str(e),
+                })
+        return results
+
+    # Wrap the function to adapt to `run_sqls_parallel`
+    def parallel_task(sql_preds, db_row, index):
+        return evaluate_queries(sql_preds, db_row, index, format, db_min)
+
+    # Callback to collect results
     exec_result = []
     def result_callback(result):
-        exec_result.append(result)
+        exec_result.extend(result)
 
-    # Run Evaluation
-    run_sqls_parallel(sql_pred_list_temp, db_eval, result_callback, format, num_cpus=num_cpus, min=db_min)
-    print(f"Finished evaluation, proceding to save the results for experiment {experiment_path}", flush=True)
-    
-    with open(os.path.join(os.getcwd(), save_path)+'.pkl', "wb") as fp: pickle.dump(exec_result, fp) # save the evaluations in pickle format
+    # Run evaluations in parallel
+    print("Starting parallel evaluation using run_sqls_parallel...")
+    run_sqls_parallel(sql_pred_list_temp, db_eval, result_callback, format, 
+                      num_cpus=num_cpus, min=db_min)
 
-    # Check if the number of experiments is the same as the number of evaluations and the number of predictions
-    if (len(exec_result) == n_exps) and (len(exec_result) == len(sql_pred_list_temp)): print("All evaluations finished correctly")
-    elif len(exec_result) == 1: print("Evaluation finished correctly")
-    else: raise ValueError(f'Error in the number of experiments: {len(exec_result)} and {len(sql_pred_list_temp)}')
-    
-    exec_result_json = []
-    for n_exp, eval_i in enumerate(exec_result):
-      # change the error message to string and save the results in a json file
-      print([q['req_id'] for q in eval_i])
-      for q_i in eval_i:
-        if q_i["error_pred"] is not None:
-          q_i["error_pred"] = str(q_i["error_pred"])
+    # Save results
+    with open(f"{save_path}.pkl", "wb") as fp:
+        pickle.dump(exec_result, fp)
+    with open(f"{save_path}.json", "w") as fp:
+        json.dump(exec_result, fp)
 
-      # save the evaluation of each experiment in a json
-      if db_min==2:
-        with open(os.path.join(os.getcwd(), save_path)+f'_{n_exp}.json', 'w') as fp:
-          json.dump(eval_i, fp)
-      else:
-        with open(os.path.join(os.getcwd(), save_path)+f'_{n_exp}_{db_min}.json', 'w') as fp:
-          json.dump(eval_i, fp)
-
-      exec_result_json.append({'n_exp': n_exp, 'eval': eval_i} )
-      
-    # save all evaluations in a json file
-    if db_min==2:
-      with open(os.path.join(os.getcwd(), save_path)+'.json', 'w') as fp:
-        json.dump(exec_result_json, fp)
-    else:
-      with open(os.path.join(os.getcwd(), save_path)+f'_{db_min}.json', 'w') as fp:
-        json.dump(exec_result_json, fp)
-
+    print("Evaluation completed and results saved.")
     return exec_result
