@@ -2,10 +2,11 @@ import sqlalchemy as sa
 import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking_v2, \
-    classify, decomposition_v2, run_query, pricing, direct_prompts
+    classify, decomposition_v2, pricing, direct_prompts
 from pipeline.ragStep import rag_step
 from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
     general_context_selfcorr_v1, general_context_selfcorr_v1_python
+from pipeline.eval import run_sql_alerce
 
 
 def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 
@@ -234,9 +235,10 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
 
 
 def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
-                 overlap: int, quantity: int, format: int, direct: bool,
-                 engine: sa.engine.base.Engine, rag_pipe: bool, 
-                 self_corr: bool) -> tuple[pd.DataFrame, dict, dict]:
+                 overlap: int, quantity: int, format: int, 
+                 direct: bool = False, rag_pipe: bool = True, 
+                 self_corr: bool = True, min: int = 2, 
+                 n_tries: int = 3) -> tuple[pd.DataFrame, dict, dict]:
     """Function to run the entire pipeline. This pipeline could be the 
        original one or the new one. Here the self-correction is applied.
 
@@ -254,9 +256,10 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         a singular query string or 'var' for the decomposition in variables
         direct (bool): If True, use direct approach for query generation. If 
         False, use step-by-step approach
-        engine (sqlalchemy.engine.base.Engine): SQL database engine
         rag_pipe (bool): Condition to use the new pipeline (uses RAG)
         self_corr (bool): Condition to use self-correction
+        min (int): Time to make the query. Defaults to 2
+        n_tries (int): Number of times to try excuting the query. Defaults to 3
         
     Returns:
         result (pandas.DataFrame): Dataframe with the resulting table
@@ -273,7 +276,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
-                result, _ = run_query(format, table, engine)
+                result, _ = run_sql_alerce(table, format, min, n_tries)
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
@@ -298,7 +301,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result, _ = run_query(format, new, engine)
+                        result, _ = run_sql_alerce(table, format, min, n_tries)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
                     
@@ -318,14 +321,14 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result, _ = run_query(format, new, engine)
+                        result, _ = run_sql_alerce(table, format, min, n_tries)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
             try:
-                result, _ = run_query(format, table, engine)
+                result, _ = run_sql_alerce(table, format, min, n_tries)
             except Exception as e:
                 raise Exception(f"Raised exception: {e}")
 
@@ -338,7 +341,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
             try:
-                result, _ = run_query(format, table, engine)
+                result, _ = run_sql_alerce(table, format, min, n_tries)
             except Exception as e:
                 print(f"Raised exception: {e}")
                 print("Start retry with self-correction")
@@ -363,7 +366,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result, _ = run_query(format, new, engine)
+                        result, _ = run_sql_alerce(table, format, min, n_tries)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
                     
@@ -383,14 +386,14 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                     prompts["Self-correction"] = corr_prompt
                     
                     try:
-                        result, _ = run_query(format, new, engine)
+                        result, _ = run_sql_alerce(table, format, min, n_tries)
                     except Exception as e:
                         raise Exception(f"Failed again: {e}")
 
         # W/o self-correction
         else:
             try:
-                result, _ = run_query(format, table, engine)
+                result, _ = run_sql_alerce(table, format, min, n_tries)
             except Exception as e:
                 raise Exception(f"Raised exception: {e}")
             
