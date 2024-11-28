@@ -7,11 +7,179 @@ import sqlalchemy as sa
 from typing import Callable
 
 from secret.config import SQL_URL, USER_10, PASS_10
-from pipeline.process import run_query
-from pipeline.main import run_pipeline
+from pipeline.process import run_query, api_call, format_response, pricing
+from pipeline.main import pipeline, recreated_pipeline
+from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
+    general_context_selfcorr_v1, general_context_selfcorr_v1_python
 
 # Setup params for query engine
 params = requests.get(SQL_URL).json()['params']
+
+
+def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
+                 overlap: int, quantity: int, format: int, 
+                 direct: bool = False, rag_pipe: bool = True, 
+                 self_corr: bool = True, min: int = 2, 
+                 n_tries: int = 3) -> tuple[pd.DataFrame, dict, dict]:
+    """Function to run the entire pipeline. This pipeline could be the 
+       original one or the new one. Here the self-correction is applied.
+
+    Args:
+        query (str): Natural language query for the database
+        model (str): LLM to use
+        max_tokens (int): Maximum amount of output tokens of the LLM
+        size (int): Size of the chunks for the character text splitter used in
+        the RAG process
+        overlap (int): Size of the overlap of the chunks used in the RAG 
+        process
+        quantity (int): The amount of most similar chunks to consider in the
+        RAG process
+        format (str): The type of formatting to use. It can be 'singular' for
+        a singular query string or 'var' for the decomposition in variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
+        rag_pipe (bool): Condition to use the new pipeline (uses RAG)
+        self_corr (bool): Condition to use self-correction
+        min (int): Time to make the query. Defaults to 2
+        n_tries (int): Number of times to try excuting the query. Defaults to 3
+        
+    Returns:
+        result (pandas.DataFrame): Dataframe with the resulting table
+        total_usage (dict): API usage after the whole process
+        prompts (dict): Dictonary with the prompts used in every step of the 
+        pipeline
+    """
+    # Check if the new pipeline is being used
+    if rag_pipe:
+        table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
+                                               overlap, quantity, format, 
+                                               direct)
+        print(table)
+        # If self-correction is enabled, use the respective prompts to correct
+        if self_corr:
+            try:
+                result, error = run_sql_alerce(table, format, min, n_tries)
+            except Exception:
+                print(f"Raised exception: {error}")
+                print("Start retry with self-correction")
+                
+                tab_schema = prompts["Classification"]\
+                    .split("\n The following tables are needed to generate \
+                        the query: ")[0]
+                    
+                if format == "sql":
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(error))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    print("Corrected query:")
+                    print(new)
+                    total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result, error = run_sql_alerce(table, format, min, n_tries)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {error}")
+                    
+                else:
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1_python, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(error))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    print("Corrected query:")
+                    print(new)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result, error = run_sql_alerce(table, format, min, n_tries)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {error}")
+
+        # W/o self-correction
+        else:
+            try:
+                result, error = run_sql_alerce(table, format, min, n_tries)
+            except Exception as e:
+                raise Exception(f"Raised exception: {error}")
+
+    # Using the recreated pipeline
+    else:
+        table, total_usage, prompts = recreated_pipeline(query, model, 
+                                                         max_tokens, format, 
+                                                         direct)
+        print(table)
+        # If self-correction is enabled, use the respective prompts to correct
+        if self_corr:
+            try:
+                result, error = run_sql_alerce(table, format, min, n_tries)
+            except Exception as e:
+                print(f"Raised exception: {error}")
+                print("Start retry with self-correction")
+                
+                tab_schema = prompts["Classification"]\
+                    .split("\n The following tables are needed to generate \
+                        the query: ")[0]
+                    
+                if format == "sql":
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(error))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    print("Corrected query:")
+                    print(new)
+                    total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result, error = run_sql_alerce(table, format, min, n_tries)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {error}")
+                    
+                else:
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1_python, 
+                        tab_schema=tab_schema, 
+                        req=query, 
+                        sql_pred=table, 
+                        error=str(error))
+                    new, new_usage = api_call(model, max_tokens, corr_prompt)
+                    print("Corrected query:")
+                    print(new)
+                    new = format_response(format, new)
+                    total_usage["Self-correction"] = new_usage
+                    total_usage = pricing(total_usage, model)
+                    prompts["Self-correction"] = corr_prompt
+                    
+                    try:
+                        result, error = run_sql_alerce(table, format, min, n_tries)
+                    except Exception as e:
+                        raise Exception(f"Failed again: {error}")
+
+        # W/o self-correction
+        else:
+            try:
+                result, error = run_sql_alerce(table, format, min, n_tries)
+            except Exception as e:
+                raise Exception(f"Raised exception: {error}")
+            
+    return result, error, total_usage, prompts
 
 
 def create_conn(min: int=2) -> sa.engine.base.Engine:
@@ -302,7 +470,7 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
 
     # Get output of the predicted SQL query
     pred_start = time.time()
-    query_pred, error_pred = run_pipeline(row["request"], model, max_tokens, 
+    query_pred, error_pred, total_usage, prompts = run_pipeline(row["request"], model, max_tokens, 
                                           size, overlap, quantity, format, 
                                           direct, rag_pipe, self_corr, min, 
                                           n_tries)    
