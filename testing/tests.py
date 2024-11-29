@@ -5,7 +5,7 @@ This is a file for running tests on the pipeline with different queries
 import requests
 import sqlalchemy as sa
 from pprint import pprint
-from pipeline.main import run_pipeline
+from pipeline.eval import run_pipeline
 from secret.config import SQL_URL
 
 # Setup params for query engine
@@ -34,10 +34,9 @@ overlap = 300
 quantity = 10
 
 # Running the pipeline
-result, total_usage, prompts = run_pipeline(query, model, max_tokens, size, 
-                                            overlap, quantity, format, False, 
-                                            engine, rag_pipe=False, 
-                                            self_corr=True)
+result, error, total_usage, prompts = run_pipeline(query, model, max_tokens, size, 
+                                            overlap, quantity, format, False,
+                                            True, True, 2, 3)
 print("Resulting table:")
 print(result)
 print("Total usage of the pipeline:")
