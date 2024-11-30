@@ -2,8 +2,8 @@
 
 ### Types of objects:
 - There are two main types of variable objects: those that have persistent variability and those that have a transient nature. 
-- In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr). 
-- In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf).
+- In the case of transient sources (Transient), the relevant light curve is the uncorrected magnitude (magpsf) and its error (sigmapsf).
+- In the case of persistent variability sources (Periodic or Stochastic), the relevant light curve magnitude is the corrected magnitude (magpsf_corr) and its error (sigmapsf_corr for periodic sources and sigmapsf_corr_ext for stochastic sources). 
 
 ### Definitions:
 - The initial rise rate is indicated by the dmdt_first column in the magstat table, separated by band. You need to use the filter id (fid) column to specify the given band.
@@ -55,8 +55,10 @@ upper levels do inner joins between the different tables and select the necessar
 classification score from SEXtractor (classtar), and the magnitude zero point estimate and its error (magzpsci, magzpunc).
 
 ### forced_photometry table:
+- the forced photometry tables contains light curve measurements for all detected objects even when they didn't trigger a detection, but only from December 2023. 
 
 ### non_detection table:
+- the non detection table contains upper limits for the absolute difference with respect to the reference when no detections were triggered in objects that have associated alerts. 
 
 ### PanSTARRS (PS1) and the ps1_ztf table:
 - The ps1_ztf table contains information about the closest sources in the PanSTARRS catalog. 
@@ -64,10 +66,16 @@ classification score from SEXtractor (classtar), and the magnitude zero point es
 the magnitudes in the g, r, i, and z bands, respectively; and objectidps1, which is the PanSTARRS unique identifier of the object.
 
 ### gaia_ztf:
+- Objects have information about the nearest objects in the Gaia catalog in the gaia_ztf table.
+- The key quantities are the distance to the closest gaia source irrespective of magnitude (neargaia) and the magnitude of the closest source (maggaia). 
 
 ### ss_ztf:
+- Objects that have Solar System counterparts (asteroids or moving objects) have this information stored in the ss_ztf table.
+- The key quantities for a given oid and candid are the distance to the nearest known Solar System object in arcsec (ssdistnr), its magnitude (ssmagnr), and its name (ssnamenr).
 
 ### allwise table:
+- We keep a copy of the allwise catalog objects that are found when crossmatching ZTF objects against Allwise in the allwise table.
+- The key quantities are the name of the object in the allwise catalog (oid_catalog), its right ascension and declination (ra and dec), and the W1 to W4 magnitudes (w1mpro to w4mpro) and errors (w1sigmpro to w4sigmpro) 
 
 ### xmatch table:
 - The xmatch table has three identifiers that are indexed columns: oid, which corresponds to the unique ZTF identifier; catid, which corresponds to the catalog identifier; and oid_catalog, which is the unique identifier for a given source in the catalog nomenclature. 
