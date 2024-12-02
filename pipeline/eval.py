@@ -1,4 +1,4 @@
-import time
+import time, os
 import requests
 import pandas as pd
 import multiprocessing as mp
@@ -14,172 +14,6 @@ from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
 
 # Setup params for query engine
 params = requests.get(SQL_URL).json()['params']
-
-
-def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
-                 overlap: int, quantity: int, format: int, 
-                 direct: bool = False, rag_pipe: bool = True, 
-                 self_corr: bool = True, min: int = 2, 
-                 n_tries: int = 3) -> tuple[pd.DataFrame, dict, dict]:
-    """Function to run the entire pipeline. This pipeline could be the 
-       original one or the new one. Here the self-correction is applied.
-
-    Args:
-        query (str): Natural language query for the database
-        model (str): LLM to use
-        max_tokens (int): Maximum amount of output tokens of the LLM
-        size (int): Size of the chunks for the character text splitter used in
-        the RAG process
-        overlap (int): Size of the overlap of the chunks used in the RAG 
-        process
-        quantity (int): The amount of most similar chunks to consider in the
-        RAG process
-        format (str): The type of formatting to use. It can be 'singular' for
-        a singular query string or 'var' for the decomposition in variables
-        direct (bool): If True, use direct approach for query generation. If 
-        False, use step-by-step approach
-        rag_pipe (bool): Condition to use the new pipeline (uses RAG)
-        self_corr (bool): Condition to use self-correction
-        min (int): Time to make the query. Defaults to 2
-        n_tries (int): Number of times to try excuting the query. Defaults to 3
-        
-    Returns:
-        result (pandas.DataFrame): Dataframe with the resulting table
-        total_usage (dict): API usage after the whole process
-        prompts (dict): Dictonary with the prompts used in every step of the 
-        pipeline
-    """
-    # Check if the new pipeline is being used
-    if rag_pipe:
-        table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
-                                               overlap, quantity, format, 
-                                               direct)
-        print(table)
-        # If self-correction is enabled, use the respective prompts to correct
-        if self_corr:
-            try:
-                result, error = run_sql_alerce(table, format, min, n_tries)
-            except Exception:
-                print(f"Raised exception: {error}")
-                print("Start retry with self-correction")
-                
-                tab_schema = prompts["Classification"]\
-                    .split("\n The following tables are needed to generate \
-                        the query: ")[0]
-                    
-                if format == "sql":
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tab_schema, 
-                        req=query, 
-                        sql_pred=table, 
-                        error=str(error))
-                    new, new_usage = api_call(model, max_tokens, corr_prompt)
-                    new = format_response(format, new)
-                    print("Corrected query:")
-                    print(new)
-                    total_usage["Self-correction"] = new_usage
-                    total_usage = pricing(total_usage, model)
-                    prompts["Self-correction"] = corr_prompt
-                    
-                    try:
-                        result, error = run_sql_alerce(table, format, min, n_tries)
-                    except Exception as e:
-                        raise Exception(f"Failed again: {error}")
-                    
-                else:
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1_python, 
-                        tab_schema=tab_schema, 
-                        req=query, 
-                        sql_pred=table, 
-                        error=str(error))
-                    new, new_usage = api_call(model, max_tokens, corr_prompt)
-                    print("Corrected query:")
-                    print(new)
-                    new = format_response(format, new)
-                    total_usage["Self-correction"] = new_usage
-                    total_usage = pricing(total_usage, model)
-                    prompts["Self-correction"] = corr_prompt
-                    
-                    try:
-                        result, error = run_sql_alerce(table, format, min, n_tries)
-                    except Exception as e:
-                        raise Exception(f"Failed again: {error}")
-
-        # W/o self-correction
-        else:
-            try:
-                result, error = run_sql_alerce(table, format, min, n_tries)
-            except Exception as e:
-                raise Exception(f"Raised exception: {error}")
-
-    # Using the recreated pipeline
-    else:
-        table, total_usage, prompts = recreated_pipeline(query, model, 
-                                                         max_tokens, format, 
-                                                         direct)
-        print(table)
-        # If self-correction is enabled, use the respective prompts to correct
-        if self_corr:
-            try:
-                result, error = run_sql_alerce(table, format, min, n_tries)
-            except Exception as e:
-                print(f"Raised exception: {error}")
-                print("Start retry with self-correction")
-                
-                tab_schema = prompts["Classification"]\
-                    .split("\n The following tables are needed to generate \
-                        the query: ")[0]
-                    
-                if format == "sql":
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tab_schema, 
-                        req=query, 
-                        sql_pred=table, 
-                        error=str(error))
-                    new, new_usage = api_call(model, max_tokens, corr_prompt)
-                    new = format_response(format, new)
-                    print("Corrected query:")
-                    print(new)
-                    total_usage["Self-correction"] = new_usage
-                    total_usage = pricing(total_usage, model)
-                    prompts["Self-correction"] = corr_prompt
-                    
-                    try:
-                        result, error = run_sql_alerce(table, format, min, n_tries)
-                    except Exception as e:
-                        raise Exception(f"Failed again: {error}")
-                    
-                else:
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1_python, 
-                        tab_schema=tab_schema, 
-                        req=query, 
-                        sql_pred=table, 
-                        error=str(error))
-                    new, new_usage = api_call(model, max_tokens, corr_prompt)
-                    print("Corrected query:")
-                    print(new)
-                    new = format_response(format, new)
-                    total_usage["Self-correction"] = new_usage
-                    total_usage = pricing(total_usage, model)
-                    prompts["Self-correction"] = corr_prompt
-                    
-                    try:
-                        result, error = run_sql_alerce(table, format, min, n_tries)
-                    except Exception as e:
-                        raise Exception(f"Failed again: {error}")
-
-        # W/o self-correction
-        else:
-            try:
-                result, error = run_sql_alerce(table, format, min, n_tries)
-            except Exception as e:
-                raise Exception(f"Raised exception: {error}")
-            
-    return result, error, total_usage, prompts
 
 
 def create_conn(min: int=2) -> sa.engine.base.Engine:
@@ -237,6 +71,158 @@ def run_sql_alerce(sql: str, format: str, min: int = 2,
           continue
   engine.dispose()
   return query, error
+
+
+def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
+                 overlap: int, quantity: int, format: int, 
+                 direct: bool = False, rag_pipe: bool = True, 
+                 self_corr: bool = True, min: int = 2, 
+                 n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict]:
+    """Function to run the entire pipeline. This pipeline could be the 
+       original one or the new one. Here the self-correction is applied.
+
+    Args:
+        query (str): Natural language query for the database
+        model (str): LLM to use
+        max_tokens (int): Maximum amount of output tokens of the LLM
+        size (int): Size of the chunks for the character text splitter used in
+        the RAG process
+        overlap (int): Size of the overlap of the chunks used in the RAG 
+        process
+        quantity (int): The amount of most similar chunks to consider in the
+        RAG process
+        format (str): The type of formatting to use. It can be 'singular' for
+        a singular query string or 'var' for the decomposition in variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
+        rag_pipe (bool): Condition to use the new pipeline (uses RAG)
+        self_corr (bool): Condition to use self-correction
+        min (int): Time to make the query. Defaults to 2
+        n_tries (int): Number of times to try excuting the query. Defaults to 3
+        
+    Returns:
+        result (pandas.DataFrame): Dataframe with the resulting table
+        error (str or None): Error message of the query (None if there wasn't one)
+        total_usage (dict): API usage after the whole process
+        prompts (dict): Dictonary with the prompts used in every step of the 
+        pipeline
+    """
+    # Check if the new pipeline is being used
+    if rag_pipe:
+        table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
+                                               overlap, quantity, format, 
+                                               direct)
+        print(table)
+        # If self-correction is enabled, use the respective prompts to correct
+        if self_corr:
+          result, error = run_sql_alerce(table, format, min, n_tries)
+          # Check if there was an error. If there was, correct it
+          if error is not None:
+            print(f"Raised exception: {error}")
+            print("Start retry with self-correction")
+                
+            tab_schema = prompts["Classification"].split("\n The following \
+              tables are needed to generate the query: ")[0]
+            
+            # Correct it in the appropiate format
+            if format == "sql":
+              corr_prompt = prompt_self_correction_v2(
+                gen_task=general_context_selfcorr_v1, 
+                tab_schema=tab_schema, 
+                req=query, 
+                sql_pred=table, 
+                error=str(error))
+              new, new_usage = api_call(model, max_tokens, corr_prompt)
+              new = format_response(format, new)
+              print("Corrected query:")
+              print(new)
+              total_usage["Self-correction"] = new_usage
+              total_usage = pricing(total_usage, model)
+              prompts["Self-correction"] = corr_prompt
+              
+              # Run the corrected query  
+              result, error = run_sql_alerce(table, format, min, n_tries)
+                    
+            else:
+              corr_prompt = prompt_self_correction_v2(
+                gen_task=general_context_selfcorr_v1_python, 
+                tab_schema=tab_schema, 
+                req=query, 
+                sql_pred=table, 
+                error=str(error))
+              new, new_usage = api_call(model, max_tokens, corr_prompt)
+              print("Corrected query:")
+              print(new)
+              new = format_response(format, new)
+              total_usage["Self-correction"] = new_usage
+              total_usage = pricing(total_usage, model)
+              prompts["Self-correction"] = corr_prompt
+              
+              # Run the corrected query
+              result, error = run_sql_alerce(table, format, min, n_tries)
+
+        # W/o self-correction
+        else:
+          result, error = run_sql_alerce(table, format, min, n_tries)
+
+    # Using the recreated pipeline
+    else:
+        table, total_usage, prompts = recreated_pipeline(query, model, 
+                                                         max_tokens, format, 
+                                                         direct)
+        print(table)
+        # If self-correction is enabled, use the respective prompts to correct
+        if self_corr:
+          # Check if there was an error. If there was, correct it
+          result, error = run_sql_alerce(table, format, min, n_tries)
+          print(f"Raised exception: {error}")
+          print("Start retry with self-correction")
+                
+          tab_schema = prompts["Classification"].split("\n The following \
+            tables are needed to generate the query: ")[0]
+          
+          # Correct it in the appropiate format      
+          if format == "sql":
+            corr_prompt = prompt_self_correction_v2(
+              gen_task=general_context_selfcorr_v1, 
+              tab_schema=tab_schema, 
+              req=query, 
+              sql_pred=table, 
+              error=str(error))
+            new, new_usage = api_call(model, max_tokens, corr_prompt)
+            new = format_response(format, new)
+            print("Corrected query:")
+            print(new)
+            total_usage["Self-correction"] = new_usage
+            total_usage = pricing(total_usage, model)
+            prompts["Self-correction"] = corr_prompt
+            
+            # Run the corrected query
+            result, error = run_sql_alerce(table, format, min, n_tries)
+                    
+          else:
+            corr_prompt = prompt_self_correction_v2(
+              gen_task=general_context_selfcorr_v1_python, 
+              tab_schema=tab_schema, 
+              req=query, 
+              sql_pred=table, 
+              error=str(error))
+            new, new_usage = api_call(model, max_tokens, corr_prompt)
+            print("Corrected query:")
+            print(new)
+            new = format_response(format, new)
+            total_usage["Self-correction"] = new_usage
+            total_usage = pricing(total_usage, model)
+            prompts["Self-correction"] = corr_prompt
+
+            # Run the corrected query
+            result, error = run_sql_alerce(table, format, min, n_tries)
+
+        # W/o self-correction
+        else:
+          result, error = run_sql_alerce(table, format, min, n_tries)
+            
+    return result, error, total_usage, prompts
 
 
 def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int, 
@@ -470,28 +456,38 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
 
     # Get output of the predicted SQL query
     pred_start = time.time()
-    query_pred, error_pred, total_usage, prompts = run_pipeline(row["request"], model, max_tokens, 
-                                          size, overlap, quantity, format, 
-                                          direct, rag_pipe, self_corr, min, 
-                                          n_tries)    
+    query_pred, error_pred, _, _ = run_pipeline(row["request"], model, 
+                                                max_tokens, size, overlap, 
+                                                quantity, format, direct, 
+                                                rag_pipe, self_corr, min, 
+                                                n_tries)    
     pred_end = time.time()
     pred_time = pred_end - pred_start
 
     # Get output of the expected SQL query
     gold_query_test = str(row['gold_query'])
     gold_start = time.time() # start time gold_query
-    query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, n_tries=3)
+    query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, 
+                                            n_tries=n_tries)
     
     # Check if the gold query was executed correctly, if not try again
     if error_gold is not None:
-      query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, n_tries=3)
+      query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, 
+                                              n_tries=n_tries)
       if error_gold is not None:
         print(f"Gold query {row['req_id']} could not be executed for experiment {n_exp}")
-        results_list.append({ "req_id": row['req_id'], "n_exp": n_exp, "query_diff": row['difficulty'], "query_type": row['type'], 
-                         "n_rows_gold": 0, "n_rows_pred": 0, "rows_oid_pred_true": 0, "rows_oid_pred_false": 0, "rows_oid_gold_true": 0, "rows_oid_gold_false": 0,
-                         "n_cols_gold": 0, "n_cols_pred": 0, "cols_pred_true": 0, "cols_pred_false": 0, "cols_gold_true": 0, "cols_gold_false": 0,
-                         "gold_time": 0, "pred_time": 0, 'error_pred': None, "are_equal": False, "is_oid": False,
-                         "cols_pred": 0, "cols_gold": 0, "columns": 1})
+        results_list.append({"req_id": row['req_id'], "n_exp": n_exp, 
+                             "query_diff": row['difficulty'], 
+                             "query_type": row['type'], "n_rows_gold": 0, 
+                             "n_rows_pred": 0, "rows_oid_pred_true": 0, 
+                             "rows_oid_pred_false": 0, "rows_oid_gold_true": 0,
+                             "rows_oid_gold_false": 0, "n_cols_gold": 0, 
+                             "n_cols_pred": 0, "cols_pred_true": 0, 
+                             "cols_pred_false": 0, "cols_gold_true": 0, 
+                             "cols_gold_false": 0, "gold_time": 0, 
+                             "pred_time": 0, 'error_pred': None, 
+                             "are_equal": False, "is_oid": False, 
+                             "cols_pred": 0, "cols_gold": 0, "columns": 1})
         indx += 1    
         continue
     gold_end = time.time()
@@ -626,11 +622,24 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
       cols_gold = 0
     
     indx+=1
-    results_list.append({ "req_id": row['req_id'], "n_exp": n_exp, "query_diff": row['difficulty'], "query_type": row['type'], 
-                         "n_rows_gold": n_rows_gold, "n_rows_pred": n_rows_pred, "rows_oid_pred_true": true_pred_oid, "rows_oid_pred_false": false_pred_oid, "rows_oid_gold_true": true_gold_oid, "rows_oid_gold_false": false_gold_oid,
-                         "n_cols_gold": n_cols_gold, "n_cols_pred": n_cols_pred, "cols_pred_true": true_pred_column, "cols_pred_false": false_pred_column, "cols_gold_true": true_gold_column, "cols_gold_false": false_gold_column,
-                         "gold_time": gold_time, "pred_time": pred_time, 'error_pred': error_pred, "are_equal": are_equal, "is_oid": is_oid, 
-                         "cols_pred": cols_pred, "cols_gold": cols_gold, "columns": cols_pred})
+    results_list.append({"req_id": row['req_id'], "n_exp": n_exp, 
+                         "query_diff": row['difficulty'], 
+                         "query_type": row['type'], "n_rows_gold": n_rows_gold, 
+                         "n_rows_pred": n_rows_pred, 
+                         "rows_oid_pred_true": true_pred_oid, 
+                         "rows_oid_pred_false": false_pred_oid, 
+                         "rows_oid_gold_true": true_gold_oid, 
+                         "rows_oid_gold_false": false_gold_oid,
+                         "n_cols_gold": n_cols_gold, 
+                         "n_cols_pred": n_cols_pred, 
+                         "cols_pred_true": true_pred_column, 
+                         "cols_pred_false": false_pred_column, 
+                         "cols_gold_true": true_gold_column, 
+                         "cols_gold_false": false_gold_column,
+                         "gold_time": gold_time, "pred_time": pred_time, 
+                         "error_pred": error_pred, "are_equal": are_equal, 
+                         "is_oid": is_oid, "cols_pred": cols_pred, 
+                         "cols_gold": cols_gold, "columns": cols_pred})
     
   print(f"\n\n Evaluation {n_exp} Finished, closing connection \n\n", flush=True)
   
@@ -676,7 +685,84 @@ def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame,
   pool.join()
 
 
-def run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, save_path: str, 
+def run_eval_fcn(db_eval, experiment_path, save_path,
+                n_exps=10, num_cpus=10, db_min=2, selfcorr=False):
+    ''' Evaluate the generated SQL queries with the true/gold SQL queries
+    Args:
+      db_eval: pandas dataframe with the true/gold SQL queries
+      experiment_path: path to the predictions in pickle format
+      save_path: path to save the evaluations in pickle format
+      n_exps: number of experiments to evaluate
+      num_cpus: number of CPUs to use for multiprocessing
+      db_min: Timeout limit for the database connection
+    Returns:
+      exec_result: list of dictionaries with the evaluation results
+    '''
+
+    # load the predictions
+    sql_pred_list_temp = []
+    for i in range(n_exps):
+        with open(experiment_path+f"_{i}", "rb") as fp:   # Unpickling
+            if selfcorr:
+              # TODO: fix try except to know if the pickle file is in the new format or the old one
+              # check keys in the pickle file to know if it is the new format or the old one
+              
+              try: 
+                sql_pred_list_temp.append([eval["original_pred_query"] if eval["selfcorr_query"] is None else eval["selfcorr_query"] for eval in pickle.load(fp)])
+              except:
+                sql_pred_list_temp.append([eval["pred_query"] if eval["selfcorr_query"] is None else eval["selfcorr_query"] for eval in pickle.load(fp)])
+                
+            else: sql_pred_list_temp.append([eval["pred_query"] for eval in pickle.load(fp)])
+        
+    print(db_eval.req_id.values)
+    # define function to save the results during the parallel execution
+    exec_result = []
+    def result_callback(result):
+        exec_result.append(result)
+
+    # TODO: change to json format
+    sql_pred_list_temp_gptformat = get_sql_gptformat(sql_pred_list_temp) # extract the SQL queries from the GPT format returned by the model
+    # Run Evaluation
+    run_sqls_parallel(sql_pred_list_temp_gptformat, db_eval, result_callback, num_cpus=num_cpus, min=db_min)
+    print(f"Finished evaluation, proceding to save the results for experiment {experiment_path}", flush=True)
+    
+    with open(os.path.join(os.getcwd(), save_path)+'.pkl', "wb") as fp: pickle.dump(exec_result, fp) # save the evaluations in pickle format
+
+    # check if the number of experiments is the same as the number of evaluations and the number of predictions
+    if (len(exec_result) == n_exps) and (len(exec_result) == len(sql_pred_list_temp)): print("All evaluations finished correctly")
+    elif len(exec_result) == 1: print("Evaluation finished correctly")
+    else: raise ValueError(f'Error in the number of experiments: {len(exec_result)} and {len(sql_pred_list_temp)}')
+    
+    exec_result_json = []
+    for n_exp, eval_i in enumerate(exec_result):
+      # change the error message to string and save the results in a json file
+      print([q['req_id'] for q in eval_i])
+      for q_i in eval_i:
+        if q_i["error_pred"] is not None:
+          q_i["error_pred"] = str(q_i["error_pred"])
+
+      # save the evaluation of each experiment in a json
+      if db_min==2:
+        with open(os.path.join(os.getcwd(), save_path)+f'_{n_exp}.json', 'w') as fp:
+          json.dump(eval_i, fp)
+      else:
+        with open(os.path.join(os.getcwd(), save_path)+f'_{n_exp}_{db_min}.json', 'w') as fp:
+          json.dump(eval_i, fp)
+
+      exec_result_json.append({'n_exp': n_exp, 'eval': eval_i} )
+      
+    # save all evaluations in a json file
+    if db_min==2:
+      with open(os.path.join(os.getcwd(), save_path)+'.json', 'w') as fp:
+        json.dump(exec_result_json, fp)
+    else:
+      with open(os.path.join(os.getcwd(), save_path)+f'_{db_min}.json', 'w') as fp:
+        json.dump(exec_result_json, fp)
+
+    return exec_result
+
+
+def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, save_path: str, 
                  model: str, max_tokens: int, format: str, 
                  num_cpus: int = 1, db_min: int = 2, self_corr: bool = False, 
                  rag_pipe: bool = False, direct: bool = False, 

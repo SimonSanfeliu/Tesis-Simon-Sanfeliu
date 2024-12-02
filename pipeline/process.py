@@ -364,7 +364,8 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
         # Simple queries don't need decomposition
         prompt = query_sql_simple.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
         # No usage needed for the simple query. There is no decomposition
         usage = None
