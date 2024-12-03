@@ -683,6 +683,49 @@ def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame,
       pool.apply_async(compare_oids, args=(db_, sql_pred, i, format, min), callback=result_funct, error_callback=error_handler)
   pool.close()
   pool.join()
+  
+  
+def new_run_sqls_parallel(df_: pd.DataFrame, model: str, max_tokens: int, 
+                          format: str, min: int = 2, n_tries: int = 3, 
+                          self_corr: bool = False, rag_pipe: bool = False, 
+                          direct: bool = False, size: int = 0, 
+                          overlap: int = 0, quantity: int = 0, 
+                          result_funct: Callable = None, num_cpus: int = 1, 
+                          exps: int = 5) -> None:
+  """Run the SQL queries in parallel
+  
+  Args:
+    df_ (pandas.Dataframe): Dataframe with the true/gold SQL queries
+    model (str): LLM model to use.
+    max_tokens (int): Maximum output tokens of the LLM.
+    format (str): The format for SQL queries ('singular' or 'var').
+    min (int, optional): Timeout limit for the database connection. Defaults to 2.
+    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3.
+    self_corr (bool, optional): Enable self-correction. Defaults to False.
+    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False.
+    direct (bool, optional): Use direct query generation. Defaults to False.
+    size (int, optional): Chunk size for RAG. Defaults to 0.
+    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0.
+    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0.
+    result_funct (func, optional): Function to save the results during the parallel execution
+    num_cpus (int, optional): Number of CPUs to use for multiprocessing. Defaults to 1
+    exps (int, optional): Number of experiments to do. Defaults to 5
+    
+  Returns:
+    None
+  """
+  pool = mp.Pool(processes=num_cpus)
+  sqls_list = [df_ for e in range(exps)]
+  for i,sql_pred in enumerate(sqls_list):
+      print(f"Running evaluation n°{i}", flush=True)
+      pool.apply_async(new_compare_oids, 
+                       args=(sql_pred, i, model, max_tokens, format, min, 
+                             n_tries, self_corr, rag_pipe, direct, size, 
+                             overlap, quantity), 
+                       callback=result_funct, 
+                       error_callback=error_handler)
+  pool.close()
+  pool.join()
 
 
 def run_eval_fcn(db_eval, experiment_path, save_path,
@@ -720,8 +763,6 @@ def run_eval_fcn(db_eval, experiment_path, save_path,
     def result_callback(result):
         exec_result.append(result)
 
-    # TODO: change to json format
-    sql_pred_list_temp_gptformat = get_sql_gptformat(sql_pred_list_temp) # extract the SQL queries from the GPT format returned by the model
     # Run Evaluation
     run_sqls_parallel(sql_pred_list_temp_gptformat, db_eval, result_callback, num_cpus=num_cpus, min=db_min)
     print(f"Finished evaluation, proceding to save the results for experiment {experiment_path}", flush=True)
@@ -762,86 +803,36 @@ def run_eval_fcn(db_eval, experiment_path, save_path,
     return exec_result
 
 
-def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, save_path: str, 
-                 model: str, max_tokens: int, format: str, 
-                 num_cpus: int = 1, db_min: int = 2, self_corr: bool = False, 
-                 rag_pipe: bool = False, direct: bool = False, 
-                 size: int = 0, overlap: int = 0, 
-                 quantity: int = 0) -> list[dict]:
+def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, model: str, 
+                     max_tokens: int, format: str, num_cpus: int = 1, 
+                     db_min: int = 2, n_tries: int = 3, 
+                     self_corr: bool = False, rag_pipe: bool = False, 
+                     direct: bool = False, size: int = 0, overlap: int = 0, 
+                     quantity: int = 0, exps: int = 5) -> list[dict]:
     """
-    Evaluate the generated SQL queries with the true/gold SQL queries using 
-    `run_sqls_parallel` and `run_pipeline`.
+    Evaluate the generated SQL queries with the true/gold SQL queries.
 
     Args:
-        db_eval (pd.DataFrame): Dataframe with the true/gold SQL queries.
-        experiment_path (str): Path to the predictions in pickle format.
-        save_path (str): Path to save the evaluations in pickle format.
+        db_eval (pd.DataFrame): Dataframe with the true/gold SQL queries
+        experiment_path (str): Path to save the predictions and evaluations in 
+        pickle and JSON format
         model (str): LLM model to use.
         max_tokens (int): Maximum output tokens of the LLM.
         format (str): The format for SQL queries ('singular' or 'var').
         num_cpus (int): Number of CPUs for parallel processing. Defaults to 1.
-        db_min (int): Timeout limit for database connection. Defaults to 2.
-        self_corr (bool): Enable self-correction. Defaults to False.
-        rag_pipe (bool): Use the RAG pipeline. Defaults to False.
-        direct (bool): Use direct query generation. Defaults to False.
-        size (int): Chunk size for RAG. Defaults to 0.
-        overlap (int): Overlap size for RAG chunks. Defaults to 0.
-        quantity (int): Number of similar chunks for RAG. Defaults to 0.
+        db_min (int): Timeout limit for the database connection. Defaults to 2.
+        n_tries (int, optional): Number of times to try excuting the query. Defaults to 3.
+        self_corr (bool, optional): Enable self-correction. Defaults to False.
+        rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False.
+        direct (bool, optional): Use direct query generation. Defaults to False.
+        size (int, optional): Chunk size for RAG. Defaults to 0.
+        overlap (int, optional): Overlap size for RAG chunks. Defaults to 0.
+        quantity (int, optional): Number of similar chunks for RAG. Defaults to 0.
+        exps (int, optional): Number of experiments to do. Defaults to 5
 
     Returns:
         exec_result (list[dict]): List of dictionaries with evaluation results.
     """
-    # Load predictions from pickled files
-    sql_pred_list_temp = []
-    for i in range(len(db_eval)):
-        with open(f"{experiment_path}_{i}", "rb") as fp:
-            sql_pred_list_temp.append(pickle.load(fp))
-
-    # Define the evaluation function to be used with `run_sqls_parallel`
-    def evaluate_queries(predictions, db_row, index, format, min):
-        results = []
-        gold_query = db_row['gold_query']
-        req_id, difficulty, query_type = db_row['req_id'], \
-          db_row['difficulty'], db_row['type']
-        for pred_query in predictions:
-            try:
-                # Evaluate the predicted query
-                pred_result, pred_usage, pred_prompts = run_pipeline(
-                    pred_query, model, max_tokens, size, overlap, quantity, 
-                    format, direct, engine=None, rag_pipe=rag_pipe, 
-                    self_corr=self_corr
-                )
-
-                # Evaluate the gold query
-                gold_result, _, _ = run_pipeline(
-                    gold_query, model, max_tokens, size, overlap, quantity, 
-                    format, direct, engine=None, rag_pipe=rag_pipe, 
-                    self_corr=self_corr
-                )
-
-                # Compare results and store the output
-                results.append({
-                    "req_id": req_id,
-                    "difficulty": difficulty,
-                    "query_type": query_type,
-                    "pred_result": pred_result,
-                    "gold_result": gold_result,
-                    "pred_usage": pred_usage,
-                    "pred_prompts": pred_prompts,
-                })
-            except Exception as e:
-                results.append({
-                    "req_id": req_id,
-                    "difficulty": difficulty,
-                    "query_type": query_type,
-                    "error": str(e),
-                })
-        return results
-
-    # Wrap the function to adapt to `run_sqls_parallel`
-    def parallel_task(sql_preds, db_row, index):
-        return evaluate_queries(sql_preds, db_row, index, format, db_min)
-
     # Callback to collect results
     exec_result = []
     def result_callback(result):
@@ -849,13 +840,17 @@ def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, save_path: str
 
     # Run evaluations in parallel
     print("Starting parallel evaluation using run_sqls_parallel...")
-    run_sqls_parallel(sql_pred_list_temp, db_eval, result_callback, format, 
-                      num_cpus=num_cpus, min=db_min)
+    new_run_sqls_parallel(db_eval, model, max_tokens, format, db_min, n_tries,
+                          self_corr, rag_pipe, direct, size, overlap, quantity,
+                          result_callback, num_cpus, exps)
 
     # Save results
-    with open(f"{save_path}.pkl", "wb") as fp:
+    if not os.path.exists(experiment_path):
+      os.mkdir(experiment_path)
+      
+    with open(f"{experiment_path}.pkl", "wb") as fp:
         pickle.dump(exec_result, fp)
-    with open(f"{save_path}.json", "w") as fp:
+    with open(f"{experiment_path}.json", "w") as fp:
         json.dump(exec_result, fp)
 
     print("Evaluation completed and results saved.")

@@ -494,17 +494,20 @@ def direct_prompts(label: str, ur: str, tables: str) -> str:
     if label == "simple":
         direct_prompt = query_sql_simple.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
     elif label == "medium":
         direct_prompt = query_direct_sql_medium.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
     elif label == "advanced":
         direct_prompt = query_direct_sql_advanced.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
     else:
         raise Exception("No valid label difficulty")
