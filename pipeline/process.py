@@ -9,7 +9,7 @@ import google.generativeai as genai
 import sqlalchemy
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
-from prompts.classification.Classification import diff_class_prompt
+from prompts.classification.Classification import diff_class_prompt_v7, final_instructions_diff_v2
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
@@ -169,32 +169,38 @@ def run_query(specified_format: str, formatted_response: str,
         try: 
             results = pd.read_sql_query(formatted_response, con=engine)
         except Exception as e:
-            print(f"Running SQL exception: {e}")
+            print(f"Running SQL exception in run_query: {e}", flush=True)
     elif specified_format == "python":
         try:
             exec(formatted_response, globals())
             results = pd.read_sql_query(full_query, con=engine)
         except Exception as e:
-           print(f"Running SQL exception: {e}")
+           print(f"Running SQL exception in run_query: {e}", flush=True)
     else:
         e = "No valid format specified"
     
     return results, e
 
 
-def classify(query: str, model: str) -> tuple[str, dict]:
+def classify(query: str, table_schema: str, model: str) -> tuple[str, str, dict]:
     """Function to classify the difficulty of a NL query
 
     Args:
         query (str): NL query
+        table_schema (str): Tables needed for the query
         model (str): LLM to classify the query
         
     Returns:
         label (str): Label of the difficulty level of the query. It can be
         'simple', 'medium' or 'advanced'.
+        prompt (str): Prompt used to classify the query
         usage (dict): LLM API usage
     """
     # Make the difficulty classification prompt
+    diff_class_prompt = diff_class_prompt_v7.format(
+        table_schema = table_schema,
+        final_instructions_diff = final_instructions_diff_v2
+    )
     prompt = diff_class_prompt + \
     f"\nThe request to classify is the following: {query}"
     
@@ -203,7 +209,7 @@ def classify(query: str, model: str) -> tuple[str, dict]:
     labels = ["simple", "medium", "advanced"]
     true_label = [l for l in labels if l in label]
     label = true_label[0]
-    return label, usage
+    return label, prompt, usage
 
 
 def schema_linking(query: str, model: str) -> tuple[str, dict]:

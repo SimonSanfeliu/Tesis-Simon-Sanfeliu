@@ -2,7 +2,7 @@ import sqlalchemy as sa
 import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking_v2, \
-    classify, decomposition_v2, pricing, direct_prompts
+    classify, decomposition_v2, pricing, direct_prompts, astro_context
 from pipeline.ragStep import rag_step
 
 
@@ -44,19 +44,7 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
     
     User request: {query}
     
-    ## Astronomical context:
-    There are two main types of variable objects: those that have persistent 
-    variability and those that have a transient nature. In the case of 
-    persistent variability sources (Periodic or Stochastic), the relevant light 
-    curve magnitude is the corrected magnitude (magpsf_corr). In the case of 
-    transient sources (Transient), the relevant light curve is the uncorrected 
-    magnitude (magpsf). Objects that are transient are considered to be fast 
-    risers if dmd_dt < -0.25 mag per day (in magstats) in any band. Note that 
-    when the user refers to the first detection of a given object, you should 
-    use the firstmjd indexed column (in object). When possible, avoid adding 
-    restrictions on the mjd column in the detection table, try putting them in 
-    the object table first. Note that all the rows in the detection table are 
-    by definition detections, you don't need to ask for additional constraints.
+    {astro_context}
     """
     
     # Initiating RAG
@@ -67,9 +55,7 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
     print(f"Tables needed: {true_tables}")
     
     # Classify the query
-    to_classify = query + f"""\n The following tables are needed to generate 
-    the query: {true_tables}"""
-    label, classify_usage = classify(to_classify, model)
+    label, to_classify, classify_usage = classify(query, true_tables, model)
     print(f"Difficulty: {label}")
     
     # If the direct approach is chosen, do not use the decomposition process
@@ -162,8 +148,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
     tables, schema_usage = schema_linking_v2(query, model)
     
     # Classify the query
-    to_classify = query + f"\n The following tables are needed: {tables}"
-    label, classify_usage = classify(to_classify, model)
+    label, to_classify, classify_usage = classify(query, tables, model)
     
     # If the direct approach is chosen, do not use the decomposition process
     if direct:
