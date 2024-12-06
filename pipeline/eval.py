@@ -1,5 +1,5 @@
 import time, os, pytz
-import datetime as datetime
+from datetime import datetime
 import requests
 import pandas as pd
 import multiprocessing as mp
@@ -700,27 +700,28 @@ def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame,
   
   
 def new_run_sqls_parallel(df_: pd.DataFrame, model: str, max_tokens: int, 
-                          format: str, min: int = 2, n_tries: int = 3, 
-                          self_corr: bool = False, rag_pipe: bool = False, 
-                          direct: bool = False, size: int = 0, 
-                          overlap: int = 0, quantity: int = 0, 
+                          format: str, path: str, min: int = 2, 
+                          n_tries: int = 3, self_corr: bool = False, 
+                          rag_pipe: bool = False, direct: bool = False, 
+                          size: int = 0, overlap: int = 0, quantity: int = 0, 
                           result_funct: Callable = None, num_cpus: int = 1, 
                           exps: int = 5) -> None:
   """Run the SQL queries in parallel
   
   Args:
     df_ (pandas.Dataframe): Dataframe with the true/gold SQL queries
-    model (str): LLM model to use.
-    max_tokens (int): Maximum output tokens of the LLM.
-    format (str): The format for SQL queries ('singular' or 'var').
-    min (int, optional): Timeout limit for the database connection. Defaults to 2.
-    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3.
-    self_corr (bool, optional): Enable self-correction. Defaults to False.
-    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False.
-    direct (bool, optional): Use direct query generation. Defaults to False.
-    size (int, optional): Chunk size for RAG. Defaults to 0.
-    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0.
-    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0.
+    model (str): LLM model to use
+    max_tokens (int): Maximum output tokens of the LLM
+    format (str): The format for SQL queries ('singular' or 'var')
+    path (str): Path to save the usage and prompts
+    min (int, optional): Timeout limit for the database connection. Defaults to 2
+    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3
+    self_corr (bool, optional): Enable self-correction. Defaults to False
+    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False
+    direct (bool, optional): Use direct query generation. Defaults to False
+    size (int, optional): Chunk size for RAG. Defaults to 0
+    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0
+    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0
     result_funct (func, optional): Function to save the results during the parallel execution
     num_cpus (int, optional): Number of CPUs to use for multiprocessing. Defaults to 1
     exps (int, optional): Number of experiments to do. Defaults to 5
@@ -733,7 +734,7 @@ def new_run_sqls_parallel(df_: pd.DataFrame, model: str, max_tokens: int,
   for i,sql_pred in enumerate(sqls_list):
       print(f"Running evaluation n°{i}", flush=True)
       pool.apply_async(new_compare_oids, 
-                       args=(sql_pred, i, model, max_tokens, format, min, 
+                       args=(sql_pred, i, model, max_tokens, format, path, min, 
                              n_tries, self_corr, rag_pipe, direct, size, 
                              overlap, quantity), 
                        callback=result_funct, 
@@ -860,9 +861,9 @@ def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, model: str,
 
     # Run evaluations in parallel
     print("Starting parallel evaluation using run_sqls_parallel...")
-    new_run_sqls_parallel(db_eval, model, max_tokens, format, db_min, n_tries,
-                          self_corr, rag_pipe, direct, size, overlap, quantity,
-                          result_callback, num_cpus, exps)
+    new_run_sqls_parallel(db_eval, model, max_tokens, format, experiment_path, 
+                          db_min, n_tries, self_corr, rag_pipe, direct, size, 
+                          overlap, quantity, result_callback, num_cpus, exps)
       
     with open(f"{experiment_path}/results_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
         pickle.dump(exec_result, fp)
