@@ -1,4 +1,5 @@
-import time, os
+import time, os, pytz
+import datetime as datetime
 import requests
 import pandas as pd
 import multiprocessing as mp
@@ -112,14 +113,14 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format, 
                                                direct)
-        print(table)
+        print(table, flush=True)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
           result, error = run_sql_alerce(table, format, min, n_tries)
           # Check if there was an error. If there was, correct it
           if error is not None:
-            print(f"Raised exception: {error}")
-            print("Start retry with self-correction")
+            print(f"Raised exception: {error}", flush=True)
+            print("Start retry with self-correction", flush=True)
                 
             tab_schema = prompts["Classification"].split("\n The following \
               tables are needed to generate the query: ")[0]
@@ -134,8 +135,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                 error=str(error))
               new, new_usage = api_call(model, max_tokens, corr_prompt)
               new = format_response(format, new)
-              print("Corrected query:")
-              print(new)
+              print("Corrected query:", flush=True)
+              print(new, flush=True)
               total_usage["Self-correction"] = new_usage
               total_usage = pricing(total_usage, model)
               prompts["Self-correction"] = corr_prompt
@@ -151,8 +152,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                 sql_pred=table, 
                 error=str(error))
               new, new_usage = api_call(model, max_tokens, corr_prompt)
-              print("Corrected query:")
-              print(new)
+              print("Corrected query:", flush=True)
+              print(new, flush=True)
               new = format_response(format, new)
               total_usage["Self-correction"] = new_usage
               total_usage = pricing(total_usage, model)
@@ -175,8 +176,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         if self_corr:
           # Check if there was an error. If there was, correct it
           result, error = run_sql_alerce(table, format, min, n_tries)
-          print(f"Raised exception: {error}")
-          print("Start retry with self-correction")
+          print(f"Raised exception: {error}", flush=True)
+          print("Start retry with self-correction", flush=True)
                 
           tab_schema = prompts["Classification"].split("\n The following \
             tables are needed to generate the query: ")[0]
@@ -191,8 +192,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
               error=str(error))
             new, new_usage = api_call(model, max_tokens, corr_prompt)
             new = format_response(format, new)
-            print("Corrected query:")
-            print(new)
+            print("Corrected query:", flush=True)
+            print(new, flush=True)
             total_usage["Self-correction"] = new_usage
             total_usage = pricing(total_usage, model)
             prompts["Self-correction"] = corr_prompt
@@ -208,8 +209,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
               sql_pred=table, 
               error=str(error))
             new, new_usage = api_call(model, max_tokens, corr_prompt)
-            print("Corrected query:")
-            print(new)
+            print("Corrected query:", flush=True)
+            print(new, flush=True)
             new = format_response(format, new)
             total_usage["Self-correction"] = new_usage
             total_usage = pricing(total_usage, model)
@@ -418,7 +419,7 @@ def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int,
 
 
 def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str, 
-                     max_tokens: int, format: str, min: int = 2, 
+                     max_tokens: int, format: str, path: str, min: int = 2, 
                      n_tries: int = 3, self_corr: bool = False, 
                      rag_pipe: bool = False, direct: bool = False, 
                      size: int = 0, overlap: int = 0, 
@@ -428,25 +429,29 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
   Args:
     df_ (pandas.DataFrame): Dataframe with the true/gold SQL queries
     n_exp (int): Number of the experiment, used to save the results
-    model (str): LLM model to use.
+    model (str): LLM model to use
     max_tokens (int): Maximum output tokens of the LLM.
-    format (str): The format for SQL queries ('singular' or 'var').
-    min (int, optional): Timeout limit for the database connection. Defaults to 2.
-    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3.
-    self_corr (bool, optional): Enable self-correction. Defaults to False.
-    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False.
-    direct (bool, optional): Use direct query generation. Defaults to False.
-    size (int, optional): Chunk size for RAG. Defaults to 0.
-    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0.
-    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0.
+    format (str): The format for SQL queries ('singular' or 'var')
+    path (str): Path to save the usage and prompts
+    min (int, optional): Timeout limit for the database connection. Defaults to 2
+    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3
+    self_corr (bool, optional): Enable self-correction. Defaults to False
+    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False
+    direct (bool, optional): Use direct query generation. Defaults to False
+    size (int, optional): Chunk size for RAG. Defaults to 0
+    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0
+    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0
     
   Returns:
     results_list (list[dict]): List of dictionaries with the evaluation results
   """
-
+  # Path to save files
+  if not os.path.exists(path):
+    os.makedirs(path)
+  
+  # iterate over the rows of the dataset
   results_list = []
   indx = 0
-  # iterate over the rows of the dataset
   for _, row in df_.iterrows():
 
     query_pred = None
@@ -456,13 +461,22 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
 
     # Get output of the predicted SQL query
     pred_start = time.time()
-    query_pred, error_pred, _, _ = run_pipeline(row["request"], model, 
-                                                max_tokens, size, overlap, 
-                                                quantity, format, direct, 
-                                                rag_pipe, self_corr, min, 
-                                                n_tries)    
+    query_pred, error_pred, usage, prompts = run_pipeline(str(row["request"]), 
+                                                          model, max_tokens, 
+                                                          size, overlap, 
+                                                          quantity, format, 
+                                                          direct, rag_pipe, 
+                                                          self_corr, min, 
+                                                          n_tries)    
     pred_end = time.time()
     pred_time = pred_end - pred_start
+    
+    # Saving the usage and prompts
+    current_time = datetime.now(pytz.timezone('Chile/Continental'))
+    with open(f"{path}/usage_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
+        pickle.dump(usage, fp)
+    with open(f"{path}/prompts_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
+        json.dump(prompts, fp)
 
     # Get output of the expected SQL query
     gold_query_test = str(row['gold_query'])
@@ -475,7 +489,7 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
       query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, 
                                               n_tries=n_tries)
       if error_gold is not None:
-        print(f"Gold query {row['req_id']} could not be executed for experiment {n_exp}")
+        print(f"Gold query {row['req_id']} could not be executed for experiment {n_exp}", flush=True)
         results_list.append({"req_id": row['req_id'], "n_exp": n_exp, 
                              "query_diff": row['difficulty'], 
                              "query_type": row['type'], "n_rows_gold": 0, 
@@ -833,6 +847,12 @@ def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, model: str,
     Returns:
         exec_result (list[dict]): List of dictionaries with evaluation results.
     """
+    # Path to save files
+    current_time = datetime.now(pytz.timezone('Chile/Continental'))
+    experiment_path += f"/{current_time.strftime('%Y-%m-%d')}"
+    if not os.path.exists(experiment_path):
+      os.makedirs(experiment_path)
+    
     # Callback to collect results
     exec_result = []
     def result_callback(result):
@@ -843,14 +863,10 @@ def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, model: str,
     new_run_sqls_parallel(db_eval, model, max_tokens, format, db_min, n_tries,
                           self_corr, rag_pipe, direct, size, overlap, quantity,
                           result_callback, num_cpus, exps)
-
-    # Save results
-    if not os.path.exists(experiment_path):
-      os.mkdir(experiment_path)
       
-    with open(f"{experiment_path}.pkl", "wb") as fp:
+    with open(f"{experiment_path}/results_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
         pickle.dump(exec_result, fp)
-    with open(f"{experiment_path}.json", "w") as fp:
+    with open(f"{experiment_path}/results_{current_time.strftime('%H:%M:%S')}.json", "w") as fp:
         json.dump(exec_result, fp)
 
     print("Evaluation completed and results saved.")
