@@ -65,7 +65,8 @@ def run_sql_alerce(sql: str, format: str, min: int = 2,
       error = None
       with engine.begin() as conn:
         try:
-            query = run_query(format, sql, conn)
+            query, e = run_query(format, sql, conn)
+            error = e
             break
         except Exception as e:
           error = e
@@ -116,6 +117,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         print(table, flush=True)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
+          # TODO: Agregar caso borde de queries simples cuando el formato es python
           result, error = run_sql_alerce(table, format, min, n_tries)
           # Check if there was an error. If there was, correct it
           if error is not None:
@@ -473,9 +475,9 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
     
     # Saving the usage and prompts
     current_time = datetime.now(pytz.timezone('Chile/Continental'))
-    with open(f"{path}/usage_{current_time.strftime('%H-%M-%S')}.pkl", "wb") as fp:
+    with open(f"{path}/usage_req_{row['req_id']}_{current_time.strftime('%H-%M-%S')}.pkl", "wb") as fp:
       pickle.dump(usage, fp)
-    with open(f"{path}/prompts_{current_time.strftime('%H-%M-%S')}.pkl", "w") as fp:
+    with open(f"{path}/prompts_req_{row['req_id']}_{current_time.strftime('%H-%M-%S')}.pkl", "w") as fp:
       json.dump(prompts, fp)
 
     # Get output of the expected SQL query

@@ -7,6 +7,7 @@ import openai
 import anthropic
 import google.generativeai as genai
 import sqlalchemy
+import sqlparse
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt_v7, final_instructions_diff_v2
@@ -128,8 +129,8 @@ def format_response(specified_format: str, response: str) -> str:
 
     Args:
         specified_format (str): The type of formatting to use. It can be 
-        'singular' for a singular query string or 'var' for the 
-        decomposition in variables
+        'sql' for a singular query string or 'python' for the 
+        decomposition in Python variables
         response (str): The response from the LLM
         
     Returns:
@@ -143,6 +144,9 @@ def format_response(specified_format: str, response: str) -> str:
         .replace("```", "").replace("```python", "")
     else:
         raise Exception("No valid format specified")
+    
+    # Make sure the formatted response is in the appropiate string format
+    formatted_response = sqlparse.format(formatted_response, reindent=True, keyword_case="upper")
     
     return formatted_response
 
