@@ -164,22 +164,24 @@ def run_query(specified_format: str, formatted_response: str,
         query
     """
     results = None
-    e = None
+    error = ""
     if specified_format == "sql":
         try: 
             results = pd.read_sql_query(formatted_response, con=engine)
         except Exception as e:
+            error = e
             print(f"Running SQL exception in run_query: {e}", flush=True)
     elif specified_format == "python":
         try:
             exec(formatted_response, globals())
             results = pd.read_sql_query(full_query, con=engine)
         except Exception as e:
-           print(f"Running SQL exception in run_query: {e}", flush=True)
+            error = e
+            print(f"Running SQL exception in run_query: {e}", flush=True)
     else:
-        e = "No valid format specified"
+        error = "No valid format specified"
     
-    return results, e
+    return results, error
 
 
 def classify(query: str, table_schema: str, model: str) -> tuple[str, str, dict]:
@@ -287,7 +289,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
                 request = ur_w_tables
         )
         # No usage needed for the simple query. There is no decomposition
-        usage = None
+        usage = {"input_tokens": 0, "output_tokens": 0}
         
     elif label == "medium":
         # Getting the decomposition plan
@@ -374,8 +376,8 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             astro_context = astro_context
         )
         # No usage needed for the simple query. There is no decomposition
-        usage = None
-        decomp_plan = None
+        usage = {"input_tokens": 0, "output_tokens": 0}
+        decomp_plan = ""
         
     elif label == "medium":
         # Getting the decomposition plan

@@ -461,7 +461,7 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
 
     # Get output of the predicted SQL query
     pred_start = time.time()
-    query_pred, error_pred, usage, prompts = run_pipeline(str(row["request"]), 
+    query_pred, error_pred, usage, prompts = run_pipeline(row["request"], 
                                                           model, max_tokens, 
                                                           size, overlap, 
                                                           quantity, format, 
@@ -473,20 +473,20 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
     
     # Saving the usage and prompts
     current_time = datetime.now(pytz.timezone('Chile/Continental'))
-    with open(f"{path}/usage_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
-        pickle.dump(usage, fp)
-    with open(f"{path}/prompts_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
-        json.dump(prompts, fp)
+    with open(f"{path}/usage_{current_time.strftime('%H-%M-%S')}.pkl", "wb") as fp:
+      pickle.dump(usage, fp)
+    with open(f"{path}/prompts_{current_time.strftime('%H-%M-%S')}.pkl", "w") as fp:
+      json.dump(prompts, fp)
 
     # Get output of the expected SQL query
     gold_query_test = str(row['gold_query'])
     gold_start = time.time() # start time gold_query
-    query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, 
+    query_gold, error_gold = run_sql_alerce(gold_query_test, "sql", min=min, 
                                             n_tries=n_tries)
     
     # Check if the gold query was executed correctly, if not try again
     if error_gold is not None:
-      query_gold, error_gold = run_sql_alerce(gold_query_test, format, min=min, 
+      query_gold, error_gold = run_sql_alerce(gold_query_test, "sql", min=min, 
                                               n_tries=n_tries)
       if error_gold is not None:
         print(f"Gold query {row['req_id']} could not be executed for experiment {n_exp}", flush=True)
@@ -660,6 +660,16 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
   return results_list
 
 
+def safe_new_compare_oids(*args):
+    try:
+        # Call the actual function
+        return new_compare_oids(*args)
+    except Exception as e:
+        # Serialize error details for safe return
+        arg_dict = {*args}
+        return {"error": str(e), "args": arg_dict}
+
+
 def error_handler(e: str) -> None:
   """Error handler for the parallel execution
   
@@ -733,7 +743,7 @@ def new_run_sqls_parallel(df_: pd.DataFrame, model: str, max_tokens: int,
   sqls_list = [df_ for e in range(exps)]
   for i,sql_pred in enumerate(sqls_list):
       print(f"Running evaluation n°{i}", flush=True)
-      pool.apply_async(new_compare_oids, 
+      pool.apply_async(safe_new_compare_oids, 
                        args=(sql_pred, i, model, max_tokens, format, path, min, 
                              n_tries, self_corr, rag_pipe, direct, size, 
                              overlap, quantity), 
@@ -865,9 +875,9 @@ def new_run_eval_fcn(db_eval: pd.DataFrame, experiment_path: str, model: str,
                           db_min, n_tries, self_corr, rag_pipe, direct, size, 
                           overlap, quantity, result_callback, num_cpus, exps)
       
-    with open(f"{experiment_path}/results_{current_time.strftime('%H:%M:%S')}.pkl", "wb") as fp:
+    with open(f"{experiment_path}/results_{current_time.strftime('%H-%M-%S')}.pkl", "wb") as fp:
         pickle.dump(exec_result, fp)
-    with open(f"{experiment_path}/results_{current_time.strftime('%H:%M:%S')}.json", "w") as fp:
+    with open(f"{experiment_path}/results_{current_time.strftime('%H-%M-%S')}.json", "w") as fp:
         json.dump(exec_result, fp)
 
     print("Evaluation completed and results saved.")

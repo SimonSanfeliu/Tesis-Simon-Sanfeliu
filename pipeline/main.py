@@ -52,11 +52,11 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
                                       quantity)
     content = rag_info.split("[")[1].split("]")[0]
     true_tables = f"[{content}]"
-    print(f"Tables needed: {true_tables}")
+    print(f"Tables needed: {true_tables}", flush=True)
     
     # Classify the query
     label, to_classify, classify_usage = classify(query, true_tables, model)
-    print(f"Difficulty: {label}")
+    print(f"Difficulty: {label}", flush=True)
     
     # If the direct approach is chosen, do not use the decomposition process
     if direct:
@@ -68,7 +68,7 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
         
         # Formatting the response
         table = format_response(format, response)
-        print(f"Resulting {format} query: {table}")
+        print(f"Resulting {format} query: {table}", flush=True)
         
         # Obtaining the total usage of the pipeline
         total_usage = {
@@ -98,10 +98,15 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
+    print(f"Raw response: {response}", flush=True)
+    
+    # Catching borderline cases
+    if format == "python" and label == "simple":
+        format = "sql"
     
     # Formatting the response
     table = format_response(format, response)
-    print(f"Resulting {format} query: {table}")
+    print(f"Resulting {format} query: {table}", flush=True)
     
     # Obtaining the total usage of the pipeline
     total_usage = {
@@ -160,7 +165,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         
         # Formatting the response
         table = format_response(format, response)
-        print(f"Resulting {format} query: {table}")
+        print(f"Resulting {format} query: {table}", flush=True)
         
         # Obtaining the total usage of the pipeline
         total_usage = {
@@ -190,6 +195,11 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
     
     # Obtaining the SQL query
     table, usage = api_call(model, max_tokens, prompt)
+    print(f"Raw response: {response}", flush=True)
+    
+    # Catching borderline cases
+    if format == "python" and label == "simple":
+        format = "sql"
     
     # Formatting the response
     table = format_response(format, table)
