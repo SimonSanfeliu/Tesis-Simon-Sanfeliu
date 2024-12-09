@@ -79,7 +79,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
                  overlap: int, quantity: int, format: int, 
                  direct: bool = False, rag_pipe: bool = True, 
                  self_corr: bool = True, min: int = 2, 
-                 n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict]:
+                 n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict, str]:
     """Function to run the entire pipeline. This pipeline could be the 
        original one or the new one. Here the self-correction is applied.
 
@@ -108,6 +108,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         total_usage (dict): API usage after the whole process
         prompts (dict): Dictonary with the prompts used in every step of the 
         pipeline
+        table (str): Generated query
     """
     # Check if the new pipeline is being used
     if rag_pipe:
@@ -225,7 +226,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         else:
           result, error = run_sql_alerce(table, format, min, n_tries)
             
-    return result, error, total_usage, prompts
+    return result, error, total_usage, prompts, table
 
 
 def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int, 

@@ -1,0 +1,2361 @@
+exp,request,model,format,rag,genQuery,goldQuery,results,resultsCols,resultsRows,resultGold,resultGoldCols,resultGoldRows
+41,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Retrieve object identifiers, probabilities, and light curves for specified conditions
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+42,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine all steps to get the desired result
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+43,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine all steps to get the desired result
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+",,,,"             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+44,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final query combining all steps
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+45,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine all steps to get the desired result
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+46,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"
+SELECT o.oid,
+       p.probability,
+       d.magpsf,
+       d.sigmapsf
+FROM OBJECT o
+WHERE o.oid IN
+    (SELECT DISTINCT oid
+     FROM probability
+     WHERE classifier_name = 'stamp_classifier'
+       AND class_name = 'SN'
+       AND ranking = 1)
+  AND o.firstmjd BETWEEN 60250 AND 60252
+  AND o.oid IN
+    (SELECT oid
+     FROM magstat
+     WHERE dmdt_first < -0.25)","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+",,,,"             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+47,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine probabilities and detections for selected oids
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name='stamp_classifier'
+        AND probability.class_name='SN'
+        AND probability.ranking=1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60190.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+48,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine all steps to get the desired result
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+49,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Retrieve object identifiers, probabilities in the stamp classifier, and light curves for objects meeting all specified conditions
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
+50,"Get the object identifiers, probabilities in the stamp classifier and light curves (only detections) for objects whose highest probability in the stamp classifier is obtained for class SN, that had their first detection in the first 2 days of september, and that qualify as fast risers.",gpt-4o,sql,True,"-- Final Query: Combine all steps to get the desired result
+
+SELECT sq.oid,
+       sq.probability,
+       sq.candid,
+       sq.fid,
+       sq.mjd,
+       magstat.fid AS magstat_fid,
+       magstat.dmdt_first
+FROM
+  (SELECT detection.oid,
+          detection.candid,
+          detection.fid,
+          detection.mjd,
+          obj_oids.probability
+   FROM
+     (SELECT object.oid,
+             probability.probability
+      FROM OBJECT
+      INNER JOIN probability ON object.oid = probability.oid
+      WHERE probability.classifier_name = 'stamp_classifier'
+        AND probability.class_name = 'SN'
+        AND probability.ranking = 1
+        AND object.firstmjd > 60188.0
+        AND object.firstmjd < 60189.0) AS obj_oids
+   INNER JOIN detection ON detection.oid = obj_oids.oid) AS sq
+INNER JOIN magstat ON sq.oid = magstat.oid
+WHERE magstat.dmdt_first < -0.25
+ORDER BY oid","
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abbinqq     0.497010  2434182954115015170    1  60188.182951   
+10  ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+11  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+12  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+13  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+14  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+15  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+16  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+17  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+18  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+19  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+20  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+21  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+22  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+23  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+24  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+25  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+26  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+27  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+28  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+29  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+30  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+31  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+32  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+33  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+34  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+35  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+36  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+37  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+38  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+39  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+40  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+41  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+42  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             1   -0.529858  
+10            2   -0.415153  
+11            2   -0.443484  
+12            1   -0.580608  
+13            1   -0.970855  
+14            2   -0.522742  
+15            1   -0.901711  
+16            1   -0.696760  
+17            1   -0.363331  
+18            1   -0.542452  
+19            1   -0.414204  
+20            1   -0.426276  
+21            1   -0.363061  
+22            2   -0.253318  
+23            2   -0.471683  
+24            2   -0.389240  
+25            2   -0.539711  
+26            1   -1.214308  
+27            1   -0.456345  
+28            1   -0.795624  
+29            1   -0.389963  
+30            1   -0.554422  
+31            1   -0.672678  
+32            2   -0.514062  
+33            1   -0.330905  
+34            1   -0.894516  
+35            2   -0.714582  
+36            2   -0.452335  
+37            2   -0.469563  
+38            2   -0.268780  
+39            2   -0.348651  
+40            2   -0.719351  
+41            2   -0.973436  
+42            2   -0.334129  ",['oid' 'probability' 'candid' 'fid' 'mjd' 'magstat_fid' 'dmdt_first'],"['ZTF18aaiaclp' 'ZTF18aakjgzj' 'ZTF18aaleydm' 'ZTF18aamxief'
+ 'ZTF18aanglcr' 'ZTF18aaouvke' 'ZTF18aaqsuyn' 'ZTF18aattenu'
+ 'ZTF18aaxkcvg' 'ZTF18abbinqq' 'ZTF18abgaubg' 'ZTF18abglnwb'
+ 'ZTF18abhwgok' 'ZTF18ablaynw' 'ZTF18ableqag' 'ZTF18acdasef'
+ 'ZTF18acxanzv' 'ZTF19aamctar' 'ZTF19aaqjtmu' 'ZTF19aaxcivg'
+ 'ZTF19abvvndq' 'ZTF19acpkrqy' 'ZTF20abkqomr' 'ZTF20abkrdwi'
+ 'ZTF20achfwjr' 'ZTF20adimwph' 'ZTF21abevufp' 'ZTF22aaqqlbm'
+ 'ZTF22aatmbdd' 'ZTF23abasyxe' 'ZTF23abatcyd' 'ZTF23abatdoy'
+ 'ZTF23abatgxx' 'ZTF23abatlea' 'ZTF23abatmhd' 'ZTF23abatokz'
+ 'ZTF23abatqpu' 'ZTF23abatqpw' 'ZTF23abatriq' 'ZTF23abatwjf'
+ 'ZTF23abatxuz' 'ZTF23abaudpp' 'ZTF23abaudrd']"
