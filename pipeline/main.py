@@ -194,7 +194,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
                                                          format)
     
     # Obtaining the SQL query
-    table, usage = api_call(model, max_tokens, prompt)
+    response, usage = api_call(model, max_tokens, prompt)
     print(f"Raw response: {response}", flush=True)
     
     # Catching borderline cases
@@ -202,7 +202,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         format = "sql"
     
     # Formatting the response
-    table = format_response(format, table)
+    table = format_response(format, response)
     
     # Obtaining the total usage of the pipeline
     total_usage = {
