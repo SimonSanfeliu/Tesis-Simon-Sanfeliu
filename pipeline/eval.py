@@ -112,7 +112,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     """
     # Check if the new pipeline is being used
     if rag_pipe:
-        table, total_usage, prompts = pipeline(query, model, max_tokens, size, 
+        table, total_usage, prompts, tables = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format, 
                                                direct)
         print(table, flush=True)
@@ -124,15 +124,12 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
           if error is not None:
             print(f"Raised exception: {error}", flush=True)
             print("Start retry with self-correction", flush=True)
-                
-            tab_schema = prompts["Classification"].split("\n The following \
-              tables are needed to generate the query: ")[0]
             
             # Correct it in the appropiate format
             if format == "sql":
               corr_prompt = prompt_self_correction_v2(
                 gen_task=general_context_selfcorr_v1, 
-                tab_schema=tab_schema, 
+                tab_schema=tables, 
                 req=query, 
                 sql_pred=table, 
                 error=str(error))
@@ -150,7 +147,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
             else:
               corr_prompt = prompt_self_correction_v2(
                 gen_task=general_context_selfcorr_v1_python, 
-                tab_schema=tab_schema, 
+                tab_schema=tables, 
                 req=query, 
                 sql_pred=table, 
                 error=str(error))
@@ -171,7 +168,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
 
     # Using the recreated pipeline
     else:
-        table, total_usage, prompts = recreated_pipeline(query, model, 
+        table, total_usage, prompts, tables = recreated_pipeline(query, model, 
                                                          max_tokens, format, 
                                                          direct)
         print(table)
@@ -181,15 +178,12 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
           result, error = run_sql_alerce(table, format, min, n_tries)
           print(f"Raised exception: {error}", flush=True)
           print("Start retry with self-correction", flush=True)
-                
-          tab_schema = prompts["Classification"].split("\n The following \
-            tables are needed to generate the query: ")[0]
           
           # Correct it in the appropiate format      
           if format == "sql":
             corr_prompt = prompt_self_correction_v2(
               gen_task=general_context_selfcorr_v1, 
-              tab_schema=tab_schema, 
+              tab_schema=tables, 
               req=query, 
               sql_pred=table, 
               error=str(error))
@@ -207,7 +201,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
           else:
             corr_prompt = prompt_self_correction_v2(
               gen_task=general_context_selfcorr_v1_python, 
-              tab_schema=tab_schema, 
+              tab_schema=tables, 
               req=query, 
               sql_pred=table, 
               error=str(error))
