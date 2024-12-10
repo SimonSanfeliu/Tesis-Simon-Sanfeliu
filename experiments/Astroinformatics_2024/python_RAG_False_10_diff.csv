@@ -1,6 +1,6 @@
 exp,request,model,format,rag,genQuery,goldQuery,results,resultsCols,resultsRows,error,usage,resultGold,resultGoldCols,resultGoldRows
-11,"Return the objects classified as AGN that show variability in the r band, but have no detections or show no variability in the g band. Order the features by their value in ascending order, and the final query by oid.",gpt-4o,python,False,"# Sub-query to select oids of objects classified as AGN
-sub_query_agn_classification = f'''
+11,"Return the objects classified as AGN that show variability in the r band, but have no detections or show no variability in the g band. Order the features by their value in ascending order, and the final query by oid.",gpt-4o,python,False,"# Sub-query to get oids of objects classified as AGN
+sub_query_agn = f'''
 SELECT
     probability.oid
 FROM
@@ -9,53 +9,61 @@ WHERE
     probability.classifier_name='lc_classifier'
     AND probability.class_name='AGN'
     AND probability.ranking=1
-''' # Sub-query to identify objects that show variability in the r band
-sub_query_variability_r_band = f'''
+''' # Sub-query to get oids of objects showing variability in the r band
+sub_query_variability_r = f'''
 SELECT
     feature.oid
 FROM
     feature
-    INNER JOIN ({sub_query_agn_classification}) AS agn_oids
-    ON feature.oid = agn_oids.oid
 WHERE
     feature.name='delta_mag_fid'
     AND feature.fid=2
     AND feature.value > 0  -- Assuming a positive value indicates variability
-''' # Sub-query to find objects with no detections or no variability in the g band
-sub_query_no_variability_g_band = f'''
+''' # Sub-query to get oids of objects with no variability in the g band
+sub_query_no_variability_g = f'''
 SELECT
-    magstat.oid
+    feature.oid
 FROM
-    magstat
+    feature
 WHERE
-    magstat.fid=1
-    AND magstat.dmdt_first IS NULL  -- Assuming NULL indicates no detections or variability
-''' # Combine sub-queries with INTERSECT and EXCEPT
+    feature.name='delta_mag_fid'
+    AND feature.fid=1
+    AND feature.value <= 0  -- Assuming a non-positive value indicates no variability
+''' # Sub-query to get oids of objects with no detections in the g band
+sub_query_no_detections_g = f'''
+SELECT
+    object.oid
+FROM
+    object
+WHERE
+    object.ndet = 0  -- Assuming ndet=0 indicates no detections
+''' # Combine conditions for variability in r band and no variability or detections in g band
 sub_query_combined = f'''
 SELECT
     oid
 FROM
-    ({sub_query_variability_r_band}) AS r_band_var
+    ({sub_query_variability_r}) AS var_r
 INTERSECT
 SELECT
     oid
 FROM
-    ({sub_query_agn_classification}) AS agn_class
-EXCEPT
+    ({sub_query_no_variability_g}) AS no_var_g
+UNION
 SELECT
     oid
 FROM
-    ({sub_query_no_variability_g_band}) AS no_g_band_var
-''' # Final query to retrieve and order features
+    ({sub_query_no_detections_g}) AS no_det_g
+''' # Final query construction
 full_query = f'''
 SELECT
-    feature.*
+    object.*
 FROM
-    feature
-    INNER JOIN ({sub_query_combined}) AS filtered_oids
-    ON feature.oid = filtered_oids.oid
+    object
+WHERE
+    object.oid IN ({sub_query_agn})
+    AND object.oid IN ({sub_query_combined})
 ORDER BY
-    feature.value ASC, feature.oid
+    object.oid
 '''","
 SELECT
   *
@@ -172,10 +180,21 @@ ORDER BY oid
 
 [SQL: 
 SELECT
-    feature.*
+    object.*
 FROM
-    feature
-    INNER JOIN (
+    object
+WHERE
+    object.oid IN (
+SELECT
+    probability.oid
+FROM
+    probability
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='AGN'
+    AND probability.ranking=1
+)
+    AND object.oid IN (
 SELECT
     oid
 FROM
@@ -184,55 +203,42 @@ SELECT
     feature.oid
 FROM
     feature
-    INNER JOIN (
-SELECT
-    probability.oid
-FROM
-    probability
-WHERE
-    probability.classifier_name='lc_classifier'
-    AND probability.class_name='AGN'
-    AND probability.ranking=1
-) AS agn_oids
-    ON feature.oid = agn_oids.oid
 WHERE
     feature.name='delta_mag_fid'
     AND feature.fid=2
     AND feature.value > 0  -- Assuming a positive value indicates variability
-) AS r_band_var
+) AS var_r
 INTERSECT
 SELECT
     oid
 FROM
     (
 SELECT
-    probability.oid
+    feature.oid
 FROM
-    probability
+    feature
 WHERE
-    probability.classifier_name='lc_classifier'
-    AND probability.class_name='AGN'
-    AND probability.ranking=1
-) AS agn_class
-EXCEPT
+    feature.name='delta_mag_fid'
+    AND feature.fid=1
+    AND feature.value <= 0  -- Assuming a non-positive value indicates no variability
+) AS no_var_g
+UNION
 SELECT
     oid
 FROM
     (
 SELECT
-    magstat.oid
+    object.oid
 FROM
-    magstat
+    object
 WHERE
-    magstat.fid=1
-    AND magstat.dmdt_first IS NULL  -- Assuming NULL indicates no detections or variability
-) AS no_g_band_var
-) AS filtered_oids
-    ON feature.oid = filtered_oids.oid
+    object.ndet = 0  -- Assuming ndet=0 indicates no detections
+) AS no_det_g
+)
 ORDER BY
-    feature.value ASC, feature.oid
+    object.oid
 ]
-(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11444, 'output_tokens': 10, 'total_tokens': 11454, 'input_cost': 0.02861, 'output_cost': 0.0001, 'total_cost': 0.02871, 'new_total_cost': 0.02871}, 'Classification': {'input_tokens': 433, 'output_tokens': 3, 'total_tokens': 436, 'input_cost': 0.0010825, 'output_cost': 3e-05, 'total_cost': 0.0011125, 'new_total_cost': 0.0011125}, 'Decompostion': {'input_tokens': 4175, 'output_tokens': 603, 'total_tokens': 4778, 'input_cost': 0.0104375, 'output_cost': 0.00603, 'total_cost': 0.0164675, 'new_total_cost': 0.0164675}, 'Query generation': {'input_tokens': 1924, 'output_tokens': 398, 'total_tokens': 2322, 'input_cost': 0.00481, 'output_cost': 0.00398, 'total_cost': 0.00879, 'new_total_cost': 0.00879}, 'Self-correction': {'input_tokens': 4211, 'output_tokens': 360, 'total_tokens': 4571, 'input_cost': 0.0105275, 'output_cost': 0.0036, 'total_cost': 0.014127500000000001}}","             oid     value       name                             version  fid
+(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11444, 'output_tokens': 7, 'total_tokens': 11451, 'input_cost': 0.02861, 'output_cost': 7e-05, 'total_cost': 0.02868, 'new_total_cost': 0.02868}, 'Classification': {'input_tokens': 430, 'output_tokens': 3, 'total_tokens': 433, 'input_cost': 0.001075, 'output_cost': 3e-05, 'total_cost': 0.001105, 'new_total_cost': 0.001105}, 'Decompostion': {'input_tokens': 4152, 'output_tokens': 695, 'total_tokens': 4847, 'input_cost': 0.01038, 'output_cost': 0.00695, 'total_cost': 0.017329999999999998, 'new_total_cost': 0.017329999999999998}, 'Query generation': {'input_tokens': 2013, 'output_tokens': 424, 'total_tokens': 2437, 'input_cost': 0.0050325, 'output_cost': 0.00424, 'total_cost': 0.0092725, 'new_total_cost': 0.0092725}, 'Self-correction': {'input_tokens': 4234, 'output_tokens': 425, 'total_tokens': 4659, 'input_cost': 0.010585, 'output_cost': 0.00425, 'total_cost': 0.014835000000000001}}","             oid     value       name                             version  fid
 0   ZTF18aazyweo -0.001111  ExcessVar                         23.12.26a85    1
 1   ZTF18aazyweo  0.000713  ExcessVar               lc_classifier_1.2.1-P    2
 2   ZTF18abcobxs -0.001127  ExcessVar  lc_classifier_1.2.1-P-transitional    1
@@ -296,105 +302,75 @@ ORDER BY
  'ZTF19adcfvxy' 'ZTF20aahuxhq' 'ZTF20aahuxhq' 'ZTF20aazijet'
  'ZTF20aazijet' 'ZTF20aazpukx' 'ZTF20aazpukx' 'ZTF20abntycb'
  'ZTF20abntycb' 'ZTF20aclgjrq' 'ZTF20aclgjrq']"
-12,"Get all the objects classified as AGN with a probability larger than 0.6, with light curves covering at least one year that have at least 20 detections at least in one band, and select those that show variations larger than 1 magnitude in the g band and larger than 0.5 in the r band. The magnitudes need to be the corrected ones. Return their oid, the value, name, version and filter id from the features, mean coordinates, number of detections, maximum and minimum magnitudes, the variations in bands as the difference between the maximum and minimum magnitudes aliasing the column as 'delta_mag'. For the filter id columns, use the alias '[table_name]_fid' using the table name as the alias.",gpt-4o,python,False,"# Step 2: Sub-query to filter objects classified as AGN with a probability greater than 0.6
+12,"Get all the objects classified as AGN with a probability larger than 0.6, with light curves covering at least one year that have at least 20 detections at least in one band, and select those that show variations larger than 1 magnitude in the g band and larger than 0.5 in the r band. The magnitudes need to be the corrected ones. Return their oid, the value, name, version and filter id from the features, mean coordinates, number of detections, maximum and minimum magnitudes, the variations in bands as the difference between the maximum and minimum magnitudes aliasing the column as 'delta_mag'. For the filter id columns, use the alias '[table_name]_fid' using the table name as the alias.",gpt-4o,python,False,"# Step 2: Sub-query to filter objects classified as AGN with a probability > 0.6
 sub_query_probability = f'''
-SELECT
-    oid
-FROM
-    probability
-WHERE
-    classifier_name='lc_classifier'
-    AND class_name='AGN'
-    AND probability > 0.6
-    AND ranking=1
+SELECT DISTINCT oid
+FROM probability
+WHERE classifier_name='lc_classifier'
+  AND class_name='AGN'
+  AND probability > 0.6
+  AND ranking=1
 ''' # Step 3: Sub-query to filter objects with light curves covering at least one year
 sub_query_light_curve_duration = f'''
-SELECT
-    oid
-FROM
-    object
-WHERE
-    (lastmjd - firstmjd) >= 365
-''' # Step 4: Sub-query to filter objects with at least 20 detections in one band
+SELECT oid
+FROM object
+WHERE (lastmjd - firstmjd) >= 365
+''' # Step 4: Sub-query to filter objects with at least 20 detections in at least one band
 sub_query_detection_count = f'''
-SELECT
-    oid
-FROM
-    object
-WHERE
-    ndet >= 20
-''' # Step 5: Sub-query for magnitude variation in the g band
-sub_query_g_band_variation = f'''
-SELECT
-    oid
-FROM
-    feature
-WHERE
-    name='delta_mag_fid'
-    AND value > 1
-    AND fid=1
-''' # Step 5: Sub-query for magnitude variation in the r band
-sub_query_r_band_variation = f'''
-SELECT
-    oid
-FROM
-    feature
-WHERE
-    name='delta_mag_fid'
-    AND value > 0.5
-    AND fid=2
-''' # Step 6: Intersect OIDs from all sub-queries
-sub_query_intersect = f'''
-SELECT
-    oid
-FROM
-    ({sub_query_probability}) AS prob
+SELECT oid
+FROM object
+WHERE ndet >= 20
+''' # Step 5: Sub-query to filter objects with magnitude variations larger than 1 in the g band
+sub_query_mag_variation_g = f'''
+SELECT oid
+FROM feature
+WHERE name='delta_mag_fid'
+  AND fid=1
+  AND value > 1
+''' # Step 6: Sub-query to filter objects with magnitude variations larger than 0.5 in the r band
+sub_query_mag_variation_r = f'''
+SELECT oid
+FROM feature
+WHERE name='delta_mag_fid'
+  AND fid=2
+  AND value > 0.5
+''' # Step 7: Intersect the results of the subqueries to get the final list of oids
+sub_query_intersection = f'''
+SELECT oid
+FROM ({sub_query_probability}) AS prob
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_light_curve_duration}) AS duration
+SELECT oid
+FROM ({sub_query_light_curve_duration}) AS lc_duration
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_detection_count}) AS detection
+SELECT oid
+FROM ({sub_query_detection_count}) AS det_count
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_g_band_variation}) AS g_variation
+SELECT oid
+FROM ({sub_query_mag_variation_g}) AS mag_var_g
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_r_band_variation}) AS r_variation
-''' # Step 7: Final query to select required columns
+SELECT oid
+FROM ({sub_query_mag_variation_r}) AS mag_var_r
+''' # Step 8: Final query to select required columns
 full_query = f'''
 SELECT
     obj.oid,
-    prob.value,
-    prob.name,
-    prob.version,
-    feat.value AS delta_mag,
+    feat.value,
+    feat.name,
+    feat.version,
+    feat.fid AS feature_fid,
     obj.meanra,
     obj.meandec,
     obj.ndet,
-    mag.max_mag,
-    mag.min_mag,
-    (mag.max_mag - mag.min_mag) AS delta_mag,
-    feat.fid AS feature_fid,
-    mag.fid AS magstat_fid
+    obj.max_mag,
+    obj.min_mag,
+    (obj.max_mag - obj.min_mag) AS delta_mag
 FROM
-    ({sub_query_intersect}) AS filtered_oids
-    INNER JOIN object AS obj ON filtered_oids.oid = obj.oid
-    INNER JOIN probability AS prob ON filtered_oids.oid = prob.oid
-    INNER JOIN feature AS feat ON filtered_oids.oid = feat.oid
-    INNER JOIN magstat AS mag ON filtered_oids.oid = mag.oid
+    ({sub_query_intersection}) AS final_oids
+    INNER JOIN object AS obj ON final_oids.oid = obj.oid
+    INNER JOIN feature AS feat ON final_oids.oid = feat.oid
 WHERE
-    feat.name='delta_mag_fid'
-ORDER BY
-    obj.oid
+    feat.name IN ('delta_mag_fid')
+ORDER BY obj.oid
 '''","
 SELECT
   sq.oid, sq.value, sq.name, sq.fid as feature_fid, sq.version, sq.ndet, sq.meanra, sq.meandec,
@@ -518,115 +494,85 @@ ORDER BY oid
   AND magstat.ndet > 20
   AND magstat.corrected = TRUE
 ORDER BY oid
-",,,,"(psycopg2.errors.UndefinedColumn) column prob.value does not exist
-LINE 4:     prob.value,
-            ^
+",,,,"(psycopg2.errors.UndefinedColumn) column obj.max_mag does not exist
+LINE 11:     obj.max_mag,
+             ^
 
 [SQL: 
 SELECT
     obj.oid,
-    prob.value,
-    prob.name,
-    prob.version,
-    feat.value AS delta_mag,
+    feat.value,
+    feat.name,
+    feat.version,
+    feat.fid AS feature_fid,
     obj.meanra,
     obj.meandec,
     obj.ndet,
-    mag.max_mag,
-    mag.min_mag,
-    (mag.max_mag - mag.min_mag) AS delta_mag,
-    feat.fid AS feature_fid,
-    mag.fid AS magstat_fid
+    obj.max_mag,
+    obj.min_mag,
+    (obj.max_mag - obj.min_mag) AS delta_mag
 FROM
     (
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    probability
-WHERE
-    classifier_name='lc_classifier'
-    AND class_name='AGN'
-    AND probability > 0.6
-    AND ranking=1
+SELECT oid
+FROM (
+SELECT DISTINCT oid
+FROM probability
+WHERE classifier_name='lc_classifier'
+  AND class_name='AGN'
+  AND probability > 0.6
+  AND ranking=1
 ) AS prob
 INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    object
-WHERE
-    (lastmjd - firstmjd) >= 365
-) AS duration
+SELECT oid
+FROM (
+SELECT oid
+FROM object
+WHERE (lastmjd - firstmjd) >= 365
+) AS lc_duration
 INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    object
-WHERE
-    ndet >= 20
-) AS detection
+SELECT oid
+FROM (
+SELECT oid
+FROM object
+WHERE ndet >= 20
+) AS det_count
 INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    feature
-WHERE
-    name='delta_mag_fid'
-    AND value > 1
-    AND fid=1
-) AS g_variation
+SELECT oid
+FROM (
+SELECT oid
+FROM feature
+WHERE name='delta_mag_fid'
+  AND fid=1
+  AND value > 1
+) AS mag_var_g
 INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    feature
+SELECT oid
+FROM (
+SELECT oid
+FROM feature
+WHERE name='delta_mag_fid'
+  AND fid=2
+  AND value > 0.5
+) AS mag_var_r
+) AS final_oids
+    INNER JOIN object AS obj ON final_oids.oid = obj.oid
+    INNER JOIN feature AS feat ON final_oids.oid = feat.oid
 WHERE
-    name='delta_mag_fid'
-    AND value > 0.5
-    AND fid=2
-) AS r_variation
-) AS filtered_oids
-    INNER JOIN object AS obj ON filtered_oids.oid = obj.oid
-    INNER JOIN probability AS prob ON filtered_oids.oid = prob.oid
-    INNER JOIN feature AS feat ON filtered_oids.oid = feat.oid
-    INNER JOIN magstat AS mag ON filtered_oids.oid = mag.oid
-WHERE
-    feat.name='delta_mag_fid'
-ORDER BY
-    obj.oid
+    feat.name IN ('delta_mag_fid')
+ORDER BY obj.oid
 ]
-(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11552, 'output_tokens': 10, 'total_tokens': 11562, 'input_cost': 0.02888, 'output_cost': 0.0001, 'total_cost': 0.02898, 'new_total_cost': 0.02898}, 'Classification': {'input_tokens': 541, 'output_tokens': 3, 'total_tokens': 544, 'input_cost': 0.0013525, 'output_cost': 3e-05, 'total_cost': 0.0013825, 'new_total_cost': 0.0013825}, 'Decompostion': {'input_tokens': 4283, 'output_tokens': 772, 'total_tokens': 5055, 'input_cost': 0.0107075, 'output_cost': 0.00772, 'total_cost': 0.0184275, 'new_total_cost': 0.0184275}, 'Query generation': {'input_tokens': 2201, 'output_tokens': 633, 'total_tokens': 2834, 'input_cost': 0.0055025, 'output_cost': 0.00633, 'total_cost': 0.0118325, 'new_total_cost': 0.0118325}, 'Self-correction': {'input_tokens': 4651, 'output_tokens': 612, 'total_tokens': 5263, 'input_cost': 0.0116275, 'output_cost': 0.00612, 'total_cost': 0.0177475}}","              oid        value       name  feature_fid version  ndet  \
-0    ZTF18aajadqs    32.419900  Amplitude            2  24.5.1  1094   
-1    ZTF18aajadqs    32.419900  Amplitude            2  24.5.1  1094   
-2    ZTF18aajadqs    23.218352  Amplitude            1  24.5.1  1094   
-3    ZTF18aajadqs    23.218352  Amplitude            1  24.5.1  1094   
+(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11552, 'output_tokens': 7, 'total_tokens': 11559, 'input_cost': 0.02888, 'output_cost': 7e-05, 'total_cost': 0.02895, 'new_total_cost': 0.02895}, 'Classification': {'input_tokens': 538, 'output_tokens': 3, 'total_tokens': 541, 'input_cost': 0.001345, 'output_cost': 3e-05, 'total_cost': 0.0013750000000000001, 'new_total_cost': 0.0013750000000000001}, 'Decompostion': {'input_tokens': 4260, 'output_tokens': 847, 'total_tokens': 5107, 'input_cost': 0.01065, 'output_cost': 0.00847, 'total_cost': 0.019119999999999998, 'new_total_cost': 0.019119999999999998}, 'Query generation': {'input_tokens': 2273, 'output_tokens': 557, 'total_tokens': 2830, 'input_cost': 0.0056825, 'output_cost': 0.00557, 'total_cost': 0.0112525, 'new_total_cost': 0.0112525}, 'Self-correction': {'input_tokens': 4574, 'output_tokens': 791, 'total_tokens': 5365, 'input_cost': 0.011435, 'output_cost': 0.00791, 'total_cost': 0.019345}}","              oid        value       name  feature_fid version  ndet  \
+0    ZTF18aajadqs    23.218352  Amplitude            1  24.5.1  1094   
+1    ZTF18aajadqs    23.218352  Amplitude            1  24.5.1  1094   
+2    ZTF18aajadqs    32.419900  Amplitude            2  24.5.1  1094   
+3    ZTF18aajadqs    32.419900  Amplitude            2  24.5.1  1094   
 4    ZTF18aajspec  1081.856191  Amplitude            1  24.5.1   410   
 ..            ...          ...        ...          ...     ...   ...   
-313  ZTF22aaihxyw    31.858641  Amplitude            1  24.5.1    92   
-314  ZTF23aagpjmh     6.896555  Amplitude            2  24.5.1    93   
-315  ZTF23aagpjmh     6.896555  Amplitude            2  24.5.1    93   
-316  ZTF23aagpjmh     9.379387  Amplitude            1  24.5.1    93   
-317  ZTF23aagpjmh     9.379387  Amplitude            1  24.5.1    93   
+313  ZTF22aaihxyw    10.054767  Amplitude            2  24.5.1    92   
+314  ZTF23aagpjmh     9.379387  Amplitude            1  24.5.1    93   
+315  ZTF23aagpjmh     9.379387  Amplitude            1  24.5.1    93   
+316  ZTF23aagpjmh     6.896555  Amplitude            2  24.5.1    93   
+317  ZTF23aagpjmh     6.896555  Amplitude            2  24.5.1    93   
 
          meanra    meandec     magmax     magmin  delta_mag  magstat_fid  
 0    262.778601  30.297384  20.614600  18.841400   1.773199            1  
@@ -722,57 +668,67 @@ ORDER BY
  'ZTF21aaihchs' 'ZTF21aaihchs' 'ZTF22aaihxyw' 'ZTF22aaihxyw'
  'ZTF22aaihxyw' 'ZTF22aaihxyw' 'ZTF23aagpjmh' 'ZTF23aagpjmh'
  'ZTF23aagpjmh' 'ZTF23aagpjmh']"
-13," Get the object identifiers, probabilities in the stamp classifier and light curves (including only non-detections) for objects whose highest probability in the stamp classifier is obtained for class SN, had their first detection in the first 2 days of september, and qualify as fast risers. Also, return the oid, probability, filter ID and the image difference, and filter ID of magstat as 'magstat_fid', with the initial rise estimate. Order the results by the oid and limit the results to 100 rows due to time constraints.",gpt-4o,python,False,"# Sub-query to get object identifiers and probabilities for class 'SN' in the stamp classifier
+13," Get the object identifiers, probabilities in the stamp classifier and light curves (including only non-detections) for objects whose highest probability in the stamp classifier is obtained for class SN, had their first detection in the first 2 days of september, and qualify as fast risers. Also, return the oid, probability, filter ID and the image difference, and filter ID of magstat as 'magstat_fid', with the initial rise estimate. Order the results by the oid and limit the results to 100 rows due to time constraints.",gpt-4o,python,False,"# Sub-query to get oids with the highest probability for class 'SN' in the stamp classifier
 sub_query_probability = f'''
 SELECT
-    probability.oid, probability.probability
+    oid
 FROM
     probability
 WHERE
-    probability.classifier_name='stamp_classifier'
-    AND probability.class_name='SN'
-    AND probability.ranking=1
-''' # Sub-query to filter objects with first detection in the first 2 days of September
-sub_query_object = f'''
+    classifier_name='stamp_classifier'
+    AND class_name='SN'
+    AND ranking=1
+''' # Sub-query to get oids with first detection in the first 2 days of September
+sub_query_first_detection = f'''
 SELECT
-    object.oid
+    oid
 FROM
     object
 WHERE
-    object.firstmjd > 60188.0
-    AND object.firstmjd < 60189.0
-''' # Sub-query to identify fast risers using the magstat table
-sub_query_magstat = f'''
+    firstmjd > 60188.0
+    AND firstmjd < 60189.0
+''' # Sub-query to get oids that qualify as fast risers
+sub_query_fast_risers = f'''
 SELECT
-    magstat.oid, magstat.fid as magstat_fid, magstat.dmdt_first
+    oid
 FROM
     magstat
 WHERE
-    magstat.dmdt_first < -0.25
-''' # Combine sub-queries using INTERSECT to get oids that meet all conditions
-sub_query_combined = f'''
+    dmdt_first < -0.25
+''' # Combine the sub-queries to get the intersection of oids
+sub_query_combined_oids = f'''
 SELECT
-    prob.oid, prob.probability, mag.fid as magstat_fid, mag.dmdt_first
+    oid
 FROM
-    ({sub_query_probability}) AS prob
-    INNER JOIN ({sub_query_object}) AS obj ON prob.oid = obj.oid
-    INNER JOIN ({sub_query_magstat}) AS mag ON prob.oid = mag.oid
-''' # Sub-query to retrieve light curves including non-detections from forced_photometry
-sub_query_forced_photometry = f'''
+    ({sub_query_probability}) AS prob_oids
+INTERSECT
 SELECT
-    fp.oid, fp.fid, fp.image_difference
+    oid
 FROM
-    forced_photometry AS fp
-    INNER JOIN ({sub_query_combined}) AS combined ON fp.oid = combined.oid
-''' # Final query to select required columns, order by oid, and limit results
+    ({sub_query_first_detection}) AS first_det_oids
+INTERSECT
+SELECT
+    oid
+FROM
+    ({sub_query_fast_risers}) AS fast_risers_oids
+''' # Final query to retrieve the required information
 full_query = f'''
 SELECT
-    combined.oid, combined.probability, fp.fid, fp.image_difference, combined.magstat_fid, combined.dmdt_first
+    obj.oid,
+    prob.probability,
+    det.fid,
+    det.difference_image,
+    mag.fid AS magstat_fid,
+    mag.dmdt_first
 FROM
-    ({sub_query_forced_photometry}) AS fp
-    INNER JOIN ({sub_query_combined}) AS combined ON fp.oid = combined.oid
+    ({sub_query_combined_oids}) AS combined_oids
+    INNER JOIN probability AS prob ON combined_oids.oid = prob.oid
+    INNER JOIN detection AS det ON combined_oids.oid = det.oid
+    INNER JOIN magstat AS mag ON combined_oids.oid = mag.oid
+WHERE
+    prob.classifier_name='stamp_classifier'
 ORDER BY
-    combined.oid
+    obj.oid
 LIMIT 100
 '''","SELECT
     sq.oid, sq.probability, sq.diffmaglim, sq.fid, sq.mjd,
@@ -804,90 +760,69 @@ WHERE
 WHERE
   magstat.dmdt_first < -0.25
 ORDER BY oid
-LIMIT 100",,,,"(psycopg2.errors.UndefinedColumn) column mag.fid does not exist
-LINE 12:     prob.oid, prob.probability, mag.fid as magstat_fid, mag....
-                                         ^
-HINT:  Perhaps you meant to reference the column ""mag.oid"".
+LIMIT 100",,,,"(psycopg2.errors.UndefinedTable) missing FROM-clause entry for table ""obj""
+LINE 3:     obj.oid,
+            ^
 
 [SQL: 
 SELECT
-    combined.oid, combined.probability, fp.fid, fp.image_difference, combined.magstat_fid, combined.dmdt_first
+    obj.oid,
+    prob.probability,
+    det.fid,
+    det.difference_image,
+    mag.fid AS magstat_fid,
+    mag.dmdt_first
 FROM
     (
 SELECT
-    fp.oid, fp.fid, fp.image_difference
-FROM
-    forced_photometry AS fp
-    INNER JOIN (
-SELECT
-    prob.oid, prob.probability, mag.fid as magstat_fid, mag.dmdt_first
+    oid
 FROM
     (
 SELECT
-    probability.oid, probability.probability
+    oid
 FROM
     probability
 WHERE
-    probability.classifier_name='stamp_classifier'
-    AND probability.class_name='SN'
-    AND probability.ranking=1
-) AS prob
-    INNER JOIN (
+    classifier_name='stamp_classifier'
+    AND class_name='SN'
+    AND ranking=1
+) AS prob_oids
+INTERSECT
 SELECT
-    object.oid
-FROM
-    object
-WHERE
-    object.firstmjd > 60188.0
-    AND object.firstmjd < 60189.0
-) AS obj ON prob.oid = obj.oid
-    INNER JOIN (
-SELECT
-    magstat.oid, magstat.fid as magstat_fid, magstat.dmdt_first
-FROM
-    magstat
-WHERE
-    magstat.dmdt_first < -0.25
-) AS mag ON prob.oid = mag.oid
-) AS combined ON fp.oid = combined.oid
-) AS fp
-    INNER JOIN (
-SELECT
-    prob.oid, prob.probability, mag.fid as magstat_fid, mag.dmdt_first
+    oid
 FROM
     (
 SELECT
-    probability.oid, probability.probability
-FROM
-    probability
-WHERE
-    probability.classifier_name='stamp_classifier'
-    AND probability.class_name='SN'
-    AND probability.ranking=1
-) AS prob
-    INNER JOIN (
-SELECT
-    object.oid
+    oid
 FROM
     object
 WHERE
-    object.firstmjd > 60188.0
-    AND object.firstmjd < 60189.0
-) AS obj ON prob.oid = obj.oid
-    INNER JOIN (
+    firstmjd > 60188.0
+    AND firstmjd < 60189.0
+) AS first_det_oids
+INTERSECT
 SELECT
-    magstat.oid, magstat.fid as magstat_fid, magstat.dmdt_first
+    oid
+FROM
+    (
+SELECT
+    oid
 FROM
     magstat
 WHERE
-    magstat.dmdt_first < -0.25
-) AS mag ON prob.oid = mag.oid
-) AS combined ON fp.oid = combined.oid
+    dmdt_first < -0.25
+) AS fast_risers_oids
+) AS combined_oids
+    INNER JOIN probability AS prob ON combined_oids.oid = prob.oid
+    INNER JOIN detection AS det ON combined_oids.oid = det.oid
+    INNER JOIN magstat AS mag ON combined_oids.oid = mag.oid
+WHERE
+    prob.classifier_name='stamp_classifier'
 ORDER BY
-    combined.oid
+    obj.oid
 LIMIT 100
 ]
-(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11508, 'output_tokens': 13, 'total_tokens': 11521, 'input_cost': 0.02877, 'output_cost': 0.00013, 'total_cost': 0.028900000000000002, 'new_total_cost': 0.028900000000000002}, 'Classification': {'input_tokens': 500, 'output_tokens': 3, 'total_tokens': 503, 'input_cost': 0.00125, 'output_cost': 3e-05, 'total_cost': 0.00128, 'new_total_cost': 0.00128}, 'Decompostion': {'input_tokens': 4242, 'output_tokens': 637, 'total_tokens': 4879, 'input_cost': 0.010605, 'output_cost': 0.00637, 'total_cost': 0.016975, 'new_total_cost': 0.016975}, 'Query generation': {'input_tokens': 2025, 'output_tokens': 484, 'total_tokens': 2509, 'input_cost': 0.0050625, 'output_cost': 0.00484, 'total_cost': 0.0099025, 'new_total_cost': 0.0099025}, 'Self-correction': {'input_tokens': 4494, 'output_tokens': 480, 'total_tokens': 4974, 'input_cost': 0.011235, 'output_cost': 0.0048, 'total_cost': 0.016035}}","             oid  probability  diffmaglim  fid           mjd  magstat_fid  \
+(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11508, 'output_tokens': 13, 'total_tokens': 11521, 'input_cost': 0.02877, 'output_cost': 0.00013, 'total_cost': 0.028900000000000002, 'new_total_cost': 0.028900000000000002}, 'Classification': {'input_tokens': 500, 'output_tokens': 3, 'total_tokens': 503, 'input_cost': 0.00125, 'output_cost': 3e-05, 'total_cost': 0.00128, 'new_total_cost': 0.00128}, 'Decompostion': {'input_tokens': 4222, 'output_tokens': 849, 'total_tokens': 5071, 'input_cost': 0.010555, 'output_cost': 0.00849, 'total_cost': 0.019045, 'new_total_cost': 0.019045}, 'Query generation': {'input_tokens': 2237, 'output_tokens': 412, 'total_tokens': 2649, 'input_cost': 0.0055925, 'output_cost': 0.00412, 'total_cost': 0.0097125, 'new_total_cost': 0.0097125}, 'Self-correction': {'input_tokens': 4244, 'output_tokens': 578, 'total_tokens': 4822, 'input_cost': 0.01061, 'output_cost': 0.00578, 'total_cost': 0.016390000000000002}}","             oid  probability  diffmaglim  fid           mjd  magstat_fid  \
 0   ZTF18aaiaclp     0.520409     20.4159    1  60161.201343            2   
 1   ZTF18aaiaclp     0.520409     20.5201    1  60161.206146            2   
 2   ZTF18aaiaclp     0.520409     19.7568    1  60161.283750            2   
@@ -938,7 +873,7 @@ LIMIT 100
  'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm'
  'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm'
  'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm' 'ZTF18aaleydm']"
-14,"Find at most 200 ZTF objects that satisfy the following conditions: have a distance to the nearest PS1 source larger than 5 arcsec, and have a probability larger than 0.7 of being in a class other than supernova in the light curve classifier. Return all columns from the 'object', 'probability' and 'ps1_ztf' table for such objects, and order the results by the nearest PS1 source distance.",gpt-4o,python,False,"# Sub-query for Probability: Filter objects based on the probability condition
+14,"Find at most 200 ZTF objects that satisfy the following conditions: have a distance to the nearest PS1 source larger than 5 arcsec, and have a probability larger than 0.7 of being in a class other than supernova in the light curve classifier. Return all columns from the 'object', 'probability' and 'ps1_ztf' table for such objects, and order the results by the nearest PS1 source distance.",gpt-4o,python,False,"# Sub-query to filter objects based on the probability condition
 sub_query_probability = f'''
 SELECT DISTINCT oid
 FROM probability
@@ -946,26 +881,24 @@ WHERE classifier_name = 'lc_classifier'
   AND ranking = 1
   AND probability > 0.7
   AND class_name NOT IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
-''' # Sub-query for PS1 Distance: Filter objects based on the PS1 distance condition
+''' # Sub-query to filter objects based on the PS1 distance condition
 sub_query_ps1_distance = f'''
 SELECT oid
 FROM ps1_ztf
 WHERE distpsnr1 > 5
-''' # Combine Sub-queries: Use INTERSECT to get oids that satisfy both conditions
-sub_query_combined = f'''
+''' # Intersection of sub-queries to find oids that satisfy both conditions
+sub_query_intersection = f'''
 SELECT oid
 FROM ({sub_query_probability}) AS prob_oids
 INTERSECT
 SELECT oid
 FROM ({sub_query_ps1_distance}) AS ps1_oids
-''' # Main Query Construction: Retrieve all columns from object, probability, and ps1_ztf tables
+''' # Main query to retrieve all relevant columns from the 'object', 'probability', and 'ps1_ztf' tables
 full_query = f'''
 SELECT *
 FROM object
-INNER JOIN probability ON object.oid = probability.oid
-INNER JOIN ps1_ztf ON object.oid = ps1_ztf.oid
-WHERE object.oid IN ({sub_query_combined})
-ORDER BY ps1_ztf.distpsnr1
+WHERE oid IN ({sub_query_intersection})
+ORDER BY (SELECT distpsnr1 FROM ps1_ztf WHERE ps1_ztf.oid = object.oid)
 LIMIT 200
 '''","SELECT
     *
@@ -988,9 +921,7 @@ LIMIT 200
 [SQL: 
 SELECT *
 FROM object
-INNER JOIN probability ON object.oid = probability.oid
-INNER JOIN ps1_ztf ON object.oid = ps1_ztf.oid
-WHERE object.oid IN (
+WHERE oid IN (
 SELECT oid
 FROM (
 SELECT DISTINCT oid
@@ -1008,10 +939,10 @@ FROM ps1_ztf
 WHERE distpsnr1 > 5
 ) AS ps1_oids
 )
-ORDER BY ps1_ztf.distpsnr1
+ORDER BY (SELECT distpsnr1 FROM ps1_ztf WHERE ps1_ztf.oid = object.oid)
 LIMIT 200
 ]
-(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11490, 'output_tokens': 11, 'total_tokens': 11501, 'input_cost': 0.028725, 'output_cost': 0.00011, 'total_cost': 0.028835, 'new_total_cost': 0.028835}, 'Classification': {'input_tokens': 480, 'output_tokens': 3, 'total_tokens': 483, 'input_cost': 0.0012, 'output_cost': 3e-05, 'total_cost': 0.00123, 'new_total_cost': 0.00123}, 'Decompostion': {'input_tokens': 4222, 'output_tokens': 651, 'total_tokens': 4873, 'input_cost': 0.010555, 'output_cost': 0.00651, 'total_cost': 0.017065, 'new_total_cost': 0.017065}, 'Query generation': {'input_tokens': 2019, 'output_tokens': 280, 'total_tokens': 2299, 'input_cost': 0.0050475, 'output_cost': 0.0028, 'total_cost': 0.0078475, 'new_total_cost': 0.0078475}, 'Self-correction': {'input_tokens': 4140, 'output_tokens': 451, 'total_tokens': 4591, 'input_cost': 0.01035, 'output_cost': 0.00451, 'total_cost': 0.01486}}","            oid  ndethist  ncovhist  mjdstarthist    mjdendhist  corrected  \
+(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11490, 'output_tokens': 11, 'total_tokens': 11501, 'input_cost': 0.028725, 'output_cost': 0.00011, 'total_cost': 0.028835, 'new_total_cost': 0.028835}, 'Classification': {'input_tokens': 480, 'output_tokens': 3, 'total_tokens': 483, 'input_cost': 0.0012, 'output_cost': 3e-05, 'total_cost': 0.00123, 'new_total_cost': 0.00123}, 'Decompostion': {'input_tokens': 4202, 'output_tokens': 734, 'total_tokens': 4936, 'input_cost': 0.010505, 'output_cost': 0.00734, 'total_cost': 0.017845, 'new_total_cost': 0.017845}, 'Query generation': {'input_tokens': 2102, 'output_tokens': 257, 'total_tokens': 2359, 'input_cost': 0.005255, 'output_cost': 0.00257, 'total_cost': 0.007825, 'new_total_cost': 0.007825}, 'Self-correction': {'input_tokens': 4117, 'output_tokens': 319, 'total_tokens': 4436, 'input_cost': 0.0102925, 'output_cost': 0.00319, 'total_cost': 0.0134825}}","            oid  ndethist  ncovhist  mjdstarthist    mjdendhist  corrected  \
 0  ZTF20acoknjv        59       838  59153.503218  60651.482951       True   
 1  ZTF20acoknjv        59       838  59153.503218  60651.482951       True   
 2  ZTF20acoknjv        59       838  59153.503218  60651.482951       True   
@@ -1049,16 +980,16 @@ LIMIT 200
  ['ZTF20acoknjv' 'ZTF20acoknjv' 'ZTF20acoknjv']
  ['ZTF20abfttkl' 'ZTF20abfttkl' 'ZTF20abfttkl']
  ['ZTF20aaqvvup' 'ZTF20aaqvvup' 'ZTF20aaqvvup']]"
-15,"Find at most 10 ZTF objects that have a first detection date later than mjd=60310 days, as well as a probability of 1 of being an asteroid in the stamp classifier, ordered by the first detection date. Return all columns from the 'forced_photometry' table for such objects",gpt-4o,python,False,"# Sub-query to get object identifiers (oids) with a first detection date later than mjd=60310
-sub_query_object = f'''
+15,"Find at most 10 ZTF objects that have a first detection date later than mjd=60310 days, as well as a probability of 1 of being an asteroid in the stamp classifier, ordered by the first detection date. Return all columns from the 'forced_photometry' table for such objects",gpt-4o,python,False,"# Sub-query to get oids with first detection date later than mjd=60310
+sub_query_first_detection_date = f'''
 SELECT
     oid
 FROM
     object
 WHERE
     firstmjd > 60310
-''' # Sub-query to get object identifiers (oids) with a probability of 1 of being an asteroid in the stamp classifier
-sub_query_probability = f'''
+''' # Sub-query to get oids with probability of 1 of being an asteroid in the stamp classifier
+sub_query_asteroid_probability = f'''
 SELECT
     oid
 FROM
@@ -1068,27 +999,20 @@ WHERE
     AND class_name = 'asteroid'
     AND probability = 1
     AND ranking = 1
-''' # Intersect the two sub-queries to get oids that satisfy both conditions
-sub_query_intersect = f'''
-SELECT
-    oid
-FROM
-    ({sub_query_object}) AS obj
-INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_probability}) AS prob
-''' # Main query to get all columns from the 'forced_photometry' table for the filtered oids
+''' # Main query to retrieve all columns from the forced_photometry table for objects meeting both conditions
 full_query = f'''
 SELECT
-    *
+    fp.*
 FROM
-    forced_photometry
+    forced_photometry fp
 WHERE
-    oid IN ({sub_query_intersect})
+    fp.oid IN (
+        {sub_query_first_detection_date}
+        INTERSECT
+        {sub_query_asteroid_probability}
+    )
 ORDER BY
-    (SELECT firstmjd FROM object WHERE oid = forced_photometry.oid) ASC
+    (SELECT firstmjd FROM object WHERE oid = fp.oid) ASC
 LIMIT 10
 '''","SELECT
     *
@@ -1115,27 +1039,21 @@ LIMIT 10
 
 [SQL: 
 SELECT
-    *
+    fp.*
 FROM
-    forced_photometry
+    forced_photometry fp
 WHERE
-    oid IN (
-SELECT
-    oid
-FROM
-    (
+    fp.oid IN (
+        
 SELECT
     oid
 FROM
     object
 WHERE
     firstmjd > 60310
-) AS obj
-INTERSECT
-SELECT
-    oid
-FROM
-    (
+
+        INTERSECT
+        
 SELECT
     oid
 FROM
@@ -1145,13 +1063,13 @@ WHERE
     AND class_name = 'asteroid'
     AND probability = 1
     AND ranking = 1
-) AS prob
-)
+
+    )
 ORDER BY
-    (SELECT firstmjd FROM object WHERE oid = forced_photometry.oid) ASC
+    (SELECT firstmjd FROM object WHERE oid = fp.oid) ASC
 LIMIT 10
 ]
-(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11461, 'output_tokens': 10, 'total_tokens': 11471, 'input_cost': 0.0286525, 'output_cost': 0.0001, 'total_cost': 0.0287525, 'new_total_cost': 0.0287525}, 'Classification': {'input_tokens': 449, 'output_tokens': 3, 'total_tokens': 452, 'input_cost': 0.0011225, 'output_cost': 3e-05, 'total_cost': 0.0011525, 'new_total_cost': 0.0011525}, 'Decompostion': {'input_tokens': 4192, 'output_tokens': 545, 'total_tokens': 4737, 'input_cost': 0.01048, 'output_cost': 0.00545, 'total_cost': 0.01593, 'new_total_cost': 0.01593}, 'Query generation': {'input_tokens': 1883, 'output_tokens': 269, 'total_tokens': 2152, 'input_cost': 0.0047075, 'output_cost': 0.00269, 'total_cost': 0.0073974999999999996, 'new_total_cost': 0.0073974999999999996}, 'Self-correction': {'input_tokens': 4099, 'output_tokens': 259, 'total_tokens': 4358, 'input_cost': 0.0102475, 'output_cost': 0.00259, 'total_cost': 0.0128375}}","              pid           oid           mjd  fid          ra        dec  \
+(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11461, 'output_tokens': 10, 'total_tokens': 11471, 'input_cost': 0.0286525, 'output_cost': 0.0001, 'total_cost': 0.0287525, 'new_total_cost': 0.0287525}, 'Classification': {'input_tokens': 449, 'output_tokens': 3, 'total_tokens': 452, 'input_cost': 0.0011225, 'output_cost': 3e-05, 'total_cost': 0.0011525, 'new_total_cost': 0.0011525}, 'Decompostion': {'input_tokens': 4172, 'output_tokens': 532, 'total_tokens': 4704, 'input_cost': 0.01043, 'output_cost': 0.00532, 'total_cost': 0.01575, 'new_total_cost': 0.01575}, 'Query generation': {'input_tokens': 1870, 'output_tokens': 223, 'total_tokens': 2093, 'input_cost': 0.004675, 'output_cost': 0.00223, 'total_cost': 0.0069050000000000005, 'new_total_cost': 0.0069050000000000005}, 'Self-correction': {'input_tokens': 4053, 'output_tokens': 235, 'total_tokens': 4288, 'input_cost': 0.0101325, 'output_cost': 0.00235, 'total_cost': 0.012482499999999999}}","              pid           oid           mjd  fid          ra        dec  \
 0   2530158592915  ZTF24aaaajnz  60284.158600    2  356.638975  47.487980   
 1   2530219763015  ZTF24aaaajnz  60284.219768    1  356.638975  47.487980   
 2   2534136721615  ZTF24aaaajnz  60288.136724    1  356.638975  47.487980   
@@ -1227,9 +1145,9 @@ LIMIT 10
  'ZTF24aaaajuw' 'ZTF24aaaajuw' 'ZTF24aaaajuw' 'ZTF24aaaajsp'
  'ZTF24aaaajsp' 'ZTF24aaaajsp' 'ZTF24aaaajsp' 'ZTF24aaaajsp'
  'ZTF24aaaajsp']"
-16,"Find at most 50 ZTF objects that satisfy the following conditions: have a probability larger than 0.6 of being an AGN in the light curve classifier, and a WISE W1 magnitude between 12 and 13. Return all columns from the 'magstat' table for such objects",gpt-4o,python,False,"# Sub-query to select object identifiers (oids) from the 'probability' table where the classifier is 'lc_classifier',
-# the class is 'AGN', and the probability is greater than 0.6. Ensure to select the highest probability class (ranking=1).
-sub_query_probability = '''
+16,"Find at most 50 ZTF objects that satisfy the following conditions: have a probability larger than 0.6 of being an AGN in the light curve classifier, and a WISE W1 magnitude between 12 and 13. Return all columns from the 'magstat' table for such objects",gpt-4o,python,False,"# Sub-query to select object identifiers (oids) from the 'probability' table
+# where the classifier is 'lc_classifier', the class is 'AGN', and the probability is greater than 0.6.
+sub_query_probability = f'''
 SELECT
     oid
 FROM
@@ -1240,23 +1158,31 @@ WHERE
     AND probability > 0.6
     AND ranking = 1
 ''' # Sub-query to select oids from the 'allwise' table where the W1 magnitude (w1mpro) is between 12 and 13.
-sub_query_wise_magnitude = '''
+sub_query_allwise = f'''
 SELECT
     oid
 FROM
     allwise
 WHERE
     w1mpro BETWEEN 12 AND 13
-''' # Main query to combine the results of the two sub-queries and select all columns from the 'magstat' table
-# for the oids that meet both the probability and WISE magnitude conditions. Limit the results to at most 50 objects.
+''' # Main query to combine the results of the two sub-queries and select all columns from 'magstat'
+# where the oid is in the list of oids obtained from the combined sub-query.
 full_query = f'''
 SELECT
     *
 FROM
     magstat
 WHERE
-    oid IN ({sub_query_probability})
-    AND oid IN ({sub_query_wise_magnitude})
+    oid IN (
+        SELECT
+            oid
+        FROM
+            ({sub_query_probability}) AS prob
+        INNER JOIN
+            ({sub_query_allwise}) AS wise
+        ON
+            prob.oid = wise.oid
+    )
 LIMIT 50
 '''","SELECT
     *
@@ -1281,231 +1207,46 @@ WHERE
     AND class_name = 'AGN'
     AND probability > 0.6
 LIMIT 50
-)","             oid  fid  stellar  corrected  ndet  ndubious  dmdt_first  \
-0   ZTF23aavefel    1    False       True    11         0         NaN   
-1   ZTF23aavefel    2    False       True    37         0         NaN   
-2   ZTF18aarzxrf    1    False       True    12         0    0.000837   
-3   ZTF18aarzxrf    2    False       True    16         0    0.080613   
-4   ZTF19abjfnef    1    False       True    36         0         NaN   
-5   ZTF19abjfnef    2    False       True    14         0         NaN   
-6   ZTF20ablyrle    1    False       True    16         0         NaN   
-7   ZTF20ablyrle    2    False       True     1         0         NaN   
-8   ZTF18aaccuha    1    False       True    32         1   -0.001466   
-9   ZTF18aaccuha    2    False       True     5         0    0.000893   
-10  ZTF18admasxp    1    False       True    36         0         NaN   
-11  ZTF18admasxp    2    False       True    64         0         NaN   
-12  ZTF21aaiswdm    1    False       True    14         0    0.158483   
-13  ZTF21aaiswdm    2    False       True    22         0         NaN   
-14  ZTF23aafsdez    1    False       True    23         0         NaN   
-15  ZTF23aafsdez    2    False       True    16         0         NaN   
-16  ZTF21aainmkx    1    False       True     4         0         NaN   
-17  ZTF21aainmkx    2    False       True    22         0         NaN   
-18  ZTF18aaetnmr    1    False       True    23         0   -0.002581   
-19  ZTF18aaetnmr    2    False       True     9         0   -0.001323   
-20  ZTF18acppxbf    1    False       True    18         0         NaN   
-21  ZTF18acppxbf    2    False       True    64         0         NaN   
-22  ZTF18acrniue    1    False       True    12         0         NaN   
-23  ZTF18acrniue    2    False       True     5         0         NaN   
-24  ZTF20aaqhzng    1     True       True    29         0    0.004727   
-25  ZTF20aaqhzng    2     True       True    11         0   -0.027586   
-26  ZTF18aauifxf    1    False       True   168         0         NaN   
-27  ZTF18aauifxf    2    False       True    19         0         NaN   
-28  ZTF21abbeefj    1    False       True    95         0         NaN   
-29  ZTF21abbeefj    2    False       True    20         0         NaN   
-30  ZTF18abwimng    1    False       True    41         0    0.036403   
-31  ZTF18abwimng    2    False       True    30         0    0.006540   
-32  ZTF19aaohskk    1    False       True    18         0         NaN   
-33  ZTF19aaohskk    2    False       True     3         0         NaN   
-34  ZTF18aagvjgn    1    False       True   256         0         NaN   
-35  ZTF18aagvjgn    2    False       True    85         0         NaN   
-36  ZTF20ackrgdr    1    False       True    10         0    0.022511   
-37  ZTF20ackrgdr    2    False       True     3         0   -0.061435   
-38  ZTF21aatggym    1    False       True    17         0         NaN   
-39  ZTF21aatggym    2    False       True     4         0    0.065061   
-40  ZTF20abrnlcl    1    False       True    31         0         NaN   
-41  ZTF20abrnlcl    2    False       True     4         0         NaN   
-42  ZTF19adbvkuq    1    False       True    26         0    0.132424   
-43  ZTF19adbvkuq    2    False       True     4         0   -0.421596   
-44  ZTF20aashzqn    1    False       True    26         0         NaN   
-45  ZTF20aashzqn    2    False       True    21         0         NaN   
-46  ZTF20aashzqn    3    False       True     1         0         NaN   
-47  ZTF23aaepjto    1    False       True    21         0         NaN   
-48  ZTF23aaepjto    2    False       True     6         0         NaN   
-49  ZTF23aaepjto    3    False       True     2         0         NaN   
+)",,,,"(psycopg2.errors.AmbiguousColumn) column reference ""oid"" is ambiguous
+LINE 9:             oid
+                    ^
 
-    dm_first  sigmadm_first    dt_first  ...  magmedian_corr  magmax_corr  \
-0        NaN            NaN         NaN  ...             NaN          NaN   
-1        NaN            NaN         NaN  ...       18.744728    18.798445   
-2   0.064800     -20.250978  466.711180  ...       19.747637    19.897612   
-3   1.175595     -19.189545   17.076134  ...       18.720700    18.785400   
-4        NaN            NaN         NaN  ...       19.539425    19.614939   
-5        NaN            NaN         NaN  ...       19.123901    19.123901   
-6        NaN            NaN         NaN  ...       19.068563    19.099327   
-7        NaN            NaN         NaN  ...             NaN          NaN   
-8  -0.138600     -20.718916    6.079641  ...       20.656595    20.830372   
-9   0.332900     -20.401966  703.983400  ...       19.866346    19.935263   
-10       NaN            NaN         NaN  ...       17.528955   100.000000   
-11       NaN            NaN         NaN  ...       17.244377   100.000000   
-12  0.489200     -19.445919    4.930370  ...       18.821690    18.879637   
-13       NaN            NaN         NaN  ...       18.162760    18.263290   
-14       NaN            NaN         NaN  ...       19.089575    19.089575   
-15       NaN            NaN         NaN  ...       18.666645    18.666645   
-16       NaN            NaN         NaN  ...             NaN          NaN   
-17       NaN            NaN         NaN  ...       19.536474    19.597195   
-18 -0.326100     -19.889688   10.920671  ...       18.314451    18.418428   
-19 -0.230452     -20.212990   16.960938  ...       17.829647    17.880670   
-20       NaN            NaN         NaN  ...       18.713795    18.713795   
-21       NaN            NaN         NaN  ...       18.025152    18.027220   
-22       NaN            NaN         NaN  ...       18.328138    18.328138   
-23       NaN            NaN         NaN  ...             NaN          NaN   
-24 -0.175300     -20.516588   16.904790  ...       18.047379    18.119070   
-25 -0.414200     -20.487183    6.002338  ...       17.527214    17.567492   
-26       NaN            NaN         NaN  ...       18.504055    18.512240   
-27       NaN            NaN         NaN  ...             NaN          NaN   
-28       NaN            NaN         NaN  ...       19.365997    19.428300   
-29       NaN            NaN         NaN  ...       18.786644    18.801533   
-30  0.294500     -20.240976   15.018658  ...       20.516747    20.953903   
-31 -0.142720     -20.243757   10.996447  ...       19.678650    19.798489   
-32       NaN            NaN         NaN  ...       19.353346    19.442009   
-33       NaN            NaN         NaN  ...       18.436220    18.461138   
-34       NaN            NaN         NaN  ...       16.880615    17.013273   
-35       NaN            NaN         NaN  ...             NaN          NaN   
-36  0.412718     -20.265621   27.897917  ...       20.955439    21.289522   
-37 -0.319821     -20.263405    1.880451  ...       20.420149    20.782800   
-38       NaN            NaN         NaN  ...       19.651442    19.730164   
-39  0.051900     -20.070680    4.024201  ...       18.996240    19.048183   
-40       NaN            NaN         NaN  ...       18.605486    18.669218   
-41       NaN            NaN         NaN  ...             NaN          NaN   
-42  1.421300     -18.972506   12.984722  ...       19.675152    19.890015   
-43 -0.595206     -20.259094    1.026574  ...       18.828350    18.994440   
-44       NaN            NaN         NaN  ...       18.492440    18.552818   
-45       NaN            NaN         NaN  ...             NaN          NaN   
-46       NaN            NaN         NaN  ...             NaN          NaN   
-47       NaN            NaN         NaN  ...       21.316378    22.149374   
-48       NaN            NaN         NaN  ...       20.392155    20.449200   
-49       NaN            NaN         NaN  ...       19.830885    19.853666   
-
-    magmin_corr  magsigma_corr  maglast_corr  magfirst_corr   firstmjd  \
-0           NaN            NaN           NaN            NaN  60184.440   
-1     18.691011       0.053717     18.798445            NaN  60153.465   
-2     19.678501       0.067675     19.827478      19.797552  59313.266   
-3     18.685482       0.031087     18.742914      18.704782  58852.570   
-4     19.509111       0.042821     19.514687            NaN  59370.420   
-5     19.123901       0.000000     19.123901            NaN  59798.336   
-6     19.029291       0.024373     19.029291            NaN  59040.234   
-7           NaN            NaN           NaN            NaN  59996.500   
-8     20.283495       0.125097     20.777380      20.425707  58248.320   
-9     19.821915       0.046181     19.919628      19.861294  58980.266   
-10    17.391222      23.115461     17.481094      17.488737  59684.484   
-11    17.184855      22.385496     17.255907      17.235985  59670.504   
-12    18.656320       0.066566     18.712887      18.879637  59228.453   
-13    18.039760       0.063635     18.119802      18.234428  59228.480   
-14    19.089575       0.000000     19.089575            NaN  60031.210   
-15    18.666645       0.000000     18.666645            NaN  60290.523   
-16          NaN            NaN           NaN            NaN  59342.220   
-17    19.508389       0.037062     19.536474            NaN  59316.285   
-18    18.236713       0.052569     18.335852      18.264593  58567.190   
-19    17.777872       0.031881     17.783422      17.845005  58584.170   
-20    18.713795       0.000000     18.713795            NaN  58559.150   
-21    18.004118       0.010437     18.025152            NaN  58428.500   
-22    18.328138       0.000000     18.328138            NaN  58522.492   
-23          NaN            NaN           NaN            NaN  58543.375   
-24    17.977081       0.034122     18.089165      18.119070  58898.402   
-25    17.519890       0.015246     17.559452      17.567492  58904.477   
-26    18.495870       0.008184     18.495870            NaN  58464.496   
-27          NaN            NaN           NaN            NaN  58254.188   
-28    19.274397       0.033652     19.370634            NaN  59343.285   
-29    18.771755       0.014889     18.801533            NaN  59343.324   
-30    20.248169       0.157221     20.282250      20.442738  59397.450   
-31    19.584007       0.052977     19.676900      19.798489  59393.450   
-32    19.264683       0.088663     19.442009            NaN  58609.203   
-33    18.421843       0.016233     18.436220      18.421843  60438.240   
-34    16.650140       0.160524     16.650140            NaN  58272.240   
-35          NaN            NaN           NaN            NaN  58266.277   
-36    20.381393       0.259624     21.289522      20.381393  59140.406   
-37    20.227495       0.281956     20.420149      20.782800  59523.140   
-38    19.550938       0.056033     19.666883      19.654734  59291.508   
-39    18.943861       0.043348     18.986353      18.943861  59295.492   
-40    18.586195       0.031479     18.608915            NaN  59073.400   
-41          NaN            NaN           NaN            NaN  59463.383   
-42    19.604870       0.076116     19.654036      19.626637  58836.414   
-43    18.819440       0.084639     18.827202      18.994440  58872.290   
-44    18.427847       0.036785     18.492409            NaN  58912.504   
-45          NaN            NaN           NaN            NaN  58885.523   
-46          NaN            NaN           NaN            NaN  60438.290   
-47    21.020594       0.339437     21.292677            NaN  60046.254   
-48    20.380386       0.030052     20.449200            NaN  60032.348   
-49    19.808105       0.022780     19.853666      19.808105  60409.363   
-
-      lastmjd      step_id_corr  saturation_rate  
-0   60533.457            24.5.1              0.0  
-1   60592.426            24.5.1              0.0  
-2   60056.280             1.2.0              0.0  
-3   60056.330             1.2.0              0.0  
-4   60534.280            24.5.1              0.0  
-5   60534.297            24.5.1              0.0  
-6   60444.370            24.4.1              0.0  
-7   59996.500            24.4.1              0.0  
-8   59376.242  correction_0.0.1              0.0  
-9   59368.223  correction_0.0.1              0.0  
-10  60259.156             1.2.1              0.0  
-11  60259.297             1.2.1              0.0  
-12  60056.273             1.2.0              0.0  
-13  60056.316             1.2.0              0.0  
-14  60652.500            26.0.0              0.0  
-15  60650.566            26.0.0              0.0  
-16  60434.203            24.5.1              0.0  
-17  60644.470            24.5.1              0.0  
-18  59232.426             1.2.1              0.0  
-19  60203.516             1.2.1              0.0  
-20  60407.280            24.4.1              0.0  
-21  60433.170            24.4.1              0.0  
-22  60351.402        ALeRCE ZTF              0.0  
-23  59270.370        ALeRCE ZTF              0.0  
-24  59341.300  correction_0.0.1              0.0  
-25  59339.273  correction_0.0.1              0.0  
-26  60650.523            26.0.0              0.0  
-27  59904.520            26.0.0              0.0  
-28  60467.348            24.5.1              0.0  
-29  60444.402            24.5.1              0.0  
-30  59871.227             1.1.6              0.0  
-31  59873.176             1.1.6              0.0  
-32  60447.260            24.5.1              0.0  
-33  60462.195            24.5.1              0.0  
-34  60383.390        ALeRCE ZTF              0.0  
-35  60118.220        ALeRCE ZTF              0.0  
-36  59873.402             1.1.6              0.0  
-37  59846.453             1.1.6              0.0  
-38  59484.184  correction_1.0.6              0.0  
-39  59470.180  correction_1.0.6              0.0  
-40  60649.207            24.5.1              0.0  
-41  60639.210            24.5.1              0.0  
-42  59550.305  correction_1.0.6              0.0  
-43  59145.490  correction_1.0.6              0.0  
-44  60489.207            24.5.1              0.0  
-45  60438.266            24.5.1              0.0  
-46  60438.290            24.5.1              0.0  
-47  60462.230            24.5.1              0.0  
-48  60411.300            24.5.1              0.0  
-49  60410.210            24.5.1              0.0  
-
-[50 rows x 28 columns]","['oid' 'fid' 'stellar' 'corrected' 'ndet' 'ndubious' 'dmdt_first'
- 'dm_first' 'sigmadm_first' 'dt_first' 'magmean' 'magmedian' 'magmax'
- 'magmin' 'magsigma' 'maglast' 'magfirst' 'magmean_corr' 'magmedian_corr'
- 'magmax_corr' 'magmin_corr' 'magsigma_corr' 'maglast_corr'
- 'magfirst_corr' 'firstmjd' 'lastmjd' 'step_id_corr' 'saturation_rate']","['ZTF23aavefel' 'ZTF23aavefel' 'ZTF18aarzxrf' 'ZTF18aarzxrf'
- 'ZTF19abjfnef' 'ZTF19abjfnef' 'ZTF20ablyrle' 'ZTF20ablyrle'
- 'ZTF18aaccuha' 'ZTF18aaccuha' 'ZTF18admasxp' 'ZTF18admasxp'
- 'ZTF21aaiswdm' 'ZTF21aaiswdm' 'ZTF23aafsdez' 'ZTF23aafsdez'
- 'ZTF21aainmkx' 'ZTF21aainmkx' 'ZTF18aaetnmr' 'ZTF18aaetnmr'
- 'ZTF18acppxbf' 'ZTF18acppxbf' 'ZTF18acrniue' 'ZTF18acrniue'
- 'ZTF20aaqhzng' 'ZTF20aaqhzng' 'ZTF18aauifxf' 'ZTF18aauifxf'
- 'ZTF21abbeefj' 'ZTF21abbeefj' 'ZTF18abwimng' 'ZTF18abwimng'
- 'ZTF19aaohskk' 'ZTF19aaohskk' 'ZTF18aagvjgn' 'ZTF18aagvjgn'
- 'ZTF20ackrgdr' 'ZTF20ackrgdr' 'ZTF21aatggym' 'ZTF21aatggym'
- 'ZTF20abrnlcl' 'ZTF20abrnlcl' 'ZTF19adbvkuq' 'ZTF19adbvkuq'
- 'ZTF20aashzqn' 'ZTF20aashzqn' 'ZTF20aashzqn' 'ZTF23aaepjto'
- 'ZTF23aaepjto' 'ZTF23aaepjto']",,"{'Schema Linking': {'input_tokens': 11460, 'output_tokens': 13, 'total_tokens': 11473, 'input_cost': 0.02865, 'output_cost': 0.00013, 'total_cost': 0.02878, 'new_total_cost': 0.02878}, 'Classification': {'input_tokens': 451, 'output_tokens': 3, 'total_tokens': 454, 'input_cost': 0.0011275, 'output_cost': 3e-05, 'total_cost': 0.0011575000000000001, 'new_total_cost': 0.0011575000000000001}, 'Decompostion': {'input_tokens': 3931, 'output_tokens': 454, 'total_tokens': 4385, 'input_cost': 0.0098275, 'output_cost': 0.00454, 'total_cost': 0.014367499999999998, 'new_total_cost': 0.014367499999999998}, 'Query generation': {'input_tokens': 1496, 'output_tokens': 269, 'total_tokens': 1765, 'input_cost': 0.00374, 'output_cost': 0.00269, 'total_cost': 0.00643, 'new_total_cost': 0.00643}, 'Self-correction': {'input_tokens': 4021, 'output_tokens': 314, 'total_tokens': 4335, 'input_cost': 0.0100525, 'output_cost': 0.00314, 'total_cost': 0.013192500000000001}}","              oid  fid  stellar  corrected  ndet  ndubious  dmdt_first  \
+[SQL: 
+SELECT
+    *
+FROM
+    magstat
+WHERE
+    oid IN (
+        SELECT
+            oid
+        FROM
+            (
+SELECT
+    oid
+FROM
+    probability
+WHERE
+    classifier_name = 'lc_classifier'
+    AND class_name = 'AGN'
+    AND probability > 0.6
+    AND ranking = 1
+) AS prob
+        INNER JOIN
+            (
+SELECT
+    oid
+FROM
+    allwise
+WHERE
+    w1mpro BETWEEN 12 AND 13
+) AS wise
+        ON
+            prob.oid = wise.oid
+    )
+LIMIT 50
+]
+(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11460, 'output_tokens': 13, 'total_tokens': 11473, 'input_cost': 0.02865, 'output_cost': 0.00013, 'total_cost': 0.02878, 'new_total_cost': 0.02878}, 'Classification': {'input_tokens': 451, 'output_tokens': 3, 'total_tokens': 454, 'input_cost': 0.0011275, 'output_cost': 3e-05, 'total_cost': 0.0011575000000000001, 'new_total_cost': 0.0011575000000000001}, 'Decompostion': {'input_tokens': 3931, 'output_tokens': 453, 'total_tokens': 4384, 'input_cost': 0.0098275, 'output_cost': 0.00453, 'total_cost': 0.014357499999999999, 'new_total_cost': 0.014357499999999999}, 'Query generation': {'input_tokens': 1495, 'output_tokens': 277, 'total_tokens': 1772, 'input_cost': 0.0037375, 'output_cost': 0.00277, 'total_cost': 0.006507499999999999, 'new_total_cost': 0.006507499999999999}, 'Self-correction': {'input_tokens': 4058, 'output_tokens': 327, 'total_tokens': 4385, 'input_cost': 0.010145, 'output_cost': 0.00327, 'total_cost': 0.013415}}","              oid  fid  stellar  corrected  ndet  ndubious  dmdt_first  \
 0    ZTF19acccyyt    1    False       True   147         0         NaN   
 1    ZTF19acccyyt    2    False       True   166         0         NaN   
 2    ZTF19aadblpm    1    False       True   170         0         NaN   
@@ -1589,8 +1330,8 @@ LIMIT 50
  'ZTF19aaapjjd' 'ZTF19aaapjjd' 'ZTF19aaapjjd' 'ZTF19aalzdfg'
  'ZTF19aalzdfg' 'ZTF19aalzdfg' 'ZTF17aaaxudr' 'ZTF17aaaxudr'
  'ZTF18acbycof' 'ZTF18acbycof' 'ZTF18abjwcao' 'ZTF18abjwcao']"
-17,"Find at most 30 ZTF objects that have a probability larger than 0.9 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4'. Return the following columns: identifier of the ZTF and candidate, distance from the nearest Solar System object, MPC archive magnitude and name. Include also the following columns related to each candidate in the output table: filter identifier, FWHM from SExtractor, number of PS1 calibrators used, and exposure time",gpt-4o,python,False,"# Sub-query to get oids with probability > 0.9 for 'asteroid' in 'stamp_classifier_1.0.4'
-sub_query_probability = f'''
+17,"Find at most 30 ZTF objects that have a probability larger than 0.9 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4'. Return the following columns: identifier of the ZTF and candidate, distance from the nearest Solar System object, MPC archive magnitude and name. Include also the following columns related to each candidate in the output table: filter identifier, FWHM from SExtractor, number of PS1 calibrators used, and exposure time",gpt-4o,python,False,"# Sub-query to get the oids of objects with a high probability of being an asteroid
+sub_query_oid = f'''
 SELECT DISTINCT
     probability.oid
 FROM
@@ -1601,41 +1342,22 @@ WHERE
     AND probability.class_name = 'asteroid'
     AND probability.probability > 0.9
     AND probability.ranking = 1
-''' # Sub-query to get candidate information from detection table
-sub_query_detection = f'''
-SELECT
-    detection.oid, detection.candid, detection.fid, detection.exptime
-FROM
-    detection
-WHERE
-    detection.oid IN ({sub_query_probability})
-''' # Sub-query to get FWHM from dataquality table
-sub_query_dataquality = f'''
-SELECT
-    dataquality.candid, dataquality.fwhm
-FROM
-    dataquality
-WHERE
-    dataquality.candid IN (SELECT candid FROM ({sub_query_detection}) AS det)
-''' # Sub-query to get Solar System information from ss_ztf table
-sub_query_ss_ztf = f'''
-SELECT
-    ss_ztf.candid, ss_ztf.ssdistnr, ss_ztf.ssmagnr, ss_ztf.ssnamenr
-FROM
-    ss_ztf
-WHERE
-    ss_ztf.candid IN (SELECT candid FROM ({sub_query_detection}) AS det)
-''' # Final query combining all sub-queries
+''' # Main query to retrieve the required information
 full_query = f'''
 SELECT
-    det.oid, det.candid, ss.ssdistnr, ss.ssmagnr, ss.ssnamenr,
-    det.fid, dq.fwhm, det.exptime
+    obj.oid,
+    det.candid,
+    ss.ssdistnr,
+    ss.ssmagnr,
+    ss.ssnamenr,
+    det.fid,
+    dq.fwhm,
+    det.exptime
 FROM
-    ({sub_query_detection}) AS det
-INNER JOIN
-    ({sub_query_dataquality}) AS dq ON det.candid = dq.candid
-INNER JOIN
-    ({sub_query_ss_ztf}) AS ss ON det.candid = ss.candid
+    ({sub_query_oid}) AS obj_oids
+    INNER JOIN detection det ON obj_oids.oid = det.oid
+    INNER JOIN ss_ztf ss ON det.oid = ss.oid AND det.candid = ss.candid
+    INNER JOIN dataquality dq ON det.oid = dq.oid AND det.candid = dq.candid
 LIMIT 30
 '''","SELECT
     sq1.oid,
@@ -1662,22 +1384,22 @@ ON sq1.oid = ss_ztf.oid
 INNER JOIN
 dataquality
 ON ss_ztf.oid = dataquality.oid
-AND ss_ztf.candid = dataquality.candid",,,,"(psycopg2.errors.UndefinedColumn) column detection.exptime does not exist
-LINE 8: ...  detection.oid, detection.candid, detection.fid, detection....
-                                                             ^
+AND ss_ztf.candid = dataquality.candid",,,,"(psycopg2.errors.UndefinedTable) missing FROM-clause entry for table ""obj""
+LINE 3:     obj.oid,
+            ^
 
 [SQL: 
 SELECT
-    det.oid, det.candid, ss.ssdistnr, ss.ssmagnr, ss.ssnamenr,
-    det.fid, dq.fwhm, det.exptime
+    obj.oid,
+    det.candid,
+    ss.ssdistnr,
+    ss.ssmagnr,
+    ss.ssnamenr,
+    det.fid,
+    dq.fwhm,
+    det.exptime
 FROM
     (
-SELECT
-    detection.oid, detection.candid, detection.fid, detection.exptime
-FROM
-    detection
-WHERE
-    detection.oid IN (
 SELECT DISTINCT
     probability.oid
 FROM
@@ -1688,205 +1410,129 @@ WHERE
     AND probability.class_name = 'asteroid'
     AND probability.probability > 0.9
     AND probability.ranking = 1
-)
-) AS det
-INNER JOIN
-    (
-SELECT
-    dataquality.candid, dataquality.fwhm
-FROM
-    dataquality
-WHERE
-    dataquality.candid IN (SELECT candid FROM (
-SELECT
-    detection.oid, detection.candid, detection.fid, detection.exptime
-FROM
-    detection
-WHERE
-    detection.oid IN (
-SELECT DISTINCT
-    probability.oid
-FROM
-    probability
-WHERE
-    probability.classifier_name = 'stamp_classifier'
-    AND probability.classifier_version = 'stamp_classifier_1.0.4'
-    AND probability.class_name = 'asteroid'
-    AND probability.probability > 0.9
-    AND probability.ranking = 1
-)
-) AS det)
-) AS dq ON det.candid = dq.candid
-INNER JOIN
-    (
-SELECT
-    ss_ztf.candid, ss_ztf.ssdistnr, ss_ztf.ssmagnr, ss_ztf.ssnamenr
-FROM
-    ss_ztf
-WHERE
-    ss_ztf.candid IN (SELECT candid FROM (
-SELECT
-    detection.oid, detection.candid, detection.fid, detection.exptime
-FROM
-    detection
-WHERE
-    detection.oid IN (
-SELECT DISTINCT
-    probability.oid
-FROM
-    probability
-WHERE
-    probability.classifier_name = 'stamp_classifier'
-    AND probability.classifier_version = 'stamp_classifier_1.0.4'
-    AND probability.class_name = 'asteroid'
-    AND probability.probability > 0.9
-    AND probability.ranking = 1
-)
-) AS det)
-) AS ss ON det.candid = ss.candid
+) AS obj_oids
+    INNER JOIN detection det ON obj_oids.oid = det.oid
+    INNER JOIN ss_ztf ss ON det.oid = ss.oid AND det.candid = ss.candid
+    INNER JOIN dataquality dq ON det.oid = dq.oid AND det.candid = dq.candid
 LIMIT 30
 ]
-(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11498, 'output_tokens': 15, 'total_tokens': 11513, 'input_cost': 0.028745, 'output_cost': 0.00015, 'total_cost': 0.028895, 'new_total_cost': 0.028895}, 'Classification': {'input_tokens': 491, 'output_tokens': 3, 'total_tokens': 494, 'input_cost': 0.0012275, 'output_cost': 3e-05, 'total_cost': 0.0012575000000000002, 'new_total_cost': 0.0012575000000000002}, 'Decompostion': {'input_tokens': 4234, 'output_tokens': 670, 'total_tokens': 4904, 'input_cost': 0.010585, 'output_cost': 0.0067, 'total_cost': 0.017285000000000002, 'new_total_cost': 0.017285000000000002}, 'Query generation': {'input_tokens': 2050, 'output_tokens': 438, 'total_tokens': 2488, 'input_cost': 0.005125, 'output_cost': 0.00438, 'total_cost': 0.009505, 'new_total_cost': 0.009505}, 'Self-correction': {'input_tokens': 4420, 'output_tokens': 430, 'total_tokens': 4850, 'input_cost': 0.01105, 'output_cost': 0.0043, 'total_cost': 0.01535}}","             oid               candid  ssdistnr  ssmagnr   ssnamenr  fid  \
-0   ZTF22abbxlfm  2058407585615015005       0.0     18.4      63734    2   
-1   ZTF22abbxlfo  2058407585615015006       0.0     19.1     162764    2   
-2   ZTF22abbxlfs  2058408042415015018       0.0     20.1     307456    2   
-3   ZTF22abbxlft  2058407585615015019       0.0     19.2      98590    2   
-4   ZTF22abbxlfw  2058408042415015005       0.0     20.3      93878    2   
-5   ZTF22abbxlfy  2058407585615015011       0.0     19.3      78887    2   
-6   ZTF22abbxlfx  2058408042415015006       0.0     20.4     553519    2   
-7   ZTF22abbxlgc  2058407585615015028       0.0     19.3     102546    2   
-8   ZTF22abbxlge  2058407585615015013       0.0     19.3      79429    2   
-9   ZTF22abbxlgd  2058408042415015003       0.0     21.4     260799    2   
-10  ZTF22abbxlgi  2058407585615015003       0.0     19.9     158314    2   
-11  ZTF22abbxlgh  2058408042415015001       0.0     21.1     244594    2   
-12  ZTF22abbxlgm  2058407585615015016       0.0     19.8     412638    2   
-13  ZTF22abbxlgl  2058407585615015029       0.0     19.8      38268    2   
-14  ZTF22abbxlgj  2058408042415015010       1.0     21.2     321998    2   
-15  ZTF22abbxlgw  2058408043615015000       0.0     19.0     100240    2   
-16  ZTF22abbxlgz  2058408043615015024       0.0     20.5     148517    2   
-17  ZTF22abbxlha  2058408043615015031       0.0     19.6      40857    2   
-18  ZTF22abbxlhd  2058408043615015023       0.0     20.8     253895    2   
-19  ZTF22abbxlhk  2058408045815015025       0.0     19.5     126298    2   
-20  ZTF22abbxlhf  2058408043615015002       0.0     21.1     406561    2   
-21  ZTF22abbxlhh  2058408043615015028       0.0     21.0     252847    2   
-22  ZTF22abbxlhq  2058408045815015012       1.0     20.4  2005SP205    2   
-23  ZTF22abbxlht  2058408045815015023       0.0     20.4     179497    2   
-24  ZTF22abbxlhx  2058408040515015018       0.0     19.6      32597    2   
-25  ZTF22abbxlia  2058408040515015006       0.0     20.5     130630    2   
-26  ZTF22abbxlib  2058408040515015004       0.0     19.6     122597    2   
-27  ZTF22abbxkgp  2058406634415015002       0.0     20.1     380928    2   
-28  ZTF22abbxkgu  2058406634415015021       0.0     20.4      89503    2   
-29  ZTF22abbxkhu  2058407582915015034       0.0     20.2     292307    2   
+(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11498, 'output_tokens': 15, 'total_tokens': 11513, 'input_cost': 0.028745, 'output_cost': 0.00015, 'total_cost': 0.028895, 'new_total_cost': 0.028895}, 'Classification': {'input_tokens': 491, 'output_tokens': 3, 'total_tokens': 494, 'input_cost': 0.0012275, 'output_cost': 3e-05, 'total_cost': 0.0012575000000000002, 'new_total_cost': 0.0012575000000000002}, 'Decompostion': {'input_tokens': 4214, 'output_tokens': 785, 'total_tokens': 4999, 'input_cost': 0.010535, 'output_cost': 0.00785, 'total_cost': 0.018385, 'new_total_cost': 0.018385}, 'Query generation': {'input_tokens': 2165, 'output_tokens': 248, 'total_tokens': 2413, 'input_cost': 0.0054125, 'output_cost': 0.00248, 'total_cost': 0.0078925, 'new_total_cost': 0.0078925}, 'Self-correction': {'input_tokens': 4073, 'output_tokens': 272, 'total_tokens': 4345, 'input_cost': 0.0101825, 'output_cost': 0.00272, 'total_cost': 0.0129025}}","             oid               candid  ssdistnr  ssmagnr ssnamenr  fid  \
+0   ZTF21abiqtce  1642187814715015011       0.0     19.2    46590    2   
+1   ZTF21abiqtch  1642187814715015001       0.0     20.2    43053    2   
+2   ZTF21abiqter  1642187333015015003       0.0     19.2    31627    2   
+3   ZTF21abiqtfd  1642187815715015004       0.0     19.8    99956    2   
+4   ZTF21abiqtfq  1642187810815015010       0.0     19.6    95240    2   
+5   ZTF21abiqtdq  1642187813415015016       0.0     19.7    90203    2   
+6   ZTF21abiqteb  1642187330415015005       0.0     19.7    49011    2   
+7   ZTF21abiqthd  1642187332615015001       0.0     19.7    50206    2   
+8   ZTF21abiqtgw  1642187334715015015       0.0     20.0    84185    2   
+9   ZTF21abiqthy  1642187810415015009       0.0     19.9    15413    2   
+10  ZTF21abiqtjj  1642187812915015015       0.0     20.0   104588    2   
+11  ZTF21abiqtpp  1642188425415015000       0.0     19.5    45799    2   
+12  ZTF21abiqtco  1642187332815015005       0.0     19.2    16429    2   
+13  ZTF21abiqthe  1642187332615015000       0.0     19.8    49544    2   
+14  ZTF21abiqtkx  1642187332915015013       0.0     19.6    26316    2   
+15  ZTF21abiqtnb  1642187334415015010       0.0     20.4   427804    2   
+16  ZTF21abiqtnz  1642187812115015015       0.0     20.5    89670    2   
+17  ZTF21abiqtps  1642187334115015000       0.0     19.5    53383    2   
+18  ZTF21abiqtbe  1642187334615015007       0.0     19.8    79515    2   
+19  ZTF21abiqteh  1642187331215015007       0.0     16.2     1056    2   
+20  ZTF21abiqtgg  1642187335515015006       0.0     20.6   231452    2   
+21  ZTF21abiqtiv  1642187334315015015       0.0     19.9    94465    2   
+22  ZTF21abiqtkn  1642187335715015002       0.0     19.6   108203    2   
+23  ZTF21abiqtkw  1642187332915015011       0.0     18.8    14295    2   
+24  ZTF21abiqtob  1642187816115015009       0.0     19.8   138479    2   
+25  ZTF21abiqtrf  1642188422115015014       0.0     18.2    11192    2   
+26  ZTF21abiqtqj  1642187330615015003       0.0     20.5    64508    2   
+27  ZTF21abiqtan  1642187330515015010       0.0     19.6    76897    2   
+28  ZTF21abiqtbs  1642187813015015002       0.0     20.1    38199    2   
+29  ZTF21abiqtaw  1642187336315015001       0.0     19.6    75778    2   
 
         fwhm  nmatches  exptime  
-0   2.070000       361     30.0  
-1   1.850000       361     30.0  
-2   1.980000       408     30.0  
-3   1.720000       361     30.0  
-4   1.720000       408     30.0  
-5   2.280000       361     30.0  
-6   1.810000       408     30.0  
-7   1.740000       361     30.0  
-8   1.900000       361     30.0  
-9   1.240000       408     30.0  
-10  1.940000       361     30.0  
-11  2.000000       408     30.0  
-12  1.970000       361     30.0  
-13  1.910000       361     30.0  
-14  1.250000       408     30.0  
-15  1.920000       463     30.0  
-16  2.420000       463     30.0  
-17  1.840000       463     30.0  
-18  2.780000       463     30.0  
-19  1.810000       381     30.0  
-20  2.310000       463     30.0  
-21  1.148893       463     30.0  
-22  1.820000       381     30.0  
-23  2.160000       381     30.0  
-24  1.780000       384     30.0  
-25  1.850000       384     30.0  
-26  1.930000       384     30.0  
-27  1.840000       301     30.0  
-28  2.090000       301     30.0  
-29  2.050000       368     30.0  ","['oid' 'candid' 'ssdistnr' 'ssmagnr' 'ssnamenr' 'fid' 'fwhm' 'nmatches'
- 'exptime']","['ZTF22abbxlfm' 'ZTF22abbxlfo' 'ZTF22abbxlfs' 'ZTF22abbxlft'
- 'ZTF22abbxlfw' 'ZTF22abbxlfy' 'ZTF22abbxlfx' 'ZTF22abbxlgc'
- 'ZTF22abbxlge' 'ZTF22abbxlgd' 'ZTF22abbxlgi' 'ZTF22abbxlgh'
- 'ZTF22abbxlgm' 'ZTF22abbxlgl' 'ZTF22abbxlgj' 'ZTF22abbxlgw'
- 'ZTF22abbxlgz' 'ZTF22abbxlha' 'ZTF22abbxlhd' 'ZTF22abbxlhk'
- 'ZTF22abbxlhf' 'ZTF22abbxlhh' 'ZTF22abbxlhq' 'ZTF22abbxlht'
- 'ZTF22abbxlhx' 'ZTF22abbxlia' 'ZTF22abbxlib' 'ZTF22abbxkgp'
- 'ZTF22abbxkgu' 'ZTF22abbxkhu']"
-18,"Find at most 10 ZTF objects that satisfy the following conditions: have more than 500 detections, a probability larger than 0.5 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4', and a distance from the nearest Solar System object below 2 arcsec. Return the following columns: ZTF identifier, number of detections, first and last detection date, probability, candidate identifier, distance between ZTF object and MPC object, MPC name, detection date and filter identifier. Order the results by the first detection date.",gpt-4o,python,False,"# Step 2: Filter objects with more than 500 detections
-sub_query_detections = f'''
-SELECT
-    oid
-FROM
-    object
-WHERE
-    ndet > 500
-''' # Step 3: Filter objects with a high probability of being an asteroid
+0   1.930000       363     30.0  
+1   2.010000       363     30.0  
+2   2.020000       428     30.0  
+3   2.200000       312     30.0  
+4   1.980000       367     30.0  
+5   1.720000       330     30.0  
+6   1.670000       431     30.0  
+7   1.730000       438     30.0  
+8   2.750000       475     30.0  
+9   1.660000       386     30.0  
+10  2.530000       376     30.0  
+11  1.660000      1449     30.0  
+12  2.630000       479     30.0  
+13  2.280000       438     30.0  
+14  2.740000       398     30.0  
+15  1.650000       412     30.0  
+16  1.114006       361     30.0  
+17  2.270000       418     30.0  
+18  2.550000       417     30.0  
+19  2.150000       430     30.0  
+20  2.250000       383     30.0  
+21  2.120000       467     30.0  
+22  1.930000       446     30.0  
+23  2.560000       398     30.0  
+24  2.080000       300     30.0  
+25  2.040000      1712     30.0  
+26  1.089646       433     30.0  
+27  1.670000       444     30.0  
+28  1.750000       352     30.0  
+29  2.360000       448     30.0  ","['oid' 'candid' 'ssdistnr' 'ssmagnr' 'ssnamenr' 'fid' 'fwhm' 'nmatches'
+ 'exptime']","['ZTF21abiqtce' 'ZTF21abiqtch' 'ZTF21abiqter' 'ZTF21abiqtfd'
+ 'ZTF21abiqtfq' 'ZTF21abiqtdq' 'ZTF21abiqteb' 'ZTF21abiqthd'
+ 'ZTF21abiqtgw' 'ZTF21abiqthy' 'ZTF21abiqtjj' 'ZTF21abiqtpp'
+ 'ZTF21abiqtco' 'ZTF21abiqthe' 'ZTF21abiqtkx' 'ZTF21abiqtnb'
+ 'ZTF21abiqtnz' 'ZTF21abiqtps' 'ZTF21abiqtbe' 'ZTF21abiqteh'
+ 'ZTF21abiqtgg' 'ZTF21abiqtiv' 'ZTF21abiqtkn' 'ZTF21abiqtkw'
+ 'ZTF21abiqtob' 'ZTF21abiqtrf' 'ZTF21abiqtqj' 'ZTF21abiqtan'
+ 'ZTF21abiqtbs' 'ZTF21abiqtaw']"
+18,"Find at most 10 ZTF objects that satisfy the following conditions: have more than 500 detections, a probability larger than 0.5 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4', and a distance from the nearest Solar System object below 2 arcsec. Return the following columns: ZTF identifier, number of detections, first and last detection date, probability, candidate identifier, distance between ZTF object and MPC object, MPC name, detection date and filter identifier. Order the results by the first detection date.",gpt-4o,python,False,"# Sub-query: Probability Filtering
 sub_query_probability = f'''
-SELECT
-    oid
-FROM
-    probability
-WHERE
-    classifier_name = 'stamp_classifier'
-    AND classifier_version = 'stamp_classifier_1.0.4'
-    AND class_name = 'asteroid'
-    AND probability > 0.5
-    AND ranking = 1
-''' # Step 4: Filter objects based on distance to Solar System objects
-sub_query_ss_distance = f'''
-SELECT
-    oid
-FROM
-    ss_ztf
-WHERE
-    ssdistnr < 2
-''' # Step 5: Combine sub-queries to find common oids
+SELECT DISTINCT oid
+FROM probability
+WHERE classifier_name='stamp_classifier'
+  AND classifier_version='stamp_classifier_1.0.4'
+  AND class_name='asteroid'
+  AND ranking=1
+  AND probability > 0.5
+''' # Sub-query: Detection Count
+sub_query_detection_count = f'''
+SELECT oid
+FROM object
+WHERE ndet > 500
+''' # Sub-query: Distance Filtering
+sub_query_distance = f'''
+SELECT oid
+FROM ss_ztf
+WHERE ssdistnr < 2
+''' # Combine Sub-queries
 sub_query_combined = f'''
-SELECT
-    oid
-FROM
-    ({sub_query_detections}) AS det
+SELECT oid
+FROM ({sub_query_probability}) AS prob
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_probability}) AS prob
+SELECT oid
+FROM ({sub_query_detection_count}) AS det_count
 INTERSECT
-SELECT
-    oid
-FROM
-    ({sub_query_ss_distance}) AS ss
-''' # Step 6: Retrieve detailed information for filtered objects
+SELECT oid
+FROM ({sub_query_distance}) AS dist
+''' # Main Query: Retrieve Required Columns
 full_query = f'''
-SELECT
-    obj.oid AS ztf_identifier,
-    obj.ndet AS number_of_detections,
-    obj.firstmjd AS first_detection_date,
-    obj.lastmjd AS last_detection_date,
-    prob.probability,
-    det.candid AS candidate_identifier,
-    ss.ssdistnr AS distance_to_mpc_object,
-    ss.ssnamenr AS mpc_name,
-    det.mjd AS detection_date,
-    det.fid AS filter_identifier
-FROM
-    ({sub_query_combined}) AS filtered_oids
-    INNER JOIN object AS obj ON filtered_oids.oid = obj.oid
-    INNER JOIN detection AS det ON obj.oid = det.oid
-    INNER JOIN probability AS prob ON obj.oid = prob.oid
-    INNER JOIN ss_ztf AS ss ON obj.oid = ss.oid
-WHERE
-    prob.classifier_name = 'stamp_classifier'
-    AND prob.classifier_version = 'stamp_classifier_1.0.4'
-    AND prob.class_name = 'asteroid'
-    AND prob.ranking = 1
-ORDER BY
-    obj.firstmjd
+SELECT obj.oid AS ztf_identifier, obj.ndet AS number_of_detections, 
+       obj.firstmjd AS first_detection_date, obj.lastmjd AS last_detection_date, 
+       prob.probability, det.candid AS candidate_identifier, 
+       ss.ssdistnr AS distance_to_mpc_object, ss.ssnamenr AS mpc_name, 
+       det.mjd AS detection_date, det.fid AS filter_identifier
+FROM ({sub_query_combined}) AS combined
+INNER JOIN object obj ON combined.oid = obj.oid
+INNER JOIN probability prob ON obj.oid = prob.oid
+INNER JOIN detection det ON obj.oid = det.oid
+INNER JOIN ss_ztf ss ON obj.oid = ss.oid
+WHERE prob.classifier_name='stamp_classifier'
+  AND prob.classifier_version='stamp_classifier_1.0.4'
+  AND prob.class_name='asteroid'
+  AND prob.ranking=1
+ORDER BY obj.firstmjd
 LIMIT 10
 '''","SELECT
     object.oid, ndet, firstmjd, lastmjd,
@@ -1915,73 +1561,49 @@ LIMIT 10
 ",,,,"(psycopg2.errors.QueryCanceled) canceling statement due to statement timeout
 
 [SQL: 
-SELECT
-    obj.oid AS ztf_identifier,
-    obj.ndet AS number_of_detections,
-    obj.firstmjd AS first_detection_date,
-    obj.lastmjd AS last_detection_date,
-    prob.probability,
-    det.candid AS candidate_identifier,
-    ss.ssdistnr AS distance_to_mpc_object,
-    ss.ssnamenr AS mpc_name,
-    det.mjd AS detection_date,
-    det.fid AS filter_identifier
-FROM
-    (
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    object
-WHERE
-    ndet > 500
-) AS det
-INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    probability
-WHERE
-    classifier_name = 'stamp_classifier'
-    AND classifier_version = 'stamp_classifier_1.0.4'
-    AND class_name = 'asteroid'
-    AND probability > 0.5
-    AND ranking = 1
+SELECT obj.oid AS ztf_identifier, obj.ndet AS number_of_detections, 
+       obj.firstmjd AS first_detection_date, obj.lastmjd AS last_detection_date, 
+       prob.probability, det.candid AS candidate_identifier, 
+       ss.ssdistnr AS distance_to_mpc_object, ss.ssnamenr AS mpc_name, 
+       det.mjd AS detection_date, det.fid AS filter_identifier
+FROM (
+SELECT oid
+FROM (
+SELECT DISTINCT oid
+FROM probability
+WHERE classifier_name='stamp_classifier'
+  AND classifier_version='stamp_classifier_1.0.4'
+  AND class_name='asteroid'
+  AND ranking=1
+  AND probability > 0.5
 ) AS prob
 INTERSECT
-SELECT
-    oid
-FROM
-    (
-SELECT
-    oid
-FROM
-    ss_ztf
-WHERE
-    ssdistnr < 2
-) AS ss
-) AS filtered_oids
-    INNER JOIN object AS obj ON filtered_oids.oid = obj.oid
-    INNER JOIN detection AS det ON obj.oid = det.oid
-    INNER JOIN probability AS prob ON obj.oid = prob.oid
-    INNER JOIN ss_ztf AS ss ON obj.oid = ss.oid
-WHERE
-    prob.classifier_name = 'stamp_classifier'
-    AND prob.classifier_version = 'stamp_classifier_1.0.4'
-    AND prob.class_name = 'asteroid'
-    AND prob.ranking = 1
-ORDER BY
-    obj.firstmjd
+SELECT oid
+FROM (
+SELECT oid
+FROM object
+WHERE ndet > 500
+) AS det_count
+INTERSECT
+SELECT oid
+FROM (
+SELECT oid
+FROM ss_ztf
+WHERE ssdistnr < 2
+) AS dist
+) AS combined
+INNER JOIN object obj ON combined.oid = obj.oid
+INNER JOIN probability prob ON obj.oid = prob.oid
+INNER JOIN detection det ON obj.oid = det.oid
+INNER JOIN ss_ztf ss ON obj.oid = ss.oid
+WHERE prob.classifier_name='stamp_classifier'
+  AND prob.classifier_version='stamp_classifier_1.0.4'
+  AND prob.class_name='asteroid'
+  AND prob.ranking=1
+ORDER BY obj.firstmjd
 LIMIT 10
 ]
-(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11514, 'output_tokens': 12, 'total_tokens': 11526, 'input_cost': 0.028785, 'output_cost': 0.00012, 'total_cost': 0.028905, 'new_total_cost': 0.028905}, 'Classification': {'input_tokens': 505, 'output_tokens': 3, 'total_tokens': 508, 'input_cost': 0.0012625, 'output_cost': 3e-05, 'total_cost': 0.0012925, 'new_total_cost': 0.0012925}, 'Decompostion': {'input_tokens': 4247, 'output_tokens': 657, 'total_tokens': 4904, 'input_cost': 0.0106175, 'output_cost': 0.00657, 'total_cost': 0.0171875, 'new_total_cost': 0.0171875}, 'Query generation': {'input_tokens': 2050, 'output_tokens': 513, 'total_tokens': 2563, 'input_cost': 0.005125, 'output_cost': 0.00513, 'total_cost': 0.010255, 'new_total_cost': 0.010255}, 'Self-correction': {'input_tokens': 4398, 'output_tokens': 513, 'total_tokens': 4911, 'input_cost': 0.010995, 'output_cost': 0.00513, 'total_cost': 0.016125}}","            oid  ndet      firstmjd       lastmjd  probability  \
+(Background on this error at: https://sqlalche.me/e/20/e3q8)","{'Schema Linking': {'input_tokens': 11514, 'output_tokens': 12, 'total_tokens': 11526, 'input_cost': 0.028785, 'output_cost': 0.00012, 'total_cost': 0.028905, 'new_total_cost': 0.028905}, 'Classification': {'input_tokens': 505, 'output_tokens': 3, 'total_tokens': 508, 'input_cost': 0.0012625, 'output_cost': 3e-05, 'total_cost': 0.0012925, 'new_total_cost': 0.0012925}, 'Decompostion': {'input_tokens': 4227, 'output_tokens': 725, 'total_tokens': 4952, 'input_cost': 0.0105675, 'output_cost': 0.00725, 'total_cost': 0.0178175, 'new_total_cost': 0.0178175}, 'Query generation': {'input_tokens': 2118, 'output_tokens': 414, 'total_tokens': 2532, 'input_cost': 0.005295, 'output_cost': 0.00414, 'total_cost': 0.009434999999999999, 'new_total_cost': 0.009434999999999999}, 'Self-correction': {'input_tokens': 4299, 'output_tokens': 414, 'total_tokens': 4713, 'input_cost': 0.0107475, 'output_cost': 0.00414, 'total_cost': 0.0148875}}","            oid  ndet      firstmjd       lastmjd  probability  \
 0  ZTF18aakqcul   728  58279.169583  60649.539618          1.0   
 1  ZTF18abbxrwg   948  58287.335428  60603.131134          1.0   
 2  ZTF18abctcjx   941  58301.355914  60622.127350          1.0   
@@ -2007,65 +1629,74 @@ LIMIT 10
  'ssnamenr' 'mjd' 'fid']","['ZTF18aakqcul' 'ZTF18abbxrwg' 'ZTF18abctcjx' 'ZTF18abegdjb'
  'ZTF18abjxzue' 'ZTF18abnowwc' 'ZTF18abnugpf' 'ZTF17aacmuxo'
  'ZTF17aaapcln' 'ZTF18abrbhzl']"
-19,"Find all detections, non-detections and forced photometry points for the ZTF object 'ZTF24aamtvxb'. Return all epochs in the same output table, including the following columns: ZTF identifier, epoch date, filter identifier, isdiffpos flag, detection difference magnitude and its uncertainty, 5-sigma magnitude limit, forced difference magnitude and its uncertainty, and a column named 'table' (that contains the name of the table of origin for each epoch)",gpt-4o,python,False,"# Step 1: Sub-query to get the oid for the ZTF object 'ZTF24aamtvxb'
-sub_query_oid = f'''
-SELECT oid
-FROM object
-WHERE object.ztf_id = 'ZTF24aamtvxb'
-''' # Step 2: Sub-query to get detection data
+19,"Find all detections, non-detections and forced photometry points for the ZTF object 'ZTF24aamtvxb'. Return all epochs in the same output table, including the following columns: ZTF identifier, epoch date, filter identifier, isdiffpos flag, detection difference magnitude and its uncertainty, 5-sigma magnitude limit, forced difference magnitude and its uncertainty, and a column named 'table' (that contains the name of the table of origin for each epoch)",gpt-4o,python,False,"# Sub-query to get the object identifier for 'ZTF24aamtvxb'
+sub_query_object = f'''
+SELECT oid FROM object WHERE object_id = 'ZTF24aamtvxb'
+''' # Sub-query for detections
 sub_query_detection = f'''
-SELECT
-    detection.oid,
-    detection.mjd AS epoch_date,
-    detection.fid AS filter_identifier,
-    detection.isdiffpos,
-    detection.magpsf AS detection_diff_mag,
-    detection.sigmapsf AS detection_diff_mag_uncertainty,
-    NULL AS diffmaglim,
-    NULL AS forcediffimflux,
-    NULL AS forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    isdiffpos, 
+    magpsf AS detection_diff_mag, 
+    sigmapsf AS detection_diff_mag_uncertainty, 
+    NULL AS diffmaglim, 
+    NULL AS forced_mag, 
+    NULL AS forced_mag_uncertainty, 
     'detection' AS table
-FROM
+FROM 
     detection
-WHERE
-    detection.oid = ({sub_query_oid})
-''' # Step 3: Sub-query to get non-detection data
+WHERE 
+    oid IN ({sub_query_object})
+''' # Sub-query for non-detections
 sub_query_non_detection = f'''
-SELECT
-    non_detection.oid,
-    non_detection.mjd AS epoch_date,
-    non_detection.fid AS filter_identifier,
-    NULL AS isdiffpos,
-    NULL AS detection_diff_mag,
-    NULL AS detection_diff_mag_uncertainty,
-    non_detection.diffmaglim,
-    NULL AS forcediffimflux,
-    NULL AS forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    NULL AS isdiffpos, 
+    NULL AS detection_diff_mag, 
+    NULL AS detection_diff_mag_uncertainty, 
+    diffmaglim AS diffmaglim, 
+    NULL AS forced_mag, 
+    NULL AS forced_mag_uncertainty, 
     'non_detection' AS table
-FROM
+FROM 
     non_detection
-WHERE
-    non_detection.oid = ({sub_query_oid})
-''' # Step 4: Sub-query to get forced photometry data
+WHERE 
+    oid IN ({sub_query_object})
+''' # Sub-query for forced photometry
 sub_query_forced_photometry = f'''
-SELECT
-    forced_photometry.oid,
-    forced_photometry.mjd AS epoch_date,
-    forced_photometry.fid AS filter_identifier,
-    NULL AS isdiffpos,
-    NULL AS detection_diff_mag,
-    NULL AS detection_diff_mag_uncertainty,
-    NULL AS diffmaglim,
-    forced_photometry.forcediffimflux,
-    forced_photometry.forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    NULL AS isdiffpos, 
+    NULL AS detection_diff_mag, 
+    NULL AS detection_diff_mag_uncertainty, 
+    NULL AS diffmaglim, 
+    forcediffimflux AS forced_mag, 
+    forcediffimfluxunc AS forced_mag_uncertainty, 
     'forced_photometry' AS table
-FROM
+FROM 
     forced_photometry
-WHERE
-    forced_photometry.oid = ({sub_query_oid})
-''' # Step 5: Combine all sub-queries using UNION
+WHERE 
+    oid IN ({sub_query_object})
+''' # Combine all sub-queries using UNION
 full_query = f'''
-SELECT * FROM (
+SELECT 
+    oid, 
+    epoch_date, 
+    filter_identifier, 
+    isdiffpos, 
+    detection_diff_mag, 
+    detection_diff_mag_uncertainty, 
+    diffmaglim, 
+    forced_mag, 
+    forced_mag_uncertainty, 
+    table
+FROM (
     {sub_query_detection}
     UNION
     {sub_query_non_detection}
@@ -2106,81 +1737,86 @@ FROM
     forced_photometry
 WHERE
     oid = 'ZTF24aamtvxb'
-",,,,"(psycopg2.errors.UndefinedColumn) column object.ztf_id does not exist
-LINE 21: WHERE object.ztf_id = 'ZTF24aamtvxb'
-               ^
+",,,,"(psycopg2.errors.SyntaxError) syntax error at or near ""table""
+LINE 12:     table
+             ^
 
 [SQL: 
-SELECT * FROM (
+SELECT 
+    oid, 
+    epoch_date, 
+    filter_identifier, 
+    isdiffpos, 
+    detection_diff_mag, 
+    detection_diff_mag_uncertainty, 
+    diffmaglim, 
+    forced_mag, 
+    forced_mag_uncertainty, 
+    table
+FROM (
     
-SELECT
-    detection.oid,
-    detection.mjd AS epoch_date,
-    detection.fid AS filter_identifier,
-    detection.isdiffpos,
-    detection.magpsf AS detection_diff_mag,
-    detection.sigmapsf AS detection_diff_mag_uncertainty,
-    NULL AS diffmaglim,
-    NULL AS forcediffimflux,
-    NULL AS forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    isdiffpos, 
+    magpsf AS detection_diff_mag, 
+    sigmapsf AS detection_diff_mag_uncertainty, 
+    NULL AS diffmaglim, 
+    NULL AS forced_mag, 
+    NULL AS forced_mag_uncertainty, 
     'detection' AS table
-FROM
+FROM 
     detection
-WHERE
-    detection.oid = (
-SELECT oid
-FROM object
-WHERE object.ztf_id = 'ZTF24aamtvxb'
+WHERE 
+    oid IN (
+SELECT oid FROM object WHERE object_id = 'ZTF24aamtvxb'
 )
 
     UNION
     
-SELECT
-    non_detection.oid,
-    non_detection.mjd AS epoch_date,
-    non_detection.fid AS filter_identifier,
-    NULL AS isdiffpos,
-    NULL AS detection_diff_mag,
-    NULL AS detection_diff_mag_uncertainty,
-    non_detection.diffmaglim,
-    NULL AS forcediffimflux,
-    NULL AS forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    NULL AS isdiffpos, 
+    NULL AS detection_diff_mag, 
+    NULL AS detection_diff_mag_uncertainty, 
+    diffmaglim AS diffmaglim, 
+    NULL AS forced_mag, 
+    NULL AS forced_mag_uncertainty, 
     'non_detection' AS table
-FROM
+FROM 
     non_detection
-WHERE
-    non_detection.oid = (
-SELECT oid
-FROM object
-WHERE object.ztf_id = 'ZTF24aamtvxb'
+WHERE 
+    oid IN (
+SELECT oid FROM object WHERE object_id = 'ZTF24aamtvxb'
 )
 
     UNION
     
-SELECT
-    forced_photometry.oid,
-    forced_photometry.mjd AS epoch_date,
-    forced_photometry.fid AS filter_identifier,
-    NULL AS isdiffpos,
-    NULL AS detection_diff_mag,
-    NULL AS detection_diff_mag_uncertainty,
-    NULL AS diffmaglim,
-    forced_photometry.forcediffimflux,
-    forced_photometry.forcediffimfluxunc,
+SELECT 
+    oid, 
+    mjd AS epoch_date, 
+    fid AS filter_identifier, 
+    NULL AS isdiffpos, 
+    NULL AS detection_diff_mag, 
+    NULL AS detection_diff_mag_uncertainty, 
+    NULL AS diffmaglim, 
+    forcediffimflux AS forced_mag, 
+    forcediffimfluxunc AS forced_mag_uncertainty, 
     'forced_photometry' AS table
-FROM
+FROM 
     forced_photometry
-WHERE
-    forced_photometry.oid = (
-SELECT oid
-FROM object
-WHERE object.ztf_id = 'ZTF24aamtvxb'
+WHERE 
+    oid IN (
+SELECT oid FROM object WHERE object_id = 'ZTF24aamtvxb'
 )
 
 ) AS combined_results
 ORDER BY epoch_date
 ]
-(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11497, 'output_tokens': 11, 'total_tokens': 11508, 'input_cost': 0.0287425, 'output_cost': 0.00011, 'total_cost': 0.0288525, 'new_total_cost': 0.0288525}, 'Classification': {'input_tokens': 487, 'output_tokens': 3, 'total_tokens': 490, 'input_cost': 0.0012175, 'output_cost': 3e-05, 'total_cost': 0.0012475000000000001, 'new_total_cost': 0.0012475000000000001}, 'Decompostion': {'input_tokens': 4230, 'output_tokens': 643, 'total_tokens': 4873, 'input_cost': 0.010575, 'output_cost': 0.00643, 'total_cost': 0.017005, 'new_total_cost': 0.017005}, 'Query generation': {'input_tokens': 2019, 'output_tokens': 507, 'total_tokens': 2526, 'input_cost': 0.0050475, 'output_cost': 0.00507, 'total_cost': 0.0101175, 'new_total_cost': 0.0101175}, 'Self-correction': {'input_tokens': 4486, 'output_tokens': 505, 'total_tokens': 4991, 'input_cost': 0.011215, 'output_cost': 0.00505, 'total_cost': 0.016264999999999998}}","              oid           mjd  fid  isdiffpos     magpsf  sigmapsf  \
+(Background on this error at: https://sqlalche.me/e/20/f405)","{'Schema Linking': {'input_tokens': 11497, 'output_tokens': 11, 'total_tokens': 11508, 'input_cost': 0.0287425, 'output_cost': 0.00011, 'total_cost': 0.0288525, 'new_total_cost': 0.0288525}, 'Classification': {'input_tokens': 487, 'output_tokens': 3, 'total_tokens': 490, 'input_cost': 0.0012175, 'output_cost': 3e-05, 'total_cost': 0.0012475000000000001, 'new_total_cost': 0.0012475000000000001}, 'Decompostion': {'input_tokens': 4210, 'output_tokens': 1186, 'total_tokens': 5396, 'input_cost': 0.010525, 'output_cost': 0.01186, 'total_cost': 0.022385000000000002, 'new_total_cost': 0.022385000000000002}, 'Query generation': {'input_tokens': 2562, 'output_tokens': 516, 'total_tokens': 3078, 'input_cost': 0.006405, 'output_cost': 0.00516, 'total_cost': 0.011564999999999999, 'new_total_cost': 0.011564999999999999}, 'Self-correction': {'input_tokens': 4330, 'output_tokens': 583, 'total_tokens': 4913, 'input_cost': 0.010825, 'output_cost': 0.00583, 'total_cost': 0.016655}}","              oid           mjd  fid  isdiffpos     magpsf  sigmapsf  \
 0    ZTF24aamtvxb  60440.276505    1        1.0  18.307241  0.082498   
 1    ZTF24aamtvxb  60442.171227    1        1.0  15.560810  0.033140   
 2    ZTF24aamtvxb  60444.229016    1        1.0  14.585193  0.024982   
@@ -2318,7 +1954,7 @@ WHERE
 ON sq1.oid = sq2.oid
 ORDER BY sq1.oid
 LIMIT 30
-",,,,"invalid syntax (<string>, line 2)","{'Schema Linking': {'input_tokens': 11542, 'output_tokens': 5, 'total_tokens': 11547, 'input_cost': 0.028855, 'output_cost': 5e-05, 'total_cost': 0.028905, 'new_total_cost': 0.028905}, 'Classification': {'input_tokens': 526, 'output_tokens': 3, 'total_tokens': 529, 'input_cost': 0.001315, 'output_cost': 3e-05, 'total_cost': 0.001345, 'new_total_cost': 0.001345}, 'Decompostion': {'input_tokens': 0, 'output_tokens': 0, 'input_cost': 0.0, 'output_cost': 0.0, 'total_cost': 0.0, 'new_total_cost': 0.0}, 'Query generation': {'input_tokens': 4026, 'output_tokens': 357, 'total_tokens': 4383, 'input_cost': 0.010065, 'output_cost': 0.00357, 'total_cost': 0.013635, 'new_total_cost': 0.013635}, 'Self-correction': {'input_tokens': 4172, 'output_tokens': 416, 'total_tokens': 4588, 'input_cost': 0.01043, 'output_cost': 0.00416, 'total_cost': 0.014589999999999999}}","             oid  ndet      firstmjd  prob_stamp_bogus  prob_lc_transient
+",,,,"invalid syntax (<string>, line 2)","{'Schema Linking': {'input_tokens': 11542, 'output_tokens': 5, 'total_tokens': 11547, 'input_cost': 0.028855, 'output_cost': 5e-05, 'total_cost': 0.028905, 'new_total_cost': 0.028905}, 'Classification': {'input_tokens': 526, 'output_tokens': 3, 'total_tokens': 529, 'input_cost': 0.001315, 'output_cost': 3e-05, 'total_cost': 0.001345, 'new_total_cost': 0.001345}, 'Decompostion': {'input_tokens': 0, 'output_tokens': 0, 'input_cost': 0.0, 'output_cost': 0.0, 'total_cost': 0.0, 'new_total_cost': 0.0}, 'Query generation': {'input_tokens': 4026, 'output_tokens': 357, 'total_tokens': 4383, 'input_cost': 0.010065, 'output_cost': 0.00357, 'total_cost': 0.013635, 'new_total_cost': 0.013635}, 'Self-correction': {'input_tokens': 4172, 'output_tokens': 567, 'total_tokens': 4739, 'input_cost': 0.01043, 'output_cost': 0.00567, 'total_cost': 0.0161}}","             oid  ndet      firstmjd  prob_stamp_bogus  prob_lc_transient
 0   ZTF17aaahhwn    16  60168.430151          0.771008              1.000
 1   ZTF18aajkcdn    11  59904.431377          0.767230              0.954
 2   ZTF18abjrfqx    42  58325.466678          0.745006              1.000
