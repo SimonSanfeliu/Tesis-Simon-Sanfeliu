@@ -7,7 +7,7 @@ from pipeline.ragStep import rag_step
 
 
 def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 
-             quantity: int, format: str, direct: bool) -> tuple[str, dict, dict]:
+             quantity: int, format: str, direct: bool) -> tuple[str, dict, dict, str, str]:
     """Pipeline of the LLM process using RAG to get the SQL query.
 
     Args:
@@ -30,6 +30,8 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
         usage (dict): API usage after RAG process
         prompts (dict): Dictonary with the prompts used in every step of the 
         pipeline
+        true_tables (str): Table schema used for the query
+        label (str): Difficulty label detected for the query
     """    
     # Context for the RAG process
     with open('prompts/schema_linking/DBSchema.txt', 'r') as file:
@@ -127,11 +129,11 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
         "Query generation": prompt 
     }
     
-    return table, total_usage, prompts, true_tables
+    return table, total_usage, prompts, true_tables, label
 
 
 def recreated_pipeline(query: str, model: str, max_tokens: int, 
-                       format: str, direct: bool) -> tuple[str, dict, dict]:
+                       format: str, direct: bool) -> tuple[str, dict, dict, str, str]:
     """Recreated pipeline from the original work
 
     Args:
@@ -148,6 +150,8 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         total_usage (dict): API usage after the whole process
         prompts (dict): Dictonary with the prompts used in every step of the 
         pipeline
+        tables (str): Table schema used for the query
+        label (str): Difficulty label detected for the query
     """
     # Schema linking to obtain the tables needed for the query
     tables, schema_usage = schema_linking_v2(query, model)
@@ -223,4 +227,4 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         "Query generation": prompt
     }
     
-    return table, total_usage, prompts, tables
+    return table, total_usage, prompts, tables, label
