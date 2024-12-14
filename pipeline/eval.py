@@ -112,13 +112,12 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     """
     # Check if the new pipeline is being used
     if rag_pipe:
-        table, total_usage, prompts, tables = pipeline(query, model, max_tokens, size, 
+        table, total_usage, prompts, tables, label = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format, 
                                                direct)
         print(table, flush=True)
         # If self-correction is enabled, use the respective prompts to correct
         if self_corr:
-          # TODO: Agregar caso borde de queries simples cuando el formato es python
           result, error = run_sql_alerce(table, format, min, n_tries)
           # Check if there was an error. If there was, correct it
           if error is not None:
@@ -127,6 +126,25 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
             
             # Correct it in the appropiate format
             if format == "sql":
+              corr_prompt = prompt_self_correction_v2(
+                gen_task=general_context_selfcorr_v1, 
+                tab_schema=tables, 
+                req=query, 
+                sql_pred=table, 
+                error=str(error))
+              new, new_usage = api_call(model, max_tokens, corr_prompt)
+              new = format_response(format, new)
+              print("Corrected query:", flush=True)
+              print(new, flush=True)
+              total_usage["Self-correction"] = new_usage
+              total_usage = pricing(total_usage, model)
+              prompts["Self-correction"] = corr_prompt
+              
+              # Run the corrected query  
+              result, error = run_sql_alerce(table, format, min, n_tries)
+              
+            elif format == "python" and label == "simple":
+              format = "sql"
               corr_prompt = prompt_self_correction_v2(
                 gen_task=general_context_selfcorr_v1, 
                 tab_schema=tables, 
@@ -168,7 +186,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
 
     # Using the recreated pipeline
     else:
-        table, total_usage, prompts, tables = recreated_pipeline(query, model, 
+        table, total_usage, prompts, tables, label = recreated_pipeline(query, model, 
                                                          max_tokens, format, 
                                                          direct)
         print(table)
@@ -196,6 +214,25 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
             prompts["Self-correction"] = corr_prompt
             
             # Run the corrected query
+            result, error = run_sql_alerce(table, format, min, n_tries)
+            
+          elif format == "python" and label == "simple":
+            format = "sql"
+            corr_prompt = prompt_self_correction_v2(
+                gen_task=general_context_selfcorr_v1, 
+                tab_schema=tables, 
+                req=query, 
+                sql_pred=table, 
+                error=str(error))
+            new, new_usage = api_call(model, max_tokens, corr_prompt)
+            new = format_response(format, new)
+            print("Corrected query:", flush=True)
+            print(new, flush=True)
+            total_usage["Self-correction"] = new_usage
+            total_usage = pricing(total_usage, model)
+            prompts["Self-correction"] = corr_prompt
+              
+            # Run the corrected query  
             result, error = run_sql_alerce(table, format, min, n_tries)
                     
           else:
@@ -415,6 +452,45 @@ def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int,
   return results_list
 
 
+def error_handler(e: str) -> None:
+  """Error handler for the parallel execution
+  
+  Args:
+    e (str): Error message
+    
+  Returns:
+    None
+  """
+  print('error', flush=True)
+  print(dir(e), "\n", flush=True)
+  print("-->{}<--".format(e.__cause__), flush=True)
+  
+
+def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame, 
+                      result_funct: Callable, format: str, num_cpus: int = 1, 
+                      min: int = 2) -> None:
+  """Run the SQL queries in parallel
+  
+  Args:
+    sqls_list (list[list]): List of lists with the SQL queries to evaluate
+    db_ (pandas.Dataframe): Dataframe with the true/gold SQL queries
+    result_funct (func): Function to save the results during the parallel execution
+    format (str): The type of formatting to use. It can be 'sql' for a singular 
+    query string or 'python' for the decomposition in variables
+    num_cpus (int, optional): Number of CPUs to use for multiprocessing. Defaults to 1
+    min (int, optional): Timeout limit for the database connection. Defaults to 2
+    
+  Returns:
+    None
+  """
+  pool = mp.Pool(processes=num_cpus)
+  for i,sql_pred in enumerate(sqls_list):
+      print(f"Running evaluation n°{i}", flush=True)
+      pool.apply_async(compare_oids, args=(db_, sql_pred, i, format, min), callback=result_funct, error_callback=error_handler)
+  pool.close()
+  pool.join()
+
+
 def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str, 
                      max_tokens: int, format: str, path: str, min: int = 2, 
                      n_tries: int = 3, self_corr: bool = False, 
@@ -428,7 +504,7 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
     n_exp (int): Number of the experiment, used to save the results
     model (str): LLM model to use
     max_tokens (int): Maximum output tokens of the LLM.
-    format (str): The format for SQL queries ('singular' or 'var')
+    format (str): The format for SQL queries ('sql' or 'python')
     path (str): Path to save the usage and prompts
     min (int, optional): Timeout limit for the database connection. Defaults to 2
     n_tries (int, optional): Number of times to try excuting the query. Defaults to 3
@@ -657,6 +733,110 @@ def new_compare_oids(df_: pd.DataFrame, n_exp: int, model: str,
   return results_list
 
 
+def new_compare_oids_v2(df_: pd.DataFrame, n_exp: int, model: str, 
+                        max_tokens: int, format: str, path: str, min: int = 2, 
+                        n_tries: int = 3, self_corr: bool = False, 
+                        rag_pipe: bool = False, direct: bool = False, 
+                        size: int = 0, overlap: int = 0, 
+                        quantity: int = 0) -> list[dict]:
+  """Evaluate the generated SQL queries with the true/gold SQL queries
+  
+  Args:
+    df_ (pandas.DataFrame): Dataframe with the true/gold SQL queries
+    n_exp (int): Number of the experiment, used to save the results
+    model (str): LLM model to use
+    max_tokens (int): Maximum output tokens of the LLM.
+    format (str): The format for SQL queries ('sql' or 'python')
+    path (str): Path to save the usage and prompts
+    min (int, optional): Timeout limit for the database connection. Defaults to 2
+    n_tries (int, optional): Number of times to try excuting the query. Defaults to 3
+    self_corr (bool, optional): Enable self-correction. Defaults to False
+    rag_pipe (bool, optional): Use the RAG pipeline. Defaults to False
+    direct (bool, optional): Use direct query generation. Defaults to False
+    size (int, optional): Chunk size for RAG. Defaults to 0
+    overlap (int, optional): Overlap size for RAG chunks. Defaults to 0
+    quantity (int, optional): Number of similar chunks for RAG. Defaults to 0
+    
+  Returns:
+    results_list (list[dict]): List of dictionaries with the evaluation results
+  """
+  # Path to save files
+  if not os.path.exists(path):
+    os.makedirs(path)
+  
+  # iterate over the rows of the dataset
+  results_list = []
+  indx = 0
+  for _, row in df_.iterrows():
+
+    query_pred = None
+    error_pred = None
+    query_gold = None
+    error_gold = None
+
+    # Get output of the predicted SQL query
+    pred_start = time.time()
+    query_pred, error_pred, usage, prompts, table = run_pipeline(
+      row["request"], model, max_tokens, size, overlap, quantity, format, 
+      direct, rag_pipe, self_corr, min, n_tries
+      )    
+    pred_end = time.time()
+    pred_time = pred_end - pred_start
+    
+    # Saving the usage and prompts
+    current_time = datetime.now(pytz.timezone('Chile/Continental'))
+    with open(f"{path}/usage_req_{row['req_id']}_{current_time.strftime('%H-%M-%S')}.pkl", "wb") as fp:
+      pickle.dump(usage, fp)
+    with open(f"{path}/prompts_req_{row['req_id']}_{current_time.strftime('%H-%M-%S')}.pkl", "w") as fp:
+      json.dump(prompts, fp)
+
+    # Get output of the expected SQL query
+    gold_query_test = str(row['gold_query'])
+    gold_start = time.time() # start time gold_query
+    try:
+      query_gold, error_gold = run_sql_alerce(gold_query_test, "sql", min=min, 
+                                              n_tries=n_tries)
+    except Exception as e:
+      print(f"Exception occured running SQL gold: {e}")
+      print("Skipping this query for the sake of the CSV")
+      continue
+    
+    # Check if the gold query was executed correctly, if not try again
+    if error_gold is not None:
+      query_gold, error_gold = run_sql_alerce(gold_query_test, "sql", min=min, 
+                                              n_tries=n_tries)
+      if error_gold is not None:
+        print(f"Gold query {row['req_id']} could not be executed for experiment {n_exp}", flush=True)
+        results_list.append({"n_exp": n_exp, "req_id": row['req_id'], 
+                             "difficulty": row['difficulty'], 
+                             "query_type": row['type'], "n_rows_gold": 0, 
+                             "n_rows_pred": 0, "rows_oid_pred_true": 0, 
+                             "rows_oid_pred_false": 0, "rows_oid_gold_true": 0,
+                             "rows_oid_gold_false": 0, "n_cols_gold": 0, 
+                             "n_cols_pred": 0, "cols_pred_true": 0, 
+                             "cols_pred_false": 0, "cols_gold_true": 0, 
+                             "cols_gold_false": 0, "gold_time": 0, 
+                             "pred_time": 0, 'error_pred': None, 
+                             "are_equal": False, "is_oid": False, 
+                             "cols_pred": 0, "cols_gold": 0, "columns": 1})
+        indx += 1    
+        continue
+    gold_end = time.time()
+    gold_time = gold_end - gold_start
+
+    # Drop duplicated columns
+    query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
+    
+    # Obtain the gold values
+    oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+    n_rows_gold = len(oids_gold)
+    n_cols_gold = query_gold.shape[1]
+    
+    print(f"Experimeto número: {n_exp}", flush=True)
+    
+    
+
+
 def safe_new_compare_oids(*args):
     try:
         # Call the actual function
@@ -666,45 +846,6 @@ def safe_new_compare_oids(*args):
         arg_dict = {*args}
         return {"error": str(e), "args": arg_dict}
 
-
-def error_handler(e: str) -> None:
-  """Error handler for the parallel execution
-  
-  Args:
-    e (str): Error message
-    
-  Returns:
-    None
-  """
-  print('error', flush=True)
-  print(dir(e), "\n", flush=True)
-  print("-->{}<--".format(e.__cause__), flush=True)
-  
-
-def run_sqls_parallel(sqls_list: list[list], db_: pd.DataFrame, 
-                      result_funct: Callable, format: str, num_cpus: int = 1, 
-                      min: int = 2) -> None:
-  """Run the SQL queries in parallel
-  
-  Args:
-    sqls_list (list[list]): List of lists with the SQL queries to evaluate
-    db_ (pandas.Dataframe): Dataframe with the true/gold SQL queries
-    result_funct (func): Function to save the results during the parallel execution
-    format (str): The type of formatting to use. It can be 'sql' for a singular 
-    query string or 'python' for the decomposition in variables
-    num_cpus (int, optional): Number of CPUs to use for multiprocessing. Defaults to 1
-    min (int, optional): Timeout limit for the database connection. Defaults to 2
-    
-  Returns:
-    None
-  """
-  pool = mp.Pool(processes=num_cpus)
-  for i,sql_pred in enumerate(sqls_list):
-      print(f"Running evaluation n°{i}", flush=True)
-      pool.apply_async(compare_oids, args=(db_, sql_pred, i, format, min), callback=result_funct, error_callback=error_handler)
-  pool.close()
-  pool.join()
-  
   
 def new_run_sqls_parallel(df_: pd.DataFrame, model: str, max_tokens: int, 
                           format: str, path: str, min: int = 2, 
