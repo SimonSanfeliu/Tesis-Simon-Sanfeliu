@@ -10,7 +10,8 @@ import sqlalchemy
 import sqlparse
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
-from prompts.classification.Classification import diff_class_prompt_v7, final_instructions_diff_v2
+from prompts.classification.Classification import diff_class_prompt_v7, \
+    final_instructions_diff_v2
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
@@ -139,14 +140,16 @@ def format_response(specified_format: str, response: str) -> str:
     if specified_format == "sql":
         formatted_response = response.split("```sql")[1].split("```")[0] \
         .replace("```", "").replace("```sql", "")
+        
     elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
+        
     else:
         raise Exception("No valid format specified")
     
-    # Make sure the formatted response is in the appropiate string format
-    formatted_response = sqlparse.format(formatted_response, reindent=True, keyword_case="upper")
+    # Adding more formatting
+    formatted_response = formatted_response.replace(";", "")
     
     return formatted_response
 
