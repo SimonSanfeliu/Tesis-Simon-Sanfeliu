@@ -82,8 +82,6 @@ variables.
 - Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 
-{astro_context}
-
 ## Important details about the database required for the query:
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to 

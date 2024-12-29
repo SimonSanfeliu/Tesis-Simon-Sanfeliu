@@ -7,8 +7,6 @@ ONLY ANSWER IN THE FORMAT SPECIFIED BEFORE
 
 User request: {ur}
 
-{astro_context}
-
 The tables and their info:
 
 # ALeRCE's database schema

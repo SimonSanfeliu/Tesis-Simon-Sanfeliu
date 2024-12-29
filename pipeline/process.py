@@ -260,8 +260,7 @@ def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
     """
     # Make the schema linking prompt
     prompt = sch_linking.format(
-        ur = query,
-        astro_context = astro_context
+        ur = query
     )
         
     # Obtain the tables necessary for the SQL query
@@ -379,8 +378,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
         # Simple queries don't need decomposition
         prompt = query_sql_simple.format(
             ur = ur,
-            tables = tables,
-            astro_context = astro_context
+            tables = tables
         )
         # No usage needed for the simple query. There is no decomposition
         usage = {"input_tokens": 0, "output_tokens": 0}

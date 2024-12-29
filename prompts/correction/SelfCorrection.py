@@ -48,8 +48,6 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
 
-{astro_context}
-
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```step_number [STEP QUERY HERE] ```
 # Finally, join all the steps in a final query, with the following format: 
@@ -87,8 +85,6 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 - If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
-
-{astro_context}
 
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```python sub_queries = [VARIABLE SUB-QUERY HERE] ```
