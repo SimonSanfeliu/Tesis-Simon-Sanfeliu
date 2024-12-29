@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 import pandas as pd
 
-from pipeline.process import api_call, format_response, schema_linking_v2, \
+from pipeline.process import api_call, format_response, schema_linking, \
     classify, decomposition_v2, pricing, direct_prompts, astro_context
 from pipeline.ragStep import rag_step
 
@@ -154,7 +154,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         label (str): Difficulty label detected for the query
     """
     # Schema linking to obtain the tables needed for the query
-    tables, schema_usage = schema_linking_v2(query, model)
+    tables, schema_usage = schema_linking(query, model)
     
     # Classify the query
     label, to_classify, classify_usage = classify(query, tables, model)

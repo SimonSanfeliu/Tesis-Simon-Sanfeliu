@@ -257,7 +257,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         else:
           result, error = run_sql_alerce(table, format, min, n_tries)
             
-    return result, error, total_usage, prompts, table
+    return result, error, total_usage, prompts, table, label
 
 
 def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int, 
