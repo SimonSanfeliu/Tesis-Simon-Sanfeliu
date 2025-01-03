@@ -76,7 +76,7 @@ def run_sql_alerce(sql: str, format: str, min: int = 2,
 
 
 def run_pipeline(query: str, model: str, max_tokens: int, size: int, 
-                 overlap: int, quantity: int, format: int, 
+                 overlap: int, quantity: int, format: str, 
                  direct: bool = False, rag_pipe: bool = True, 
                  self_corr: bool = True, min: int = 2, 
                  n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict, str]:
@@ -112,6 +112,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     """
     # Check if the new pipeline is being used
     if rag_pipe:
+        print("New pipeline")
         table, total_usage, prompts, tables, label = pipeline(query, model, max_tokens, size, 
                                                overlap, quantity, format, 
                                                direct)
@@ -186,6 +187,7 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
 
     # Using the recreated pipeline
     else:
+        print("Recreated pipeline")
         table, total_usage, prompts, tables, label = recreated_pipeline(query, model, 
                                                          max_tokens, format, 
                                                          direct)

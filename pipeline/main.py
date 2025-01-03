@@ -89,7 +89,7 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
             "Query generation": prompt 
         }
         
-        return table, total_usage, prompts, true_tables
+        return table, total_usage, prompts, true_tables, label
     
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
@@ -188,7 +188,7 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
             "Query generation": prompt 
         }
         
-        return table, total_usage, prompts, tables
+        return table, total_usage, prompts, tables, label
     
     # Creating the prompt based on the difficulty of the query
     prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
