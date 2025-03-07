@@ -6,6 +6,105 @@ from pipeline.process import api_call, format_response, schema_linking, \
 from pipeline.ragStep import rag_step
 
 
+def recreated_pipeline(query: str, model: str, max_tokens: int, 
+                       format: str, direct: bool) -> tuple[str, dict, dict, str, str]:
+    """Recreated pipeline from the original work
+
+    Args:
+        query (str): Natural language query for the database
+        model (str): LLM to use
+        max_tokens (int): Maximum amount of output tokens of the LLM
+        format (str): The type of formatting to use. It can be 'sql' for a 
+        singular query string or 'python' for the decomposition in Python 
+        variables
+        direct (bool): If True, use direct approach for query generation. If 
+        False, use step-by-step approach
+        
+    Returns:
+        table (str): Resulting SQL query
+        total_usage (dict): API usage after the whole process
+        prompts (dict): Dictonary with the prompts used in every step of the 
+        pipeline
+        tables (str): Table schema used for the query
+        label (str): Difficulty label detected for the query
+    """
+    # Schema linking to obtain the tables needed for the query
+    tables, schema_usage = schema_linking(query, model)
+    
+    # Classify the query
+    label, to_classify, classify_usage = classify(query, tables, model)
+    
+    # If the direct approach is chosen, do not use the decomposition process
+    if direct:
+        # Creating the prompt based on the difficulty of the query
+        prompt = direct_prompts(label, query, tables)
+        
+        # Obtaining the SQL query
+        response, usage = api_call(model, max_tokens, prompt)
+        
+        # Formatting the response
+        table = format_response(format, response)
+        print(f"Resulting {format} query: {table}", flush=True)
+        
+        # Obtaining the total usage of the pipeline
+        total_usage = {
+            "Schema Linking": schema_usage,
+            "Classification": classify_usage,
+            "Query generation": usage
+        }
+        
+        # Obtaining its costs
+        total_usage = pricing(total_usage, model)
+        
+        # Adding up the prompts used
+        prompts = {
+            "Schema Linking": tables,
+            "Classification": to_classify,
+            "Query generation": prompt 
+        }
+        
+        return table, total_usage, prompts, tables, label
+    
+    # Creating the prompt based on the difficulty of the query
+    prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
+                                                         query,
+                                                         tables, 
+                                                         model, 
+                                                         format)
+    
+    # Obtaining the SQL query
+    response, usage = api_call(model, max_tokens, prompt)
+    print(f"Raw response: {response}", flush=True)
+    
+    # Catching borderline cases
+    if format == "python" and label == "simple":
+        format = "sql"
+    
+    # Formatting the response
+    table = format_response(format, response)
+    
+    # Obtaining the total usage of the pipeline
+    total_usage = {
+        "Schema Linking": schema_usage,
+        "Classification": classify_usage,
+        "Decompostion": decomp_usage,
+        "Query generation": usage
+    }
+    
+    # Obtaining its costs
+    total_usage = pricing(total_usage, model)
+    
+    # Adding up the prompts used
+    prompts = {
+        "Schema Linking": tables,
+        "Classification": to_classify,
+        "Decomposition": decomp_plan,
+        "Query generation": prompt
+    }
+    
+    return table, total_usage, prompts, tables, label
+
+
 def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int, 
              quantity: int, format: str, direct: bool) -> tuple[str, dict, dict, str, str]:
     """Pipeline of the LLM process using RAG to get the SQL query.
@@ -20,8 +119,9 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
         process
         quantity (int): The amount of most similar chunks to consider in the
         RAG process
-        format (str): The type of formatting to use. It can be 'singular' for
-        a singular query string or 'var' for the decomposition in variables
+        format (str): The type of formatting to use. It can be 'sql' for a 
+        singular query string or 'python' for the decomposition in Python 
+        variables
         direct (bool): If True, use direct approach for query generation. If 
         False, use step-by-step approach
         
@@ -130,101 +230,3 @@ def pipeline(query: str, model: str, max_tokens: int, size: int, overlap: int,
     }
     
     return table, total_usage, prompts, true_tables, label
-
-
-def recreated_pipeline(query: str, model: str, max_tokens: int, 
-                       format: str, direct: bool) -> tuple[str, dict, dict, str, str]:
-    """Recreated pipeline from the original work
-
-    Args:
-        query (str): Natural language query for the database
-        model (str): LLM to use
-        max_tokens (int): Maximum amount of output tokens of the LLM
-        format (str): The type of formatting to use. It can be 'singular' for
-        a singular query string or 'var' for the decomposition in variables
-        direct (bool): If True, use direct approach for query generation. If 
-        False, use step-by-step approach
-        
-    Returns:
-        table (str): Resulting SQL query
-        total_usage (dict): API usage after the whole process
-        prompts (dict): Dictonary with the prompts used in every step of the 
-        pipeline
-        tables (str): Table schema used for the query
-        label (str): Difficulty label detected for the query
-    """
-    # Schema linking to obtain the tables needed for the query
-    tables, schema_usage = schema_linking(query, model)
-    
-    # Classify the query
-    label, to_classify, classify_usage = classify(query, tables, model)
-    
-    # If the direct approach is chosen, do not use the decomposition process
-    if direct:
-        # Creating the prompt based on the difficulty of the query
-        prompt = direct_prompts(label, query, tables)
-        
-        # Obtaining the SQL query
-        response, usage = api_call(model, max_tokens, prompt)
-        
-        # Formatting the response
-        table = format_response(format, response)
-        print(f"Resulting {format} query: {table}", flush=True)
-        
-        # Obtaining the total usage of the pipeline
-        total_usage = {
-            "Schema Linking": schema_usage,
-            "Classification": classify_usage,
-            "Query generation": usage
-        }
-        
-        # Obtaining its costs
-        total_usage = pricing(total_usage, model)
-        
-        # Adding up the prompts used
-        prompts = {
-            "Schema Linking": tables,
-            "Classification": to_classify,
-            "Query generation": prompt 
-        }
-        
-        return table, total_usage, prompts, tables, label
-    
-    # Creating the prompt based on the difficulty of the query
-    prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
-                                                         query,
-                                                         tables, 
-                                                         model, 
-                                                         format)
-    
-    # Obtaining the SQL query
-    response, usage = api_call(model, max_tokens, prompt)
-    print(f"Raw response: {response}", flush=True)
-    
-    # Catching borderline cases
-    if format == "python" and label == "simple":
-        format = "sql"
-    
-    # Formatting the response
-    table = format_response(format, response)
-    
-    # Obtaining the total usage of the pipeline
-    total_usage = {
-        "Schema Linking": schema_usage,
-        "Classification": classify_usage,
-        "Decompostion": decomp_usage,
-        "Query generation": usage
-    }
-    
-    # Obtaining its costs
-    total_usage = pricing(total_usage, model)
-    
-    # Adding up the prompts used
-    prompts = {
-        "Schema Linking": tables,
-        "Classification": to_classify,
-        "Decomposition": decomp_plan,
-        "Query generation": prompt
-    }
-    
-    return table, total_usage, prompts, tables, label

@@ -93,8 +93,9 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
         process
         quantity (int): The amount of most similar chunks to consider in the
         RAG process
-        format (str): The type of formatting to use. It can be 'singular' for
-        a singular query string or 'var' for the decomposition in variables
+        format (str): The type of formatting to use. It can be 'sql' for a 
+        singular query string or 'python' for the decomposition in Python 
+        variables
         direct (bool): If True, use direct approach for query generation. If 
         False, use step-by-step approach
         rag_pipe (bool): Condition to use the new pipeline (uses RAG)

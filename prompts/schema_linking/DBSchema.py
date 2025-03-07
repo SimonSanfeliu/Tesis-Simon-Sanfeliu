@@ -388,7 +388,7 @@ CREATE TABLE object ( /* this is the most important table. It contains the main 
     g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/
     g_r_mean DOUBLE PRECISION, /* mean g-r difference color */
     g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */
-    meanra DOUBLE PRECISION,  /* mean right ascencion */
+    meanra DOUBLE PRECISION,  /* mean right ascension */
     meandec DOUBLE PRECISION,  /* mean declination */
     sigmara DOUBLE PRECISION, /* right ascension dispersion */
     sigmadec DOUBLE PRECISION, /* declination dispersion */
@@ -396,6 +396,31 @@ CREATE TABLE object ( /* this is the most important table. It contains the main 
     firstmjd DOUBLE PRECISION, /* time of first detection */
     lastmjd DOUBLE PRECISION, /* time of last detection */
     step_id_corr VARCHAR,
+    diffpos BOOLEAN, /* whether the first detection was positive or negative */
+    reference_change BOOLEAN /* whether the reference image changes */
+);'''
+context_objectTable_desc_v2 = '''
+CREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */
+    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */
+    deltajd DOUBLE PRECISION, /* time difference between last and first detection */
+    firstmjd DOUBLE PRECISION, /* time of first detection */
+    lastmjd DOUBLE PRECISION, /* time of last detection */
+    ndethist INTEGER,  /* number of posible detections above 3 sigma */
+    ncovhist INTEGER,  /* number of visits */
+    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/
+    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */
+    corrected BOOLEAN, /* whether the object was corrected */
+    stellar BOOLEAN, /* whether the object is likely psf shaped */
+    ndet INTEGER, /* total number of detections for the object */
+    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */
+    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/
+    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */
+    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */
+    meanra DOUBLE PRECISION,  /* mean right ascension */
+    meandec DOUBLE PRECISION,  /* mean declination */
+    sigmara DOUBLE PRECISION, /* right ascension dispersion */
+    sigmadec DOUBLE PRECISION, /* declination dispersion */
+    step_id_corr VARCHAR, /* correction step pipeline version */
     diffpos BOOLEAN, /* whether the first detection was positive or negative */
     reference_change BOOLEAN /* whether the reference image changes */
 );'''
@@ -409,14 +434,23 @@ context_probTable_desc = '''CREATE TABLE probability ( /* this table contains th
     ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */
     PRIMARY KEY (oid, class_name, classifier_name, classifier_version)
 );'''
+context_probTable_desc_v2 = '''CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */
+    oid VARCHAR REFERENCES object(oid), /* unique object identifier */
+    class_name VARCHAR, /* name of the class */
+    classifier_name VARCHAR, /* name of the classifier */
+    classifier_version VARCHAR, /* version of the classiifer */
+    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */
+    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */
+    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)
+);'''
 # magstat
 context_magstatTable_desc='''CREATE TABLE magstat ( /* different statistics for the object divided by band or filter */
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
-    fid INTEGER NOT NULL, /* band or filter identifier */
+    fid INTEGER NOT NULL, /* band or filter identifier (1=g; 2=r; 3=i) */
     stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */
-    corrected BOOLEAN NOT NULL, /* whether the object's light curve has been corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object’s light curve has been corrected */
     ndet INTEGER NOT NULL, /* the object number of detection in the given band */
-    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don't trust  */
+    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don’t trust  */
     dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */
     dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */
     sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */
@@ -455,7 +489,7 @@ context_ss_ztfTable_desc='''CREATE TABLE ss_ztf ( /* this table contains informa
     candid BIGINT NOT NULL, /* unique candidate identifier */
     ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */
     ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */
-    ssnamenr VARCHAR /* name to nearest known solar system object */
+    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */
     PRIMARY KEY (oid)
 );'''
 # detection
@@ -463,7 +497,7 @@ context_DetTable_desc='''CREATE TABLE detection (  /* this table contains inform
     candid BIGINT PRIMARY KEY, /* unique candidate identifier */
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */
-    fid INTEGER NOT NULL, /* filter identifier */
+    fid INTEGER NOT NULL, /* filter identifier  (1=g; 2=r; 3=i)*/
     pid FLOAT NOT NULL, /* program identifier */
     diffmaglim DOUBLE PRECISION, /* limiting difference magnitud */
     isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */
@@ -485,7 +519,7 @@ context_DetTable_desc='''CREATE TABLE detection (  /* this table contains inform
     magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */
     sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
-    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -527,7 +561,7 @@ context_forced_photometryTable_desc = '''CREATE TABLE forced_photometry ( /* thi
     pid BIGINT PRIMARY KEY, /* unique candidate identifier */
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */
-    fid INTEGER NOT NULL, /* filter identifier */
+    fid INTEGER NOT NULL, /* filter identifier  (1=g; 2=r; 3=i)*/
     ra DOUBLE PRECISION NOT NULL, /* inferred right ascension */
     dec DOUBLE PRECISION NOT NULL, /* inferred declination */
     mag DOUBLE PRECISION NOT NULL, /* point spread function (psf) difference magnitude */
@@ -536,7 +570,7 @@ context_forced_photometryTable_desc = '''CREATE TABLE forced_photometry ( /* thi
     e_mag_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */
     e_mag_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */
     isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */
-    corrected BOOLEAN NOT NULL, /* whether the object's magnitude was corrected */
+    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */
     dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */
     parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */
     has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */
@@ -606,6 +640,17 @@ context_xmatchTable_desc='''
 CREATE TABLE xmatch (
     oid VARCHAR REFERENCES object(oid), /* ZTF object Id */
     catid VARCHAR, /* Catalog Id / Name */
+    oid_catalog VARCHAR NOT NULL, /* Object Id in Catalog */
+    dist DOUBLE PRECISION NOT NULL, /* Distance to the closest ZTF object [arcsec] */
+    class_catalog VARCHAR, /* Class in the given gatalog if reported */
+    period DOUBLE PRECISION /* Period in the given catalog if reported  [days] */
+);
+'''
+# xmatch
+context_xmatchTable_desc_v2='''
+CREATE TABLE xmatch (
+    oid VARCHAR REFERENCES object(oid), /* ZTF object Id, same 'oid' from the others tables */
+    catid VARCHAR, /* Catalog Id / Name from which the object was matched */
     oid_catalog VARCHAR NOT NULL, /* Object Id in Catalog */
     dist DOUBLE PRECISION NOT NULL, /* Distance to the closest ZTF object [arcsec] */
     class_catalog VARCHAR, /* Class in the given gatalog if reported */
@@ -990,10 +1035,10 @@ schema_all_cntxV1 = {'object':context_objectTable_desc, 'probability': context_p
               'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
               'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
 # version 2 all tables w/ description of the columns
-schema_all_cntxV2 = {'object':context_objectTable_desc, 'probability': context_probTable_desc , 'feature': context_featureTable_desc,
+schema_all_cntxV2 = {'object':context_objectTable_desc_v2, 'probability': context_probTable_desc_v2 , 'feature': context_featureTable_desc,
               'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
               'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
-              'xmatch': context_xmatchTable_desc, 'allwise': context_allwiseTable_desc, 'dataquality': context_dataqualityTable_desc,
+              'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc, 'dataquality': context_dataqualityTable_desc,
               'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
               'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
 # Schema w/ Indexes, without description of the columns
@@ -1008,6 +1053,12 @@ schema_all_cntxV1_indx = {'object':context_objectTable_desc + context_objectTabl
                 'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
                 'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
                 'xmatch': context_xmatchTable_desc, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
+                'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
+                'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+schema_all_cntxV2_indx = {'object':context_objectTable_desc_v2 + context_objectTable_index, 'probability': context_probTable_desc_v2 + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index,
+                'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
+                'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+                'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
                 'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
                 'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
 # Schema w/ Indexes and Foreign Keys

@@ -59,6 +59,13 @@ As a SQL expert with a willingness to assist users, you are tasked with crafting
 The tables within the database are categorized into three types: time and band independent (e.g., object and probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection, forced-photometry). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
 The user values the personality of a knowledgeable SQL expert, so ensuring accuracy is paramount. Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 '''
+## version 18
+general_taskv18='''
+As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+ALeRCE processes data from the alert stream of the Zwicky Transient Facility (ZTF), so unless a specific catalog is mentioned, the data is from ZTF, including the object, candidate and filter identifiers, and other relevant information.  
+The user values the personality of a knowledgeable SQL expert, so ensuring accuracy is paramount. Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+'''
 
 
 # General context prompt, describing the schema and the database information
@@ -71,14 +78,14 @@ general_contextv5='''
 ## Default Parameters you need to carefully take in consideration
 -- the class probabilities for a given classifier and object are sorted from most to least likely as indicated by the 'ranking' column in the probability table. Thus, the most likely class for a given classifier and object should have 'ranking'=1.
 -- the ALeRCE classification Pipeline consists of a Stamp  classifier and a Light Curve classifier. The Light Curve classifier use a hierarchical method, being the most general. Thus, if no classifier is specified, the query should have classifier_name='lc_classifier' when selecting probabilities
--- If the user does not specify explicit columns, select all possible columns using the "SELECT *" SQL statement
+–- If the user does not specify explicit columns, select all possible columns using the "SELECT *" SQL statement
 -- DO NOT change the name of columns or tables, unless it is really required to do so for the SQL query
 ## ALeRCE Pipeline
 -- Stamp Classifier denoted by 'stamp_classifier': All alerts associated to new objects undergo a stamp based classification
 -- Light Curve Classifier denoted by 'lc_classifier' :  This classifier is a balanced hierarchical random forest classifier that uses four classification models and a total of 15 classes
 -- The first "hierarchical classifier" has three classes: [periodic, stochastic, transient]; and is denoted as 'lc_classifier_top'
 -- three more classifiers are applied, each one specialized on a  different type of spatial objects: Periodic, Transient and Stochastic, one specialized for each of the previous classes. Their name are denoted as 'lc_classifier_periodic', 'lc_classifier_transient' and 'lc_classifier_stochastic' respectively.
--- The 15 classes are, separated for each type type of object: Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')]; Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')]; and Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+-- The 15 classes are, separated for each type type of object: Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')]; Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')]; and Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability variables names
 -- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 -- classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -98,7 +105,7 @@ general_contextv6='''
 -- Choose probability.classifier_name='lc_classifier' if not specified
 -- Select * if no columns are requested
 -- Do not rename columns or tables if it is not necessary
-- Only queries about the first or last time of detection are feasible. If you are asked to filter by a specific time of detection tell the user that this is not possible.
+– Only queries about the first or last time of detection are feasible. If you are asked to filter by a specific time of detection tell the user that this is not possible.
 ## Probability variables names
 -- classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 -- classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -130,11 +137,11 @@ Given the following text, please thoroughly analyze and provide a detailed expla
 - Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
 - Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
 - The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic', 'lc_classifier_transient', and 'lc_classifier_stochastic', respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability Variable Names
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 - Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -172,7 +179,7 @@ Given the following text, please thoroughly analyze and provide a detailed expla
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability Variable Names
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 - Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -204,7 +211,7 @@ Given the following text, please thoroughly analyze and provide a detailed expla
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability Variable Names
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
 - Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
@@ -261,6 +268,11 @@ final_instructions_v17 = """# Remember to use only the schema provided, using th
 # Everything the user asks for is in the tables provided, you do not need to use any other table or column. Do NOT CHANGE the names of the tables or columns unless it is really required to do so for the SQL query.
 # Answer ONLY with the SQL query
 # Add COMMENTS IN PostgreSQL format so that the user can understand.
+# Using valid PostgreSQL, the names of the tables and columns, and the information given in 'Context', answer the following request for the tables provided above."""
+## version 19
+final_instructions_v19 = """# Remember to use only the schema provided, using the names of the tables and columns as they are given in the schema. You can use the information provided in the context to help you understand the schema and the request.
+# Assume that everything the user asks for is in the schema provided, you do not need to use any other table or column. Do NOT CHANGE the names of the tables or columns unless the user explicitly asks you to do so in the request, giving you the new name to use.
+# Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
 # Using valid PostgreSQL, the names of the tables and columns, and the information given in 'Context', answer the following request for the tables provided above."""
 
 

@@ -30,11 +30,11 @@ simple_query_cntx='''
   - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the text2sql task, to emphasize the most important details
@@ -83,11 +83,11 @@ medium_query_cntx='''
   - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the medium decomposition task, to emphasize the most important details for the decomposition
@@ -102,6 +102,20 @@ medium_query_instructions_1 = '''
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 '''
+medium_query_instructions_1_v2 = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities.
+- 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
+### GENERAL
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from all the tables that are used in the query.
+- Use the exact table and column names as they are in the database. This is crucial for the query to work correctly.
+- Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+# If you need to use 2 tables, try using a sub-query or INNER JPIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', choosing the best option for the query.
+# DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
+'''
+
 # medium decomposition prompt format
 medium_decomp_prompt = '''
 # {medium_decomp_task}
@@ -121,6 +135,13 @@ medium_query_task='''
 The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
 Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 '''
+medium_query_task_v2='''
+# As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+ALeRCE processes data from the alert stream of the Zwicky Transient Facility (ZTF), so unless a specific catalog is mentioned, the data is from ZTF, including the object, candidate and filter identifiers, and other relevant information.  
+Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+'''
+
 # Final instructions for the medium query generation task, to emphasize the most important details for the query
 medium_query_instructions_2 = '''
 ## DEFAULT CONDITIONS YOU NEED TO SET
@@ -137,6 +158,24 @@ medium_query_instructions_2 = '''
   ```sql SQL_QUERY_HERE ```
 DON'T include anything else in your answer. If you want to add comments, use the SQL comment format inside the query.
 '''
+medium_query_instructions_2_v2 = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities, if the user request all ranking probabilities, don't use it.
+- 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
+### GENERAL
+### Important points to consider
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from ALL the tables used, including the ones from the sub-queries.
+- Mantain the EXACT COLUMN names as they are in the database, unless the user explicitly asks you to do so in the request, giving you the new name to use. This is crucial for the query to work correctly.
+- Mantain the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object', if the query requires it. It is important to be really careful with the use of sub-queries or JOINs, as they can slow down the query.
+# Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
+# Answer ONLY with the final SQL query, with the following format: 
+  ```sql SQL_QUERY_HERE ```
+DON'T include anything else in your answer. If you want to add comments, use the SQL comment format inside the query.
+'''
+
 # medium generation prompt format
 medium_decomp_gen =  '''
 {medium_query_task}
@@ -174,11 +213,11 @@ adv_query_cntx='''
   - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the advanced decomposition task, to emphasize the most important details for the decomposition
@@ -219,6 +258,13 @@ adv_query_task= '''
 The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
 Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 '''
+adv_query_task_v2= '''
+# As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+ALeRCE processes data from the alert stream of the Zwicky Transient Facility (ZTF), so unless a specific catalog is mentioned, the data is from ZTF, including the object, candidate and filter identifiers, and other relevant information.  
+Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
+'''
+
 # Final instructions for the advanced query generation task, to emphasize the most important details for the query
 adv_query_instructions_2 = '''
 ## DEFAULT CONDITIONS YOU NEED TO SET
@@ -266,6 +312,14 @@ medium_decomp_task_v2 = '''
 # Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database.
 For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries. 
 Be careful to put all the information and details needed in the description, like conditions, the table and column names, etc.
+Take in consideration the advices, conditions and names from "General Context" and details of the database, or the query will not be optimal.
+# DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
+'''
+
+medium_decomp_task_v3 = '''
+# Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database.
+For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries. 
+Be careful to put all the information and details needed in the description, like conditions, the table and column names, and the details of the database schema. This is very important to ensure the query is optimal and accurate.
 Take in consideration the advices, conditions and names from "General Context" and details of the database, or the query will not be optimal.
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 '''
@@ -355,6 +409,16 @@ Take in consideration the advices, conditions and names from "General Context" a
 The request is a very difficult and advanced query, so you will need to use JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is very important that you give every possible detail in each step, describing the statements and the nested-queries that are required.
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 '''
+
+adv_decomp_task_v3 = '''
+# Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database.
+For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries. 
+Be careful to put all the information and details needed in the description, like conditions, the table and column names, and the details of the database schema. This is very important to ensure the query is optimal and accurate.
+Take in consideration the advices, conditions and names from "General Context" and details of the database, or the query will not be optimal.
+The request is a very difficult and advanced query, so you will need to use JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is very important that you give every possible detail in each step, describing the statements and the nested-queries that are required.
+# DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
+'''
+
 adv_query_instructions_1_v2 = '''
 ## DEFAULT CONDITIONS YOU NEED TO SET
 ### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
@@ -390,6 +454,53 @@ VI. Add the remaining conditions to the final result of step V, using the 'proba
 - Avoid changing the names of columns or tables unless it is necessary for the SQL query.
 
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' TABLE, 'object' TABLE, over an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
+# Finally, join all the steps in a final query, with the following format: 
+```sql [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answer.
+'''
+
+
+adv_query_instructions_1_v3 = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities.
+- 'probability.classifier_name='lc_classifier'
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
+II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, taking only the oids in the 'probability' sub-query with an INNER JOIN inside each 'feature' sub-query to retrieve only the features associated with the desired spatial objects.
+III. Make an UNION between the sub-queries of each feature from step II
+IV. Make an INTERSECT between the sub-queries of each feature from step II
+V. Filter the 'UNION' query from step III selecting only the 'oids' that are in the 'INTERSECT' query from step IV
+VI. Add the remaining conditions to the final result of step V, using the 'probability' sub-query from step I.
+### GENERAL
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
+- Use the exact table and column names as they are in the database. This is crucial for the query to work correctly.
+- Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+# If you need to use 2 or 3 tables, try using a sub-query or INNER JOIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
+# DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
+'''
+adv_query_instructions_2_v3 = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities, if the user request all ranking probabilities, don't use it.
+- 'probability.classifier_name='lc_classifier'
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
+II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, taking only the oids in the 'probability' sub-query with an INNER JOIN inside each 'feature' sub-query to retrieve only the features associated with the desired spatial objects.
+III. Make an UNION between the sub-queries of each feature from step II
+IV. Make an INTERSECT between the sub-queries of each feature from step II
+V. Filter the 'UNION' query from step III selecting only the 'oids' that are in the 'INTERSECT' query from step IV
+VI. Add the remaining conditions to the final result of step V, using the 'probability' sub-query from step I.
+### GENERAL
+### Important points to consider
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from ALL the tables used, including the ones from the sub-queries.
+- Mantain the EXACT COLUMN names as they are in the database, unless the user explicitly asks you to do so in the request, giving you the new name to use. This is crucial for the query to work correctly.
+- Mantain the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+
+# If you need to use 2 or 3 tables, try using a sub-query or INNER JOIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
+# Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
 # Finally, join all the steps in a final query, with the following format: 
 ```sql [FINAL QUERY HERE] ```
 DON'T include anything else inside and after your FINAL answer.
@@ -450,18 +561,18 @@ simple_query_cntx_vf= '''
   - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Probability Variable Names
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 simple_query_instructions_vf='''
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
 - The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
-- If the user doesn't specify explicit columns, use the â€œSELECT *â€ SQL statement to choose all possible columns.
+- If the user doesn't specify explicit columns, use the SELECT SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
@@ -636,9 +747,16 @@ final_prompt_simple_vf='''
 
 # Context:
 ## General information of the schema and the database
-# {simple_query_cntx}
-# # Important details about the database required for the query:
-# {simple_query_instructions}
+{simple_query_cntx}
+    
+# Postgres SQL tables, with their properties:
+{tab_schema}
+
+## Information useful for the query
+{ext_kn}
+{dom_kn}
+
+{simple_query_instructions}
 # Answer ONLY with a SQL query, with the following format: 
   ```sql SQL_QUERY_HERE ```
 DON'T include anything else in your answer.
@@ -652,7 +770,8 @@ DON'T include anything else in your answer.
 # More simplified simple and medium query task
 simple_query_task_v2='''
 # As a SQL expert with a willingness to assist users, you are tasked with crafting a PostgreSQL query for the Automatic Learning for the Rapid Classification of Events (ALeRCE) Database in 2023. This database serves as a repository for information about individual spatial objects, encompassing various statistics, properties, detections, and features observed by survey telescopes.
-Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+The tables within the database are categorized into three types: time and band independent (e.g., object, probability), time-independent (e.g., magstats), and time and band-dependent (e.g., detection). Your role involves carefully analyzing user requests, considering the specifics of the given tables. It is crucial to pay attention to explicit conditions outlined by the user and always maintain awareness of the broader context.
+ALeRCE processes data from the alert stream of the Zwicky Transient Facility (ZTF), so unless a specific catalog is mentioned, the data is from ZTF, including the object, candidate and filter identifiers, and other relevant information.  
 Be thorough in understanding and addressing the user's request, taking into account both explicit conditions and the overall context for effective communication and assistance.
 '''
 # simple query context
@@ -668,11 +787,11 @@ simple_query_cntx_v2='''
   - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # final instructions with the most important details
@@ -681,12 +800,13 @@ simple_query_instructions_v2 = '''
 ### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
 - 'probability.ranking' = 1 ; this only return the most likely probabilities.
 - 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
-### GENERAL
-- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement.
-- Avoid changing the names of columns or tables unless it is necessary for the SQL query.
+### Important points to consider
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from ALL the tables used, including the ones from the sub-queries.
+- Mantain the EXACT COLUMN names as they are in the database, unless the user explicitly asks you to do so in the request, giving you the new name to use. This is crucial for the query to work correctly.
+- Mantain the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
-# Add COMMENTS IN PostgreSQL format so that the user can understand.
+# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object', if the query requires it. It is important to be really careful with the use of sub-queries or JOINs, as they can slow down the query.
+# Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
 # Answer ONLY with a SQL query, with the following format: 
   ```sql SQL_QUERY_HERE ```
 DON'T include anything else in your answer.

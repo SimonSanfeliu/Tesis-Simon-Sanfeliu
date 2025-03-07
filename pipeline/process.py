@@ -7,7 +7,6 @@ import openai
 import anthropic
 import google.generativeai as genai
 import sqlalchemy
-import sqlparse
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt_v7, \
@@ -24,6 +23,7 @@ from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
     adv_query_cntx_vf, adv_query_instructions_1_vf, \
     adv_query_instructions_2_vf, adv_decomp_task_vf
 from final_prompts.final_prompts import *
+from prompts.schema_linking.DBSchema import schema_all_cntxV1
 
 # Setting up astronomical context
 with open("final_prompts/astrocontext.txt", "r") as f:
@@ -231,7 +231,7 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         
     Returns:
         tables (str): A string of a list of the tables needed to create the 
-        query
+        query with their respective information
         usage (dict): LLM API usage
     """
     # Make the schema linking prompt
@@ -240,8 +240,8 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         
     # Obtain the tables necessary for the SQL query
     tables, usage = api_call(model, 1000, prompt)
-    content = tables.split("[")[1].split("]")[0]
-    true_tables = f"[{content}]"
+    content = tables.strip("[]").replace("'", "").split(", ")
+    true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
 
@@ -265,8 +265,8 @@ def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
         
     # Obtain the tables necessary for the SQL query
     tables, usage = api_call(model, 1000, prompt)
-    content = tables.split("[")[1].split("]")[0]
-    true_tables = f"[{content}]"
+    content = tables.strip("[]").replace("'", "").split(", ")
+    true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
 

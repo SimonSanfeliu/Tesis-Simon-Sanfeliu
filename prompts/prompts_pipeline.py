@@ -45,6 +45,10 @@ base_v16 = {"prompt_func" : base_prompt, "general_task" : general_taskv16, "gene
            "final_instructions" : final_instructions_v16, "schema": schema_all_cntxV1_indx}
 base_v17 = {"prompt_func" : base_prompt, "general_task" : general_taskv17, "general_context" : general_context_v17,
            "final_instructions" : final_instructions_v17, "schema": schema_all_cntxV1_indx}
+base_v18 = {"prompt_func" : base_prompt, "general_task" : general_taskv18, "general_context" : general_contextv15,
+           "final_instructions" : final_instructionsv1, "schema": schema_all_cntxV1_indx}
+base_v19 = {"prompt_func" : base_prompt, "general_task" : general_taskv18, "general_context" : general_contextv15,
+           "final_instructions" : final_instructions_v19, "schema": schema_all_cntxV2}
 
 ## Decomposition Prompt: 
 # Decomposition prompt for the advanced pipeline with a decomposed approach to complete the task and generate the SQL query
@@ -85,6 +89,13 @@ decomp_v4 = {"prompt_func" : base_prompt, "general_task" : simple_query_task, "g
              "medium_decomp_gen": medium_decomp_gen, "medium_query_task": medium_query_task, "medium_query_instructions_2": medium_query_instructions_2,
              "adv_decomp_prompt": adv_decomp_prompt, "adv_decomp_task": adv_decomp_task_v2 + gpt4turbo1106_decomposed_prompt_2, "adv_query_cntx": adv_query_cntx, "adv_query_instructions_1": adv_query_instructions_1_v2, 
              "adv_decomp_gen": adv_decomp_gen, "adv_query_task": adv_query_task, "adv_query_instructions_2": adv_query_instructions_2_v2}
+
+decomp_v5 = {"prompt_func" : base_prompt, "general_task" : simple_query_task_v2, "general_context" : simple_query_cntx,
+             "final_instructions" : simple_query_instructions_v2, "schema":schema_all_cntxV2_indx, "schema_decomp": schema_all_cntxV2_indx,
+             "medium_decomp_prompt": medium_decomp_prompt, "medium_decomp_task": medium_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2, "medium_query_cntx": medium_query_cntx, "medium_query_instructions_1": medium_query_instructions_1_v2,
+             "medium_decomp_gen": medium_decomp_gen, "medium_query_task": medium_query_task_v2, "medium_query_instructions_2": medium_query_instructions_2_v2,
+             "adv_decomp_prompt": adv_decomp_prompt, "adv_decomp_task": adv_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2, "adv_query_cntx": adv_query_cntx, "adv_query_instructions_1": adv_query_instructions_1_v3, 
+             "adv_decomp_gen": adv_decomp_gen, "adv_query_task": adv_query_task_v2, "adv_query_instructions_2": adv_query_instructions_2_v3}
 
 decomp_vf = {"prompt_func" : base_prompt, "general_task" : simple_query_task_vf, "general_context" : simple_query_cntx_vf,
              "final_instructions" : simple_query_instructions_vf, "schema":schema_all_cntxV1, "schema_decomp": schema_columns,
@@ -194,9 +205,12 @@ adv_base_v3 = {**base_v5,  **schema_linking_v3, **diff_class_v7}
 adv_base_v4 = {**base_vf,  **schema_linking_v3, **diff_class_v9}
 adv_base_v5 = {**base_v15,  **schema_linking_v3, **diff_class_v9}
 adv_base_v6 = {**base_v16,  **schema_linking_v3, **diff_class_v7}
+adv_base_v7 = {**base_v18,  **schema_linking_v3, **diff_class_v7}
+adv_base_v8 = {**base_v19,  **schema_linking_v3, **diff_class_v7}
 adv_decomp_v1 = {**decomp_v4,  **schema_linking_v3, **diff_class_v7}
 adv_decomp_v2 = {**decomp_v1,  **schema_linking_v3, **diff_class_v7}
 adv_decomp_v3 = {**decomp_v1,  **schema_linking_v3, **diff_class_v9}
+adv_decomp_v4 = {**decomp_v5,  **schema_linking_v3, **diff_class_v7}
 
 
 
@@ -230,12 +244,14 @@ base_prompt_templates = {"base_v6": base_v6,
                             "base_v15": base_v15,
                             "base_v16": base_v16,
                             "base_v17": base_v17,
+                            "base_v18": base_v18,
                             "base_vf": base_vf}
 # decomp prompts
 decomp_prompt_templates = {"decomp_v1": decomp_v1, 
                             "decomp_v2": decomp_v2, 
                             # "decomp_v3": decomp_v3, 
                             "decomp_v4": decomp_v4, 
+                            "decomp_v5": decomp_v5,
                             "decomp_vf": decomp_vf}
 
 # self correction prompts
@@ -252,9 +268,12 @@ adv_prompts_templates = {"adv_base_v1": adv_base_v1,
                             "adv_base_v4": adv_base_v4,
                             "adv_base_v5": adv_base_v5,
                             "adv_base_v6": adv_base_v6,
+                            "adv_base_v7": adv_base_v7,
+                            "adv_base_v8": adv_base_v8,
                             "adv_decomp_v1": adv_decomp_v1,
                             "adv_decomp_v2": adv_decomp_v2,
                             "adv_decomp_v3": adv_decomp_v3,
+                            "adv_decomp_v4": adv_decomp_v4
                             }
 
 # Join all the prompt templates in a single dictionary
