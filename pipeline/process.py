@@ -14,16 +14,13 @@ from prompts.classification.Classification import diff_class_prompt_v7, \
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
-from prompts.decomposition.Decomposition import medium_decomp_prompt_vf, \
-    medium_decomp_gen_vf, medium_decomp_gen_vf_python, medium_query_task_vf, \
-    medium_query_cntx_vf, medium_query_instructions_1_vf, \
-    medium_query_instructions_2_vf, medium_decomp_task_vf
+from prompts.decomposition.Decomposition import *
 from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
     adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
     adv_query_cntx_vf, adv_query_instructions_1_vf, \
     adv_query_instructions_2_vf, adv_decomp_task_vf
 from final_prompts.final_prompts import *
-from prompts.schema_linking.DBSchema import schema_all_cntxV1
+from prompts.schema_linking.DBSchema import schema_all_cntxV1, schema_all_cntxV2_indx
 
 # Setting up astronomical context
 with open("final_prompts/astrocontext.txt", "r") as f:
@@ -507,8 +504,7 @@ def direct_prompts(label: str, ur: str, tables: str) -> str:
     if label == "simple":
         direct_prompt = query_sql_simple.format(
             ur = ur,
-            tables = tables,
-            astro_context = astro_context
+            tables = tables
         )
     elif label == "medium":
         direct_prompt = query_direct_sql_medium.format(

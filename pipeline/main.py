@@ -2,7 +2,7 @@ import sqlalchemy as sa
 import pandas as pd
 
 from pipeline.process import api_call, format_response, schema_linking, \
-    classify, decomposition_v2, pricing, direct_prompts, astro_context
+    classify, decomposition, decomposition_v2, pricing, direct_prompts, astro_context
 from pipeline.ragStep import rag_step
 
 
@@ -66,11 +66,11 @@ def recreated_pipeline(query: str, model: str, max_tokens: int,
         return table, total_usage, prompts, tables, label
     
     # Creating the prompt based on the difficulty of the query
-    prompt, decomp_plan, decomp_usage = decomposition_v2(label, 
-                                                         query,
-                                                         tables, 
-                                                         model, 
-                                                         format)
+    prompt, decomp_plan, decomp_usage = decomposition(label, 
+                                                      query,
+                                                      tables, 
+                                                      model, 
+                                                      format)
     
     # Obtaining the SQL query
     response, usage = api_call(model, max_tokens, prompt)
