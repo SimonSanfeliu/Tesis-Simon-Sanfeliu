@@ -571,7 +571,7 @@ simple_query_cntx_vf= '''
 simple_query_instructions_vf='''
 ## Default Parameters to Consider
 - Class probabilities for a given classifier and object are sorted from most to least likely, where the relative position is indicated by the 'ranking' column in the probability table. Hence, the most probable class should have 'ranking'=1.
-- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=â€™lc_classifierâ€™ when selecting probabilities.
+- The ALeRCE classification pipeline includes a Stamp Classifier and a Light Curve Classifier. The Light Curve classifier employs a hierarchical classification. If no classifier is specified, use 'classifier_name=lc_classifier when selecting probabilities.
 - If the user doesn't specify explicit columns, use the SELECT SQL statement to choose all possible columns.
 - Avoid changing the names of columns or tables unless necessary for the SQL query.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.

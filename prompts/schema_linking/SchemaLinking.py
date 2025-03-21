@@ -237,24 +237,25 @@ TABLE information_schema: information about the database tables and columns
 tables_linking_prompt_V2 = '''
 # Given the user request, select the tables needed to generate a SQL query
 # The Database has the following tables:
-TABLE object: contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
-TABLE probability: contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
-TABLE feature: contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
-TABLE magstat: contains time-aggregated statistics separated by filter, such as the average magnitude, or the initial magnitude change rate.
-TABLE non_detection: contains the limiting magnitudes of previous non-detections separated by filter.
-TABLE detection: contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter (see Section 4.4).
-TABLE step: 
-TABLE taxonomy: contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
-TABLE feature_version: 
-TABLE xmatch: contains the object cross-matches and associated cross-match catalogs.
-TABLE allwise: 
-TABLE dataquality: detailed object information regarding the quality of the data
-TABLE gaia_ztf: GAIA objects near detected ZTF objects
-TABLE ss_ztf: known solar system objects near detected objects
-TABLE ps1_ztf: PanSTARRS objects near detected ZTF objects
-TABLE reference: properties of the reference images used to build templates
-TABLE pipeline: 
-TABLE information_schema: information about the database tables and columns
+TABLE "object": contains basic filter and time-aggregated statistics such as location, number of observations, and the times of first and last detection.
+TABLE "probability": classification probabilities associated to a given object, classifier, and class. Contain the object classification probabilities, including those from the stamp and light curve classifiers, and from different versions of these classifiers.
+TABLE "feature": contains the object light curve statistics and other features used for ML classification and which are stored as json files in our database.
+TABLE "magstat": contains time-aggregated statistics separated by filter, such as the average magnitude, the initial magnitude change rate, number of detections, etc.
+TABLE "non_detection": contains the limiting magnitudes of previous non-detections separated by filter.
+TABLE "detection": contains the object light curves including their difference and corrected magnitudes and associated errors separated by filter.
+TABLE "step": contains the different pipeline steps and their versions.
+TABLE "taxonomy": contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time.
+TABLE "feature_version": contains the version of the feature extraction and preprocessing steps used to generate the features.
+TABLE "xmatch": contains the object cross-matches and associated cross-match catalogs.
+TABLE "allwise": contains the AllWISE catalog information for the objects.
+TABLE "dataquality": detailed object information regarding the quality of the data
+TABLE "gaia_ztf": GAIA objects near detected ZTF objects
+TABLE "ss_ztf": known solar system objects near detected objects
+TABLE "ps1_ztf": PanSTARRS objects near detected ZTF objects
+TABLE "reference": properties of the reference images used to build templates
+TABLE "pipeline": information about the different pipeline steps and their versions
+TABLE "information_schema.tables": information about the database tables and columns
+TABLE "forced_photometry": contains the forced photometry measurements for each object, including the object position, magnitude, and associated errors, and the photometry of the reference image.
 
 # References Keys
 probability(oid) VARCHAR REFERENCES object(oid),
