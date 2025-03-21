@@ -20,7 +20,7 @@ from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
     adv_query_cntx_vf, adv_query_instructions_1_vf, \
     adv_query_instructions_2_vf, adv_decomp_task_vf
 from final_prompts.final_prompts import *
-from prompts.schema_linking.DBSchema import schema_all_cntxV1, schema_all_cntxV2_indx
+from prompts.schema_linking.DBSchema import schema_all_cntxV1, schema_all_cntxV2_indx, schema_all_cntxV2
 
 # Setting up astronomical context
 with open("final_prompts/astrocontext.txt", "r") as f:
