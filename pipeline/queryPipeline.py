@@ -117,9 +117,9 @@ class queryPipeline():
         # Obtain the tables necessary for the SQL query
         tables, usage = api_call(self.model, 1000, prompt)
         content = tables.strip("[]").replace("'", "").split(", ")
-        self.tab_schema_class = f"{[self.prompts["Schema Linking"]["context1"][c] for c in content]}"
-        self.tab_schema_decomp = f"{[self.prompts["Schema Linking"]["context2"][c] for c in content]}"  # Esta usarla para decomposition de Jorge
-        self.tab_schema_direct = f"{[self.prompts["Schema Linking"]["context3"][c] for c in content]}"  # Esta usarla para direct de Jorge
+        self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
+        self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Esta usarla para decomposition de Jorge
+        self.tab_schema_direct = f"{[self.prompts['Schema Linking']['context3'][c] for c in content]}"  # Esta usarla para direct de Jorge
         return usage
     
     def classify(self, query):
