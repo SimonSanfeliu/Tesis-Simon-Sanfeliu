@@ -17,7 +17,7 @@ from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
 params = requests.get(SQL_URL).json()['params']
 
 
-def create_conn(min: int=2) -> sa.engine.base.Engine:
+def create_conn(min: int=2) -> sa.engine.base.Engine: 
     """Function to create a connection with ALeRCE's SQL database
 
     Args:
