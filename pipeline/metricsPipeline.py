@@ -12,33 +12,42 @@ class metricsPipeline():
     """
     Metrics pipeline class
     """
-    def __init__(self, model, lang_type, max_tokens, prompts, df):
+    def __init__(self, model, lang_type, max_tokens, prompts, df, t_conn, size,
+                 overlap, quantity, direct, rag_pipe, self_corr):
         """
         Class generator
         """
+        # queryPipeline attributes
         self.model = model
         self.lang_type = lang_type
         self.max_tokens = max_tokens
         self.prompts = prompts
-        self.df = df
         
-    def create_conn(self, min: int=2) -> sa.engine.base.Engine:
+        # metricsPipeline specific attributes
+        self.df = df
+        self.t_conn = t_conn
+        self.size = size
+        self.overlap = overlap
+        self.quantity = quantity
+        self.direct = direct
+        self.rag_pipe = rag_pipe
+        self.self_corr = self_corr
+        
+    def create_conn(self) -> sa.engine.base.Engine:
         """Function to create a connection with ALeRCE's SQL database
 
         Args:
-            min (int, optional): Number of minutes the connection to the database 
-            is active. Defaults to 2
 
         Returns:
             sqlalchemy.engine.base.Engine or None: The engine to access the 
             database or prints an error message
         """
         # At the moment, there are only the options of 2 or 10 minutes
-        if min==2:
+        if self.t_conn==2:
             engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}/{params['dbname']}", poolclass=sa.pool.NullPool)
             return engine
             
-        elif min==10:
+        elif self.t_conn==10:
             engine = sa.create_engine(f"postgresql+psycopg2://{USER_10}:{PASS_10}@{params['host']}/{params['dbname']}", poolclass=sa.pool.NullPool)
             return engine
         
@@ -81,15 +90,13 @@ class metricsPipeline():
         
         return results, error            
 
-    def run_sql_alerce(self, sql: str, min: int = 2, 
-                    n_tries: int = 3) -> tuple[pd.DataFrame, str]:
+    def run_sql_alerce(self, sql: str, n_tries: int = 3) -> tuple[pd.DataFrame, str]:
         """Execute the SQL query at the ALeRCE database and return the result
         
         Args:
             sql (str): SQL query to execute
             format (str): The type of formatting to use. It can be 'sql' for a singular 
             query string or 'python' for the decomposition in variables
-            min (int, optional): Timeout limit for the database connection. Defaults to 2
             n_tries (int, optional): Number of tries to execute the query. Defaults to 3
             
         Returns:
@@ -97,7 +104,7 @@ class metricsPipeline():
             error (str): Error message if the query could not be executed
         """
         # Create the instance
-        engine = self.create_conn(min=min)
+        engine = self.create_conn()
         query = None
         with engine.connect() as conn:
             # Try the query a number of times
@@ -114,32 +121,12 @@ class metricsPipeline():
         engine.dispose()
         return query, error
     
-    def run_pipeline(self, query: str, model: str, max_tokens: int, size: int, 
-                 overlap: int, quantity: int, format: str, 
-                 direct: bool = False, rag_pipe: bool = True, 
-                 self_corr: bool = True, min: int = 2, 
-                 n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict, str]:
+    def run_pipeline(self, query: str, n_tries: int = 3) -> tuple[pd.DataFrame, str, dict, dict, str]:
         """Function to run the entire pipeline. This pipeline could be the 
         original one or the new one. Here the self-correction is applied.
 
         Args:
             query (str): Natural language query for the database
-            model (str): LLM to use
-            max_tokens (int): Maximum amount of output tokens of the LLM
-            size (int): Size of the chunks for the character text splitter used in
-            the RAG process
-            overlap (int): Size of the overlap of the chunks used in the RAG 
-            process
-            quantity (int): The amount of most similar chunks to consider in the
-            RAG process
-            format (str): The type of formatting to use. It can be 'sql' for a 
-            singular query string or 'python' for the decomposition in Python 
-            variables
-            direct (bool): If True, use direct approach for query generation. If 
-            False, use step-by-step approach
-            rag_pipe (bool): Condition to use the new pipeline (uses RAG)
-            self_corr (bool): Condition to use self-correction
-            min (int): Time to make the query. Defaults to 2
             n_tries (int): Number of times to try excuting the query. Defaults to 3
             
         Returns:
@@ -151,8 +138,10 @@ class metricsPipeline():
             table (str): Generated query
         """
         # Check if the new pipeline is being used
-        if rag_pipe:
-            table, total_usage, prompts, tables, label = pipeline(query, model, max_tokens, size, 
+        if self.rag_pipe:
+            table, total_usage, prompts, tables, label = pipeline(query, 
+                                                                  self.model, 
+                                                                  self.max_tokens, self.size, 
                                                 overlap, quantity, format, 
                                                 direct)
             # If self-correction is enabled, use the respective prompts to correct
@@ -225,38 +214,44 @@ class metricsPipeline():
 
         # Using the recreated pipeline
         else:
-            pipe = queryPipeline(self.model, self.lang_type, self.max_tokens, self.prompts)
+            pipe = queryPipeline(
+                query,
+                self.model, 
+                self.lang_type, 
+                self.max_tokens, 
+                self.prompts
+            )
             
             # Schema Linking
-            schema_usage = pipe.schema_linking(query)
+            pipe.schema_linking(query)
 
             # Classification
-            class_usage = pipe.classify(query)
+            pipe.classify(query)
 
             # Decomposition
-            decomp_prompt, decomp_usage = pipe.decomposition(query)
+            pipe.decomposition(query)
             
             # Generating the queries
-            decomp_gen_query, decomp_gen_usage = pipe.query_generation(decomp_prompt)
+            pipe.query_generation()
             
             # If self-correction is enabled, use the respective prompts to correct
-            if self_corr:
+            if self.self_corr:
                 # Check if there was an error. If there was, correct it
-                result, error = run_sql_alerce(decomp_gen_query, self.lang_type, min, n_tries)
+                result, error = run_sql_alerce(pipe.final_prompt, self.lang_type, self.t_conn, n_tries)
                 
                 # Correct it in the appropiate format      
-                if format == "sql":
+                if self.lang_type == "sql":
                     corr_prompt = prompt_self_correction_v2(
                         gen_task=general_context_selfcorr_v1, 
                         tab_schema=tables, 
                         req=query, 
                         sql_pred=table, 
                         error=str(error))
-                    new, new_usage = api_call(model, max_tokens, corr_prompt)
-                    new = format_response(format, new)
+                    new, new_usage = api_call(self.model, self.max_tokens, corr_prompt)
+                    new = format_response(self.lang_type, new)
                     
                     total_usage["Self-correction"] = new_usage
-                    total_usage = pricing(total_usage, model)
+                    total_usage = pricing(total_usage, self.model)
                     prompts["Self-correction"] = corr_prompt
                     
                     # Run the corrected query

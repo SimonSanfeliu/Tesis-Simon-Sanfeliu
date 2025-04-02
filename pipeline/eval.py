@@ -263,8 +263,8 @@ def run_pipeline(query: str, model: str, max_tokens: int, size: int,
     return result, error, total_usage, prompts, table, label
 
 
-def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], n_exp: int, 
-                 format: str, min: int = 2) -> list[dict]:
+def compare_oids(df_: pd.DataFrame, sql_pred_list: list[str], id_exp: int, 
+                 format: str, t_conn: int = 2) -> list[dict]:
   """Evaluate the generated SQL queries with the true/gold SQL queries
   
   Args:
