@@ -5,15 +5,17 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from pipeline.process import *
 from prompts.base.prompts import *
 
+# TODO: Add pricing to usage
 
 class queryPipeline():
     """
     Pipeline class
     """
-    def __init__(self, model, lang_type, max_tokens, prompts):
+    def __init__(self, query, model, lang_type, max_tokens, prompts):
         """
         Class generator
         """
+        self.query = query
         self.model = model
         self.lang_type = lang_type
         self.max_tokens = max_tokens
@@ -22,19 +24,23 @@ class queryPipeline():
         self.tab_schema_decomp = ""
         self.tab_schema_direct = ""
         self.label = ""
-        self.final_prompt = ""  # ¿Dejar aquí el prompt final directo o de descomposición?
-        self.usage = {}  # Lo mismo con usage
+        self.final_prompt = ""
+        self.usage = {}
         
-    def schema_linking(self, query):
+    def schema_linking(self, query = None):
         """Function to make the schema linking of a NL query. This means it will
         obtain the tables necessary to create the corresponding SQL query 
 
         Args:
-            query (str): NL query
+            query (str, optional): NL query. Default: None.
             
         Returns:
-            usage (dict): LLM API usage
+            None
         """
+        # Check what query to use
+        if query is None:
+            query = self.query
+            
         # Make the schema linking prompt
         prompt = self.prompts["Schema Linking"]["base_prompt"] + \
             f"\nThe user request is the following: {query}"
@@ -45,9 +51,11 @@ class queryPipeline():
         self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
         self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Esta usarla para decomposition de Jorge
         self.tab_schema_direct = f"{[self.prompts['Schema Linking']['context3'][c] for c in content]}"  # Esta usarla para direct de Jorge
-        return usage
+        
+        # Saving the usage
+        self.usage["Schema Linking"] = usage
     
-    def classify(self, query):
+    def classify(self, query = None):
         """Function to classify the difficulty of a NL query
 
         Args:
@@ -56,6 +64,10 @@ class queryPipeline():
         Returns:
             usage (dict): LLM API usage
         """
+        # Check what query to use
+        if query is None:
+            query = self.query
+        
         # Make the difficulty classification prompt
         diff_class_prompt = self.prompts["Classify"]["base_prompt"].format(
             table_schema = self.tab_schema_class,
@@ -69,9 +81,11 @@ class queryPipeline():
         labels = ["simple", "medium", "advanced"]
         true_label = [l for l in labels if l in label]
         self.label = true_label[0]
-        return usage
+        
+        # Saving the usage
+        self.usage["Classify"] = usage
     
-    def decomposition(self, query):
+    def decomposition(self, query = None):
         """Function to create the decomposition prompts
 
         Args:
@@ -80,8 +94,13 @@ class queryPipeline():
         Returns:
             usage (dict): LLM API usage
         """
-        # defining query_w_tables
+        # Check what query to use
+        if query is None:
+            query = self.query
+            
+        # Defining query_w_tables
         query_w_tables = query + "\n" + self.tab_schema_decomp
+        
         if self.label == "simple":
             # Simple queries don't need decomposition
             prompt = prompt_inference(self.prompts["Decomposition"]["simple"]["query_task"], 
@@ -155,11 +174,17 @@ class queryPipeline():
         else:
             raise Exception("No valid label difficulty")
         
-        return prompt, usage
+        # Saving the prompt and usage
+        self.final_prompt = prompt
+        self.usage["Decomposition"] = usage
     
-    def direct(self, query):
+    def direct(self, query = None):
         """TODO: Docstring apropiado
         """
+        # Check what query to use
+        if query is None:
+            query = self.query
+        
         # The same direct approach is used for every label
         
         # Base prompt for the direct approach
@@ -175,17 +200,17 @@ class queryPipeline():
         # Final prompt
         prompt = base + "\n" + req
         
-        return prompt
+        # Saving the prompt
+        self.final_prompt = prompt
     
-    def query_generation(self, prompt):
+    def query_generation(self):
         """_summary_
 
         Args:
             prompt (_type_): _description_
         """
         # Obtaining the SQL query
-        response, usage = api_call(self.model, self.max_tokens, prompt)
-        # print(f"Raw response: {response}", flush=True)
+        response, usage = api_call(self.model, self.max_tokens, self.final_prompt)
         
         # Catching borderline cases
         if self.lang_type == "python" and self.label == "simple":
@@ -194,4 +219,7 @@ class queryPipeline():
         # Formatting the response
         gen_query = format_response(self.lang_type, response)
         
-        return gen_query, usage
+        # Saving the usage
+        self.usage["Query Generation"] = usage
+        
+        return gen_query
