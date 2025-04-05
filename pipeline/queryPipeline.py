@@ -5,7 +5,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from pipeline.process import *
 from prompts.base.prompts import *
 
-# TODO: Add pricing to usage
 
 class queryPipeline():
     """
@@ -223,3 +222,55 @@ class queryPipeline():
         self.usage["Query Generation"] = usage
         
         return gen_query
+    
+    def pricing(self):
+        """Function to obtain the cost of the usage of the LLMs in the pipeline
+
+        Args:
+            usage (dict): Dictionary with all the tokens used in the pipeline
+            model (str): Name of the model (LLM)
+            
+        Returns:
+            
+        """
+        # Prices dictionary (hard-coded)
+        # The prices are in US dollars and for every 1M tokens
+        prices = {
+            "gpt-4o": {
+                "input": 2.50,
+                "output": 10
+            },
+            "gpt-4o-mini": {
+                "input": 0.15,
+                "output": 0.6
+            },
+            "o1-preview": {
+                "input": 15,
+                "output": 60
+            },
+            "o1-mini": {
+                "input": 3,
+                "output": 12
+            },
+            "claude-3-5-sonnet": {
+                "input": 3,
+                "output": 15
+            }
+        }
+        
+        # Checking the corresponding model
+        m = [key for key in prices.keys() if key in self.model][0]
+        
+        for key in self.usage.keys():
+            # Obtaining the respective costs
+            input_cost = prices[m]["input"] * self.usage[key]["input_tokens"] / 1e6
+            output_cost = prices[m]["output"] * self.usage[key]["output_tokens"] / 1e6
+            total_cost = input_cost + output_cost
+                    
+            # Augmenting the usage dictionary
+            self.usage[key]["input_cost"] = input_cost
+            self.usage[key]["output_cost"] = output_cost
+            if "total_cost" in self.usage[key].keys():
+                self.usage[key]["new_total_cost"] = total_cost
+            else:
+                self.usage[key]["total_cost"] = total_cost
