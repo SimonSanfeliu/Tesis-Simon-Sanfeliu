@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import csv
+
 from pipeline.process import *
 from pipeline.eval import *
 from pipeline.queryPipeline import queryPipeline
@@ -235,4 +237,22 @@ class metricsPipeline():
             else:
                 result, error = self.run_sql_alerce(sql_pred)
                 
+        # TODO: Add new pipeline
+                
         return result, error
+    
+    def run_metrics(self, query: str, total_exps: int = 10):
+        """Function to run the experiments
+
+        Args:
+            query (str): The NL query.
+            total_exps (int, optional): Number of experiments. Defaults to 10.
+        """
+        # Each row of the original DataFrame is a query to run
+        # Each row must be ran total_exps times
+        
+        # The metrics must be calculated by row for the new DataFrame/CSV
+        # The metrics are:
+        # 1. ER and EP for rows and columns in each experiment (r and p)
+        # 2. The total number of perfect queries for rows and columns (N_rows (r = p = 1) and N_cols (r = 1))
+        # Later, we can obtain the EP and ER for rows and columns with these values, as well as the number of perfect queries we had
