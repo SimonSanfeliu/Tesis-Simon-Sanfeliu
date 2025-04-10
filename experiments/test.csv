@@ -1,0 +1,145 @@
+query_id,query_run,sql_query,query_results,query_error,query_time,r_row,p_row,r_col,p_col,N_perfect_row,N_perfect_col
+13,0,"
+SELECT
+    object.oid, probability.class_name, object.lastmjd, object.firstmjd
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND probability.ranking = 1
+    AND object.firstmjd < 60217.0
+    AND object.firstmjd > 59914.0
+","               oid class_name       lastmjd      firstmjd
+0     ZTF23aamzkrs       SNIa  60124.189074  60097.242882
+1     ZTF23aamxbpd       SNIa  60120.218900  60100.190417
+2     ZTF23aafwzmi       SNIa  60078.406505  60050.470231
+3     ZTF23aackdba       SNII  60073.174653  59992.212407
+4     ZTF23aajfere      SNIbc  60165.191285  60076.375208
+...            ...        ...           ...           ...
+4539  ZTF23aaavavg       SNIa  60770.256586  59967.353044
+4540  ZTF23aacepho       SNII  60761.243218  59980.284097
+4541  ZTF22absxdtj       SLSN  60761.184768  60046.199780
+4542  ZTF23aajipix       SNIa  60756.314028  60077.280532
+4543  ZTF23aagaoax       SNII  60761.252708  60049.210880
+
+[4544 rows x 4 columns]",,4.1776533126831055,1,1,1,1,1,1
+13,1,"
+SELECT p.class_name, o.firstmjd, o.lastmjd, o.oid
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+WHERE p.ranking = 1
+AND p.classifier_name = 'lc_classifier'
+AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","     class_name      firstmjd       lastmjd           oid
+0          SNII  59992.212407  60073.174653  ZTF23aackdba
+1          SNIa  60116.315278  60147.231875  ZTF23aaphtry
+2          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+3          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+4          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+...         ...           ...           ...           ...
+4539       SLSN  60046.199780  60761.184768  ZTF22absxdtj
+4540       SNII  59980.284097  60761.243218  ZTF23aacepho
+4541       SNIa  60077.280532  60756.314028  ZTF23aajipix
+4542       SNII  60049.210880  60761.252708  ZTF23aagaoax
+4543       SNIa  59967.353044  60770.256586  ZTF23aaavavg
+
+[4544 rows x 4 columns]",,6.734250783920288,1.0,1.0,1.0,1.0,1,1
+13,2,"
+SELECT p.class_name, o.firstmjd, o.lastmjd, o.oid
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+WHERE p.ranking = 1
+AND p.classifier_name = 'lc_classifier'
+AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","     class_name      firstmjd       lastmjd           oid
+0          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+1          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+2          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+3          SNII  59992.212407  60073.174653  ZTF23aackdba
+4         SNIbc  60076.375208  60165.191285  ZTF23aajfere
+...         ...           ...           ...           ...
+4539       SNIa  60077.280532  60756.314028  ZTF23aajipix
+4540       SNII  59980.284097  60761.243218  ZTF23aacepho
+4541       SLSN  60046.199780  60761.184768  ZTF22absxdtj
+4542       SNII  60049.210880  60761.252708  ZTF23aagaoax
+4543       SNIa  59967.353044  60770.256586  ZTF23aaavavg
+
+[4544 rows x 4 columns]",,13.896703481674194,1.0,1.0,1.0,1.0,1,1
+13,3,"
+SELECT p.class_name, o.firstmjd, o.lastmjd, o.oid
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+WHERE p.ranking = 1
+AND p.classifier_name = 'lc_classifier'
+AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","     class_name      firstmjd       lastmjd           oid
+0          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+1          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+2          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+3          SNII  59992.212407  60073.174653  ZTF23aackdba
+4         SNIbc  60076.375208  60165.191285  ZTF23aajfere
+...         ...           ...           ...           ...
+4539       SNII  59980.284097  60761.243218  ZTF23aacepho
+4540       SLSN  60046.199780  60761.184768  ZTF22absxdtj
+4541       SNII  60049.210880  60761.252708  ZTF23aagaoax
+4542       SNIa  60077.280532  60756.314028  ZTF23aajipix
+4543       SNIa  59967.353044  60770.256586  ZTF23aaavavg
+
+[4544 rows x 4 columns]",,7.042739391326904,1.0,1.0,1.0,1.0,1,1
+13,4,"
+SELECT 
+    p.class_name, 
+    o.firstmjd, 
+    o.lastmjd, 
+    o.oid
+FROM 
+    object o
+INNER JOIN 
+    probability p ON o.oid = p.oid
+WHERE 
+    p.ranking = 1
+    AND p.classifier_name = 'lc_classifier'
+    AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","     class_name      firstmjd       lastmjd           oid
+0          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+1          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+2          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+3          SNII  59992.212407  60073.174653  ZTF23aackdba
+4         SNIbc  60076.375208  60165.191285  ZTF23aajfere
+...         ...           ...           ...           ...
+4539       SNII  59980.284097  60761.243218  ZTF23aacepho
+4540       SLSN  60046.199780  60761.184768  ZTF22absxdtj
+4541       SNIa  60077.280532  60756.314028  ZTF23aajipix
+4542       SNII  60049.210880  60761.252708  ZTF23aagaoax
+4543       SNIa  59967.353044  60770.256586  ZTF23aaavavg
+
+[4544 rows x 4 columns]",,7.995291471481323,1.0,1.0,1.0,1.0,1,1
+13,5,"
+SELECT p.class_name, o.firstmjd, o.lastmjd, o.oid
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+WHERE p.ranking = 1
+AND p.classifier_name = 'lc_classifier'
+AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","     class_name      firstmjd       lastmjd           oid
+0          SNII  59992.212407  60073.174653  ZTF23aackdba
+1          SNIa  60116.315278  60147.231875  ZTF23aaphtry
+2          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+3          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+4          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+...         ...           ...           ...           ...
+4539       SNII  59972.564907  60756.496204  ZTF23aacgnve
+4540       SNII  59980.284097  60761.243218  ZTF23aacepho
+4541       SNIa  60077.280532  60756.314028  ZTF23aajipix
+4542       SNIa  59967.353044  60770.256586  ZTF23aaavavg
+4543       SNII  60049.210880  60761.252708  ZTF23aagaoax
+
+[4544 rows x 4 columns]",,7.1834352016448975,1.0,1.0,1.0,1.0,1,1
