@@ -3,6 +3,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import csv
+import time
 
 from pipeline.process import *
 from pipeline.eval import *
@@ -193,6 +194,9 @@ class metricsPipeline():
                     # Run the corrected query
                     result, error = self.run_sql_alerce(new)
                     
+                    # Standarizing the return variable
+                    sql_pred = new
+                    
                 elif self.lang_type == "python" and pipe.label == "simple":
                     # Border case
                     self.lang_type = "sql"
@@ -204,7 +208,7 @@ class metricsPipeline():
                         sql_pred=sql_pred, 
                         error=str(error))
                     new, new_usage = api_call(self.model, self.max_tokens, corr_prompt)
-                    new = format_response(format, new)
+                    new = format_response(self.lang_type, new)
                     
                     # Adding prices and prompts
                     pipe.usage["Self-correction"] = new_usage
@@ -213,6 +217,9 @@ class metricsPipeline():
                     
                     # Run the corrected query  
                     result, error = self.run_sql_alerce(new)
+                    
+                    # Standarizing the return variable
+                    sql_pred = new
                             
                 else:
                     # Correcting the generated SQL
@@ -232,6 +239,9 @@ class metricsPipeline():
 
                     # Run the corrected query
                     result, error = self.run_sql_alerce(new)
+                    
+                    # Standarizing the return variable
+                    sql_pred = new
 
             # W/o self-correction
             else:
@@ -239,14 +249,17 @@ class metricsPipeline():
                 
         # TODO: Add new pipeline
                 
-        return result, error
+        return result, error, sql_pred
     
-    def run_metrics(self, query: str, total_exps: int = 10):
+    def run_metrics(self, total_exps: int = 10, file_path: str = "experiments/test.csv"):
         """Function to run the experiments
 
         Args:
-            query (str): The NL query.
             total_exps (int, optional): Number of experiments. Defaults to 10.
+            file_path (str, optional): File path to save metrics CSV. Defaults to 'experiments/test.csv'.
+            
+        Returns:
+            None
         """
         # Each row of the original DataFrame is a query to run
         # Each row must be ran total_exps times
@@ -256,3 +269,199 @@ class metricsPipeline():
         # 1. ER and EP for rows and columns in each experiment (r and p)
         # 2. The total number of perfect queries for rows and columns (N_rows (r = p = 1) and N_cols (r = 1))
         # Later, we can obtain the EP and ER for rows and columns with these values, as well as the number of perfect queries we had
+        
+        # Headers for the new CSV file to be created
+        with open(file_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['query_id', 'query_run', 'sql_query', 
+                             'query_results', 'query_error', 'query_time', 
+                             'r_row', 'p_row', 'r_col', 'p_col', 
+                             'N_perfect_row', 'N_perfect_col'])
+        
+        for _, row in self.df.iterrows():
+            # Get output of the expected SQL query
+            gold_query_test = str(row['gold_query'])
+            gold_start = time.time()  # start time gold_query
+            query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+            
+            # Check if the gold query was executed correctly, if not try again
+            if error_gold is not None:
+                query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                if error_gold is not None:
+                    # If the second run fails, then save it as such
+                    gold_end = time.time()
+                    gold_time =  gold_end - gold_start
+                    with open(file_path, 'a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow([row['req_id'], 0, row['gold_query'],
+                                         query_gold, error_gold, gold_time,
+                                         0, 0, 0, 0, 0, 0])
+                    continue
+      
+            gold_end = time.time()
+            gold_time = gold_end - gold_start
+            
+            # Drop duplicated columns
+            query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
+            
+            # Writing the gold values in the CSV
+            with open(file_path, 'a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([row['req_id'], 0, row['gold_query'], 
+                                 query_gold, error_gold, gold_time, 1, 1, 1, 1, 
+                                 1, 1])
+            
+            # Obtain the gold values for metric calculation
+            oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+            n_rows_gold = len(oids_gold)
+            n_cols_gold = query_gold.shape[1]
+            
+            # Number of times a query is predicted (number of experiments)
+            for iter in total_exps:
+                # Get output of the predicted SQL query
+                pred_start = time.time()
+                query_pred, error_pred, sql_pred = self.run_pipeline(row['request'])    
+                pred_end = time.time()
+                pred_time = pred_end - pred_start
+                
+                # Predicted query is valid
+                if query_pred is not None and error_pred is None:
+                    # Drop duplicated columns, it is assumed that the column name is exactly 'oid'
+                    query_pred = query_pred.loc[:, ~query_pred.columns.duplicated()]
+                    n_rows_pred = query_pred.shape[0]
+                    n_cols_pred = query_pred.shape[1]
+                    
+                    ## Metrics for columns
+                    
+                    # Compare the columns of the predicted and expected SQL queries
+                    cols_pred = query_pred.columns.values.tolist()
+                    cols_gold = query_gold.columns.values.tolist()
+                    true_pred_column = 0
+                    false_pred_column = 0
+                    true_gold_column = 0
+                    false_gold_column = 0
+                    # Get the number of columns that match between the predicted and expected SQL queries
+                    for col in cols_pred:
+                        if col in cols_gold:
+                            true_pred_column += 1
+                        else:
+                            false_pred_column += 1
+                    for col in cols_gold:
+                        if col in cols_pred:
+                            true_gold_column += 1
+                        else:
+                            false_gold_column += 1
+                            
+                    # Calculating r and p
+                    r_col = true_pred_column / n_cols_gold
+                    p_col = true_gold_column / n_cols_pred
+                    
+                    # Calculating N_perfect
+                    N_perfect_col = 1 if r_col == 1 else 0
+                            
+                    ## Metrics for rows
+                    
+                    # Compare the oids of the predicted and expected SQL queries
+                    true_pred_oid = 0
+                    false_pred_oid = 0
+                    true_gold_oid = 0
+                    false_gold_oid = 0
+                    try:
+                        # Get predicted oid list
+                        if 'oid' in query_pred.columns:
+                            oids_pred = query_pred.sort_values(by="oid",axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        elif 'oid_catalog' in query_pred.columns:
+                            oids_pred = query_pred.sort_values(by="oid_catalog",axis=0).reset_index(drop=True)['oid_catalog'].values.tolist()
+                        elif 'objectidps1' in query_pred.columns:
+                            oids_pred = query_pred.sort_values(by="objectidps1",axis=0).reset_index(drop=True)['objectidps1'].values.tolist()
+                        elif 'classifier_name' in query_pred.columns:
+                            oids_pred = query_pred.sort_values(by="classifier_name",axis=0).reset_index(drop=True)['classifier_name'].values.tolist()
+                        elif 'count' in query_pred.columns:
+                            oids_pred = query_pred.sort_values(by="count",axis=0).reset_index(drop=True)['count'].values.tolist()
+                        
+                        # check oids for tipical columns names hallucinations
+                        elif 'ztf_identifier' in [col.lower() for col in query_pred.columns.tolist()]:
+                            # change the column name to 'oid'
+                            query_pred.rename(columns={'ztf_identifier': 'oid'}, inplace=True)
+                            oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        elif 'ztf identifier' in [col.lower() for col in query_pred.columns.tolist()]:
+                            # change the column name to 'oid'
+                            query_pred.rename(columns={'ztf identifier': 'oid'}, inplace=True)
+                            oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        elif 'ztf_oid' in [col.lower() for col in query_pred.columns.tolist()]:
+                            # change the column name to 'oid'
+                            query_pred.rename(columns={'ztf_oid': 'oid'}, inplace=True)
+                            oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        elif 'object' in [col.lower() for col in query_pred.columns.tolist()]:
+                            # change the column name to 'oid'
+                            query_pred.rename(columns={'object': 'oid'}, inplace=True)
+                            oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        elif 'ztf' in [col.lower() for col in query_pred.columns.tolist()]:
+                            # change the column name to 'oid'
+                            query_pred.rename(columns={'ztf': 'oid'}, inplace=True)
+                            oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                            
+                        # Check if the predicted oids are equal to the expected oids list in the same order
+                        are_equal = (oids_gold == oids_pred)
+                    
+                        # If the list of oids are equal, then the number of true and false oids is the same
+                        if are_equal:
+                            true_pred_oid = len(oids_pred)
+                            true_gold_oid = len(oids_gold)
+                            false_pred_oid = 0
+                            false_gold_oid = 0
+                        # If the list of oids are not equal, then the number of true and false oids is calculated
+                        # based on the number of oids that match between the predicted and expected oids
+                        else:
+                            # Check the number of pred oids that match the set of gold oids
+                            s = set(oids_gold)
+                            for oids in oids_pred:
+                                if oids in s: true_pred_oid += 1
+                                else: false_pred_oid += 1
+                            # Check the number of gold oids that match the set of pred oids
+                            s = set(oids_pred)
+                            for oids in oids_gold:
+                                if oids in s: true_gold_oid += 1
+                                else: false_gold_oid += 1
+                    # If the column name is not exactly 'oid' then the oids are not compared
+                    # The number of true and false oids is calculated based on the number of rows in the predicted and expected SQL queries
+                    except Exception:
+                        if query_pred.shape[0] == query_gold.shape[0]:
+                            true_pred_oid = query_pred.shape[0]
+                            true_gold_oid = query_gold.shape[0]
+                            false_pred_oid = 0
+                            false_gold_oid = 0
+
+                        else:
+                            true_pred_oid = query_pred.shape[0]
+                            true_gold_oid = query_gold.shape[0]
+                            false_pred_oid = query_pred.shape[0]
+                            false_gold_oid = query_gold.shape[0]
+                            
+                    # Calculating r and p
+                    r_row = true_pred_oid / n_rows_gold
+                    p_row = true_gold_oid / n_rows_pred
+                        
+                    # Calculating N_perfect
+                    N_perfect_row = 1 if r_row == 1 and p_row == 1 else 0
+
+                # Predicted query is not valid due to an error in the query execution
+                else:
+                    # metrics
+                    r_row = 0
+                    p_row = 0
+                    r_col = 0
+                    p_col = 0
+                    N_perfect_row = 0
+                    N_perfect_col = 0
+                    
+                    # Writing the pred values in the CSV
+                    with open(file_path, 'a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow([row['req_id'], iter+1, sql_pred, 
+                                        query_pred, error_pred, pred_time, 
+                                        r_row, p_row, r_col, p_col, 
+                                        N_perfect_row, N_perfect_col])
+                    
+                print(f"\n\n Evaluation {iter+1} finished. Closing connection \n\n", flush=True)
+                    
