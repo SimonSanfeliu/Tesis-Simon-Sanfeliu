@@ -78,7 +78,7 @@ class metricsPipeline():
             query
         """
         results = None
-        error = ""
+        error = None
         if specified_format == "sql":
             try: 
                 results = pd.read_sql_query(formatted_response, con=engine)
@@ -116,8 +116,7 @@ class metricsPipeline():
                 error = None
                 with engine.begin() as conn:
                     try:
-                        query, e = self.run_query(self.lang_type, sql, conn)
-                        error = e
+                        query, error = self.run_query(self.lang_type, sql, conn)
                         break
                     except Exception as e:
                         error = e
@@ -289,6 +288,7 @@ class metricsPipeline():
                 query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                 if error_gold is not None:
                     # If the second run fails, then save it as such
+                    print("Failed gold query")
                     gold_end = time.time()
                     gold_time =  gold_end - gold_start
                     with open(file_path, 'a', newline='') as file:
@@ -317,7 +317,7 @@ class metricsPipeline():
             n_cols_gold = query_gold.shape[1]
             
             # Number of times a query is predicted (number of experiments)
-            for iter in total_exps:
+            for iter in range(total_exps):
                 # Get output of the predicted SQL query
                 pred_start = time.time()
                 query_pred, error_pred, sql_pred = self.run_pipeline(row['request'])    
@@ -455,13 +455,13 @@ class metricsPipeline():
                     N_perfect_row = 0
                     N_perfect_col = 0
                     
-                    # Writing the pred values in the CSV
-                    with open(file_path, 'a', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow([row['req_id'], iter+1, sql_pred, 
-                                        query_pred, error_pred, pred_time, 
-                                        r_row, p_row, r_col, p_col, 
-                                        N_perfect_row, N_perfect_col])
+                # Writing the pred values in the CSV
+                with open(file_path, 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([row['req_id'], iter+1, sql_pred, 
+                                     query_pred, error_pred, pred_time, 
+                                     r_row, p_row, r_col, p_col, 
+                                     N_perfect_row, N_perfect_col])
                     
                 print(f"\n\n Evaluation {iter+1} finished. Closing connection \n\n", flush=True)
                     
