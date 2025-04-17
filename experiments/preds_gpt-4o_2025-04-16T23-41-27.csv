@@ -1,0 +1,138 @@
+,code_tag,llm_used,query_id,query_run,sql_query,query_gen_time
+0,0.14.11,gpt-4o,13,1,"
+SELECT 
+    p.class_name, 
+    o.firstmjd, 
+    o.lastmjd, 
+    o.oid
+FROM 
+    object o
+INNER JOIN 
+    probability p ON o.oid = p.oid
+WHERE 
+    p.ranking = 1
+    AND p.classifier_name = 'lc_classifier'
+    AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND o.firstmjd BETWEEN 59948.0 AND 60188.0 -- MJD for December 1, 2022 is 59948.0 and for September 1, 2023 is 60188.0
+",3.4262125492095947
+1,0.14.11,gpt-4o,13,2,"
+SELECT 
+    p.class_name, 
+    o.firstmjd, 
+    o.lastmjd, 
+    o.oid
+FROM 
+    object o
+INNER JOIN 
+    probability p ON o.oid = p.oid
+WHERE 
+    p.ranking = 1
+    AND p.classifier_name = 'lc_classifier'
+    AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND o.firstmjd BETWEEN 59948.0 AND 60188.0 -- MJD for December 1, 2022 is 59948.0 and for September 1, 2023 is 60188.0
+",3.951554775238037
+2,0.14.11,gpt-4o,10,1,"
+-- Query to retrieve object identifiers and probabilities for objects classified as 'SNIa' with ranking=1 and 'CV/Nova' with ranking=2
+-- where the difference between the probabilities is less than 0.1
+
+SELECT 
+    sni.oid, 
+    sni.probability AS SN_prob, 
+    cv.probability AS CV_prob
+FROM 
+    probability sni
+JOIN 
+    probability cv ON sni.oid = cv.oid
+WHERE 
+    sni.class_name = 'SNIa' 
+    AND sni.ranking = 1 
+    AND sni.classifier_name = 'lc_classifier'
+    AND cv.class_name = 'CV/Nova' 
+    AND cv.ranking = 2 
+    AND cv.classifier_name = 'lc_classifier'
+    AND ABS(sni.probability - cv.probability) < 0.1
+",11.569796562194824
+3,0.14.11,gpt-4o,10,2,"
+WITH SNIa_prob AS (
+    SELECT oid, probability AS SN_prob
+    FROM probability
+    WHERE class_name = 'SNIa'
+    AND ranking = 1
+    AND classifier_name = 'lc_classifier'
+),
+CV_Nova_prob AS (
+    SELECT oid, probability AS CV_prob
+    FROM probability
+    WHERE class_name = 'CV/Nova'
+    AND ranking = 2
+    AND classifier_name = 'lc_classifier'
+)
+SELECT s.oid, s.SN_prob, c.CV_prob
+FROM SNIa_prob s
+INNER JOIN CV_Nova_prob c ON s.oid = c.oid
+WHERE ABS(s.SN_prob - c.CV_prob) < 0.1
+",11.14308500289917
+4,0.14.11,gpt-4o,15,1,"
+WITH probability_subquery AS (
+    SELECT oid, probability
+    FROM probability
+    WHERE class_name = 'SN'
+      AND classifier_name = 'stamp_classifier'
+      AND ranking = 1
+),
+object_subquery AS (
+    SELECT oid
+    FROM object
+    WHERE firstmjd >= 60000 AND firstmjd < 60002  -- Assuming 60000 is the MJD for September 1st
+),
+fast_riser_subquery AS (
+    SELECT oid, fid AS magstat_fid, dmdt_first
+    FROM magstat
+    WHERE dmdt_first IS NOT NULL  -- Assuming non-null dmdt_first indicates fast risers
+),
+combined_oids AS (
+    SELECT oid
+    FROM probability_subquery
+    INTERSECT
+    SELECT oid
+    FROM object_subquery
+    INTERSECT
+    SELECT oid
+    FROM fast_riser_subquery
+)
+SELECT d.oid, p.probability, d.candid, d.fid, d.mjd, m.magstat_fid, m.dmdt_first
+FROM combined_oids co
+JOIN detection d ON co.oid = d.oid
+JOIN probability_subquery p ON co.oid = p.oid
+JOIN fast_riser_subquery m ON co.oid = m.oid
+ORDER BY d.oid
+",13.05454421043396
+5,0.14.11,gpt-4o,15,2,"
+WITH ProbSubquery AS (
+    SELECT oid
+    FROM probability
+    WHERE ranking = 1
+      AND classifier_name = 'stamp_classifier'
+      AND class_name = 'SN'
+),
+ObjectSubquery AS (
+    SELECT oid
+    FROM object
+    WHERE firstmjd >= 59835 AND firstmjd < 59837  -- First 2 days of September 2023
+),
+MagstatSubquery AS (
+    SELECT oid, fid AS magstat_fid, dmdt_first
+    FROM magstat
+    WHERE dmdt_first IS NOT NULL  -- Assuming fast risers have a non-null dmdt_first
+),
+JoinedSubquery AS (
+    SELECT o.oid, p.probability, m.magstat_fid, m.dmdt_first
+    FROM ProbSubquery p
+    INNER JOIN ObjectSubquery o ON p.oid = o.oid
+    INNER JOIN MagstatSubquery m ON o.oid = m.oid
+)
+SELECT j.oid, j.probability, d.fid, d.candid, j.magstat_fid, j.dmdt_first
+FROM JoinedSubquery j
+INNER JOIN detection d ON j.oid = d.oid
+ORDER BY j.oid
+",14.814080476760864
