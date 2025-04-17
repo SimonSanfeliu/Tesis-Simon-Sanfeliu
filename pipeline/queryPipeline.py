@@ -40,6 +40,7 @@ class queryPipeline():
         self.label = ""
         self.final_prompt = ""
         self.usage = {}
+        self.new_df = None
         
     def schema_linking(self, query: str = None):
         """Function to make the schema linking of a NL query. This means it will
@@ -297,115 +298,19 @@ class queryPipeline():
                 self.usage[key]["new_total_cost"] = total_cost
             else:
                 self.usage[key]["total_cost"] = total_cost
-                 
-    def create_conn(self) -> sa.engine.base.Engine:
-        """Function to create a connection with ALeRCE's SQL database
-
-        Args:
-            None
-        Returns:
-            sqlalchemy.engine.base.Engine or None: The engine to access the 
-            database or prints an error message
-        """
-        # At the moment, there are only the options of 2 or 10 minutes
-        if self.t_conn==2:
-            engine = sa.create_engine(f"postgresql+psycopg2://{params['user']}:{params['password']}@{params['host']}/{params['dbname']}", poolclass=sa.pool.NullPool)
-            return engine
-            
-        elif self.t_conn==10:
-            engine = sa.create_engine(f"postgresql+psycopg2://{USER_10}:{PASS_10}@{params['host']}/{params['dbname']}", poolclass=sa.pool.NullPool)
-            return engine
-        
-        else:
-            print('Time not avalaible')
-            
-    def run_query(self, specified_format: str, formatted_response: str, 
-              engine: sqlalchemy.engine.base.Engine) -> tuple[pd.DataFrame, str]:
-        """Function to run the SQL query in the database
-
-        Args:
-            specified_format (str): The type of formatting to use. It can be 
-            'sql' for a singular query string or 'python' for the 
-            decomposition in variables
-            formatted_response (str): The response ready to be used in the 
-            database engine (sqlalchemy.engine.base.Engine): The engine to 
-            access the database
-            
-        Returns:
-            results (pandas.DataFrame): Pandas DataFrame with the results of 
-            the query
-            error (str): If there is an error, it is described here as a 
-            string. If there is none, then None is returned (pun intended)
-        """
-        results = None
-        error = None
-        if specified_format == "sql":
-            try: 
-                results = pd.read_sql_query(formatted_response, con=engine)
-            except Exception as e:
-                error = e
-                print(f"Running SQL exception in run_query: {e}", flush=True)
-        elif specified_format == "python":
-            try:
-                exec(formatted_response, globals())
-                results = pd.read_sql_query(full_query, con=engine)
-            except Exception as e:
-                error = e
-                print(f"Running SQL exception in run_query: {e}", flush=True)
-        else:
-            error = "No valid format specified"
-        
-        return results, error            
-
-    def run_sql_alerce(self, sql: str) -> tuple[pd.DataFrame, str]:
-        """Execute the SQL query at the ALeRCE database and return the result
-        
-        Args:
-            sql (str): SQL query to execute
-            
-        Returns:
-            query (pandas.DataFrame): The result of the query 
-            error (str): Error message if the query could not be executed. None 
-            if there is no error
-        """
-        # Create the instance
-        engine = self.create_conn()
-        query = None
-        with engine.connect() as conn:
-            # Try the query a number of times
-            for n_ in range(0, self.n_tries):
-                error = None
-                with engine.begin() as conn:
-                    try:
-                        query, error = self.run_query(self.lang_type, sql, 
-                                                      conn)
-                        break
-                    except Exception as e:
-                        error = e
-                        continue
-        engine.dispose()
-        return query, error
     
     def run_pipeline(self, query: str, use_rag: bool = False, 
-                     use_direct_prompts: bool = False, 
-                     self_corr: bool = False) -> tuple[pd.DataFrame, str, str]:
+                     use_direct_prompts: bool = False) -> str:
         """Function to run the whole SQL prediction pipeline
 
         Args:
-            df (pandas.DataFrame): DataFrame with all the NL queries and their
-            context
+            query (str): NL query
             use_rag (bool): Indicates if the pipeline will be using RAG. 
             Defaults to False
             use_direct_prompts (bool): Indicates if the direct prompts are 
             going to be used or the decomposition ones. Defaults to False
-            self_corr (bool): Indicates if the self-correction step is going to 
-            be used. Defaults to False
         
         Returns:
-            result (pandas.DataFrame): Table with the results of the generated 
-            SQL query
-            error (str): Error message if the query could not be executed. None 
-            if there is no error
             sql_pred (str): Predicted SQL query by the pipeline
         """
         # Using the recreated pipeline
@@ -428,99 +333,20 @@ class queryPipeline():
             if use_direct_prompts:
                 # Direct prompt
                 pipe.direct(query)
-                tables = pipe.tab_schema_direct
             else:
                 # Decomposition
                 pipe.decomposition(query)
-                tables = pipe.tab_schema_decomp
             
             # Generating the queries
             sql_pred = pipe.query_generation()
-            
-            # If self-correction is enabled, use the respective prompts to correct
-            if self_corr:
-                # Check if there was an error. If there was, correct it
-                result, error = self.run_sql_alerce(sql_pred)
-                
-                # Correct it in the appropiate format      
-                if self.lang_type == "sql":
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(self.lang_type, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-                    
-                    # Run the corrected query
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-                    
-                elif self.lang_type == "python" and pipe.label == "simple":
-                    # Border case
-                    self.lang_type = "sql"
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(self.lang_type, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-                    
-                    # Run the corrected query  
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-                            
-                else:
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1_python, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(format, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-
-                    # Run the corrected query
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-
-            # W/o self-correction
-            else:
-                result, error = self.run_sql_alerce(sql_pred)
                 
         # TODO: Add new pipeline
                 
-        return result, error, sql_pred
+        return sql_pred
     
     def run_experiments(self, df: pd.DataFrame, total_exps: int = 10, 
-                        restart: bool = False):
+                        restart: bool = False, use_rag: bool = False, 
+                        use_direct_prompts: bool = False):
         """Run all the experiments neccessary given a pandas DataFrame with all
         the NL queries and their respective context
 
@@ -531,17 +357,86 @@ class queryPipeline():
             query. Defaults to 10.
             restart (bool): Indicates if the experiment proccess must be 
             restarted. Defaults to False
+            use_rag (bool): Indicates if the pipeline will be using RAG. 
+            Defaults to False
+            use_direct_prompts (bool): Indicates if the direct prompts are 
+            going to be used or the decomposition ones. Defaults to False
+            
+        Returns:
+            None
         """
+        # Check if the process must be restarted
+        if self.new_df is not None and restart:
+            try:
+                # Restart the process where there is no query_gen_time
+                null_indexes = self.new_df[self.new_df["query_gen_time"].isna()].index.to_list()
+                for index in null_indexes:
+                    # Get the NL query
+                    nl_req = self.new_df.loc[index]["request"]
+                    
+                    # Run the pipeline and time it
+                    pred_start = time.time()
+                    sql_pred = self.run_pipeline(nl_req, use_rag, 
+                                                use_direct_prompts)
+                    pred_time = time.time() - pred_start
+                    
+                    # Fill in the resulting SQL query and the time it took to generate
+                    self.new_df.loc[index]["sql_query"] = sql_pred
+                    self.new_df.loc[index]["query_gen_time"] = pred_time
+                    
+                # Now save it appropiately
+                self.new_df.to_csv(file_path)
+                
+            except Exception as e:
+                print(f"An error has occurred while restarting the process: {e}")
+                print("Progress saved in new_df attribute of this object")
+        
         # Name of the file to save the predicted queries
-        file_path = f"preds_{self.llm}_{datetime.now().isoformat(timespec='seconds')}".replace(":", "-")
+        file_path = f"experiments/preds_{self.llm}_{datetime.now().isoformat(timespec='seconds')}.csv".replace(":", "-")
         
         # Columns to use
-        column_names = ['query_id', 'query_run', 'sql_query', 'query_results', 
-                   'query_error', 'query_gen_time', 'code_tag', 'llm_used']
+        column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
+                        'sql_query', 'query_gen_time']
         
         # Generate an empty DataFrame with the corresponding columns and rows
         num_rows = len(df) * total_exps
-        new_df = pd.DataFrame([[None]*len(column_names) for _ in range(num_rows)], columns=column_names)
+        self.new_df = pd.DataFrame(
+            [[None]*len(column_names) for _ in range(num_rows)], 
+            columns=column_names
+        )
         
+        # Reading the tag
+        with open("tag.txt", "r") as f:
+            tag = f.read().split("v")[1]
+            f.close()
+        
+        # Filling up the first columns
+        row_count = 0
         for _, row in df.iterrows():
-            pass
+            for exp in range(total_exps):
+                to_fill = [tag, self.llm, row['req_id'], exp+1, None, None]
+                self.new_df.loc[row_count+exp] = to_fill
+            row_count += total_exps
+        
+        try:
+            # Filling up the rest of the DataFrame
+            row_count = 0
+            for _, row in df.iterrows():
+                for exp in range(total_exps):                
+                    # Run the pipeline and time it
+                    pred_start = time.time()
+                    sql_pred = self.run_pipeline(row['request'], use_rag, 
+                                                use_direct_prompts)
+                    pred_time = time.time() - pred_start
+                    
+                    # Fill in the resulting SQL query and the time it took to generate
+                    self.new_df.loc[row_count+exp]["sql_query"] = sql_pred
+                    self.new_df.loc[row_count+exp]["query_gen_time"] = pred_time
+                row_count += total_exps   
+                
+            # Saving the DataFrame as a CSV file
+            self.new_df.to_csv(file_path)
+            
+        except Exception as e:
+            print(f"An error has occurred: {e}")
+            print("Progress saved in new_df attribute of this object")
