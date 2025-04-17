@@ -125,6 +125,138 @@ class metricsPipeline():
         engine.dispose()
         return query, error
     
+    def run_pipeline(self, query: str, use_rag: bool = False, 
+                     use_direct_prompts: bool = False, 
+                     self_corr: bool = False) -> tuple[pd.DataFrame, str, str]:
+        """Function to run the whole SQL prediction pipeline
+
+        Args:
+            query (str): NL query
+            use_rag (bool): Indicates if the pipeline will be using RAG. 
+            Defaults to False
+            use_direct_prompts (bool): Indicates if the direct prompts are 
+            going to be used or the decomposition ones. Defaults to False
+            self_corr (bool): Indicates if the self-correction step is going to 
+            be used. Defaults to False
+        
+        Returns:
+            result (pandas.DataFrame): Table with the results of the generated 
+            SQL query
+            error (str): Error message if the query could not be executed. None 
+            if there is no error
+            sql_pred (str): Predicted SQL query by the pipeline
+        """
+        # Using the recreated pipeline
+        if not use_rag:
+            # Creating the pipeline
+            pipe = queryPipeline(
+                query,
+                self.llm, 
+                self.lang_type, 
+                self.max_tokens, 
+                self.prompts
+            )
+            
+            # Schema Linking
+            pipe.schema_linking(query)
+
+            # Classification
+            pipe.classify(query)
+
+            if use_direct_prompts:
+                # Direct prompt
+                pipe.direct(query)
+                tables = pipe.tab_schema_direct
+            else:
+                # Decomposition
+                pipe.decomposition(query)
+                tables = pipe.tab_schema_decomp
+            
+            # Generating the queries
+            sql_pred = pipe.query_generation()
+            
+            # If self-correction is enabled, use the respective prompts to correct
+            if self_corr:
+                # Check if there was an error. If there was, correct it
+                result, error = self.run_sql_alerce(sql_pred)
+                
+                # Correct it in the appropiate format      
+                if self.lang_type == "sql":
+                    # Correcting the generated SQL
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tables, 
+                        req=query, 
+                        sql_pred=sql_pred, 
+                        error=str(error))
+                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
+                    new = format_response(self.lang_type, new)
+                    
+                    # Adding prices and prompts
+                    pipe.usage["Self-correction"] = new_usage
+                    pipe.pricing()
+                    pipe.prompts["Self-correction"] = corr_prompt
+                    
+                    # Run the corrected query
+                    result, error = self.run_sql_alerce(new)
+                    
+                    # Standarizing the return variable
+                    sql_pred = new
+                    
+                elif self.lang_type == "python" and pipe.label == "simple":
+                    # Border case
+                    self.lang_type = "sql"
+                    # Correcting the generated SQL
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1, 
+                        tab_schema=tables, 
+                        req=query, 
+                        sql_pred=sql_pred, 
+                        error=str(error))
+                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
+                    new = format_response(self.lang_type, new)
+                    
+                    # Adding prices and prompts
+                    pipe.usage["Self-correction"] = new_usage
+                    pipe.pricing()
+                    pipe.prompts["Self-correction"] = corr_prompt
+                    
+                    # Run the corrected query  
+                    result, error = self.run_sql_alerce(new)
+                    
+                    # Standarizing the return variable
+                    sql_pred = new
+                            
+                else:
+                    # Correcting the generated SQL
+                    corr_prompt = prompt_self_correction_v2(
+                        gen_task=general_context_selfcorr_v1_python, 
+                        tab_schema=tables, 
+                        req=query, 
+                        sql_pred=sql_pred, 
+                        error=str(error))
+                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
+                    new = format_response(format, new)
+                    
+                    # Adding prices and prompts
+                    pipe.usage["Self-correction"] = new_usage
+                    pipe.pricing()
+                    pipe.prompts["Self-correction"] = corr_prompt
+
+                    # Run the corrected query
+                    result, error = self.run_sql_alerce(new)
+                    
+                    # Standarizing the return variable
+                    sql_pred = new
+
+            # W/o self-correction
+            else:
+                result, error = self.run_sql_alerce(sql_pred)
+                
+        # TODO: Add new pipeline
+                
+        return result, error, sql_pred
+    
     def run_metrics(self, total_exps: int = 10, file_path: str = "experiments/test.csv"):
         """Function to run the experiments
 
