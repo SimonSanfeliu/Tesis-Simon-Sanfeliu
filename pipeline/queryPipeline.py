@@ -317,35 +317,29 @@ class queryPipeline():
         # Using the recreated pipeline
         if not use_rag:
             # Creating the pipeline
-            pipe = queryPipeline(
-                query,
-                self.llm, 
-                self.lang_type, 
-                self.max_tokens, 
-                self.prompts
-            )
-            
+                       
             # Schema Linking
-            pipe.schema_linking(query)
+            self.schema_linking(query)
 
             # Classification
-            pipe.classify(query)
+            self.classify(query)
+            label = self.label
 
             if use_direct_prompts:
                 # Direct prompt
-                pipe.direct(query)
-                tables = pipe.tab_schema_direct
+                self.direct(query)
+                tables = self.tab_schema_direct
             else:
                 # Decomposition
-                pipe.decomposition(query)
-                tables = pipe.tab_schema_decomp
+                self.decomposition(query)
+                tables = self.tab_schema_decomp
             
             # Generating the queries
-            sql_pred = pipe.query_generation()
+            sql_pred = self.query_generation()
                 
         # TODO: Add new pipeline
                 
-        return sql_pred, tables
+        return sql_pred, tables, label
     
     def run_experiments(self, df: pd.DataFrame, total_exps: int = 10, 
                         restart: bool = False, use_rag: bool = False, 
@@ -371,39 +365,9 @@ class queryPipeline():
         # Name of the file to save the predicted queries
         file_path = f"experiments/preds_{self.llm}_{datetime.now().isoformat(timespec='seconds')}.csv".replace(":", "-")
         
-        # Check if the process must be restarted
-        if self.new_df is not None and restart:
-            try:
-                # Restart the process where there is no query_gen_time
-                null_indexes = self.new_df[self.new_df["query_gen_date"].isna()].index.to_list()
-                for index in null_indexes:
-                    # Get the NL query
-                    req_id = self.new_df.loc[index]["query_id"]
-                    temp_df = df[df["req_id"] == req_id].reset_index()
-                    nl_req = temp_df["request"].iloc[0]
-                    
-                    # Run the pipeline and time it
-                    pred_start = time.time()
-                    sql_pred, tables = self.run_pipeline(nl_req, use_rag, 
-                                                         use_direct_prompts)
-                    pred_time = time.time() - pred_start
-                    
-                    # Fill in the resulting SQL query and the time it took to generate
-                    self.new_df.loc[index]["sql_query"] = sql_pred
-                    self.new_df.loc[index]["tab_schema"] = tables
-                    self.new_df.loc[index]["query_gen_time"] = pred_time
-                    self.new_df.loc[index]["query_gen_date"] = datetime.now().isoformat(timespec='seconds')
-                    
-                # Now save it appropiately
-                self.new_df.to_csv(file_path)
-                
-            except Exception as e:
-                print(f"An error has occurred while restarting the process: {e}")
-                print("Progress saved in new_df attribute of this object")
-        
         # Columns to use
         column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
-                        'sql_query', 'tab_schema', 'query_gen_time', 
+                        'sql_query', 'tab_schema', 'label', 'query_gen_time', 
                         'query_gen_date']
         
         # Generate an empty DataFrame with the corresponding columns and rows
@@ -417,16 +381,48 @@ class queryPipeline():
         with open("tag.txt", "r") as f:
             tag = f.read().split("v")[1]
             f.close()
-        
+            
         # TODO: Optimize this code
         # Filling up the first columns
         row_count = 0
         for _, row in df.iterrows():
             for exp in range(total_exps):
-                to_fill = [tag, self.llm, row['req_id'], exp+1, 
+                to_fill = [tag, self.llm, row['req_id'], exp+1, None,
                            None, None, None, None]
                 self.new_df.loc[row_count+exp] = to_fill
             row_count += total_exps
+        
+        # Check if the process must be restarted
+        if self.new_df is not None and restart:
+            try:
+                # Restart the process where there is no query_gen_date
+                null_indexes = self.new_df[self.new_df["query_gen_date"].isna()].index.to_list()
+                for index in null_indexes:
+                    # Get the NL query
+                    req_id = self.new_df.loc[index]["query_id"]
+                    temp_df = df[df["req_id"] == req_id].reset_index()
+                    nl_req = temp_df["request"].iloc[0]
+                    
+                    # Run the pipeline and time it
+                    pred_start = time.time()
+                    sql_pred, tables, label = self.run_pipeline(nl_req, 
+                                                                use_rag,
+                                                                use_direct_prompts)
+                    pred_time = time.time() - pred_start
+                    
+                    # Fill in the resulting SQL query and the time it took to generate
+                    self.new_df.loc[index, "sql_query"] = sql_pred
+                    self.new_df.loc[index, "tab_schema"] = tables
+                    self.new_df.loc[index, "label"] = label
+                    self.new_df.loc[index, "query_gen_time"] = pred_time
+                    self.new_df.loc[index, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
+                    
+                # Now save it appropiately
+                self.new_df.to_csv(file_path)
+                
+            except Exception as e:
+                print(f"An error has occurred while restarting the process: {e}")
+                print("Progress saved in new_df attribute of this object")
         
         try:
             # Filling up the rest of the DataFrame
@@ -435,16 +431,17 @@ class queryPipeline():
                 for exp in range(total_exps):                
                     # Run the pipeline and time it
                     pred_start = time.time()
-                    sql_pred, tables = self.run_pipeline(row['request'], 
+                    sql_pred, tables, label = self.run_pipeline(row['request'], 
                                                          use_rag, 
                                                          use_direct_prompts)
                     pred_time = time.time() - pred_start
                     
                     # Fill in the resulting SQL query and the time it took to generate
-                    self.new_df.loc[row_count+exp]["sql_query"] = sql_pred
-                    self.new_df.loc[row_count+exp]["tab_schema"] = tables
-                    self.new_df.loc[row_count+exp]["query_gen_time"] = pred_time
-                    self.new_df.loc[row_count+exp]["query_gen_date"] = datetime.now().isoformat(timespec='seconds')
+                    self.new_df.loc[row_count+exp, "sql_query"] = sql_pred
+                    self.new_df.loc[row_count+exp, "tab_schema"] = tables
+                    self.new_df.loc[row_count+exp, "label"] = label
+                    self.new_df.loc[row_count+exp, "query_gen_time"] = pred_time
+                    self.new_df.loc[row_count+exp, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
                 row_count += total_exps   
                 
             # Saving the DataFrame as a CSV file
