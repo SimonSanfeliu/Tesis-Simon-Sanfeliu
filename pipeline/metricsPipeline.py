@@ -344,11 +344,25 @@ class metricsPipeline():
                                 print("Failed gold query")
                                 gold_time =  time.time() - gold_start
                                 gold_date = datetime.now().isoformat(timespec='seconds')
-                                self.new_df.loc[row_count] = [tag, None, row["req_id"], 0, 
-                                                              row['gold_query'], None, None, None, 
-                                                              None, query_gold, error_gold, 
-                                                              gold_time, gold_date, 0, 0, 0, 
-                                                              0, 0, 0]
+                                self.new_df.loc[index, "code_tag"] = tag
+                                self.new_df.loc[index, "llm_used"] = None
+                                self.new_df.loc[index, "query_id"] = row["req_id"]
+                                self.new_df.loc[index, "query_run"] = 0
+                                self.new_df.loc[index, "sql_query"] = row['gold_query']
+                                self.new_df.loc[index, "tab_schema"] = None
+                                self.new_df.loc[index, "label"] = None
+                                self.new_df.loc[index, "query_gen_time"] = None
+                                self.new_df.loc[index, "query_gen_date"] = None
+                                self.new_df.loc[index, "query_results"] = query_gold
+                                self.new_df.loc[index, "query_error"] = error_gold
+                                self.new_df.loc[index, "sql_time"] = gold_time
+                                self.new_df.loc[index, "sql_date"] = gold_date
+                                self.new_df.loc[index, "r_row"] = 0
+                                self.new_df.loc[index, "p_row"] = 0
+                                self.new_df.loc[index, "r_col"] = 0
+                                self.new_df.loc[index, "p_col"] = 0
+                                self.new_df.loc[index, "N_perfect_row"] = 0
+                                self.new_df.loc[index, "N_perfect_col"] = 0
                                 continue
                 
                         gold_time = time.time() - gold_start
@@ -358,11 +372,25 @@ class metricsPipeline():
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Writing the gold values in the CSV
-                        self.new_df.loc[row_count] = [tag, None, row['req_id'], 0,
-                                                      row['gold_query'], None, None, None, 
-                                                      None, query_gold, error_gold, 
-                                                      gold_time, gold_date, 1, 1, 1, 
-                                                      1, 1, 1]
+                        self.new_df.loc[index, "code_tag"] = tag
+                        self.new_df.loc[index, "llm_used"] = None
+                        self.new_df.loc[index, "query_id"] = row["req_id"]
+                        self.new_df.loc[index, "query_run"] = 0
+                        self.new_df.loc[index, "sql_query"] = row['gold_query']
+                        self.new_df.loc[index, "tab_schema"] = None
+                        self.new_df.loc[index, "label"] = None
+                        self.new_df.loc[index, "query_gen_time"] = None
+                        self.new_df.loc[index, "query_gen_date"] = None
+                        self.new_df.loc[index, "query_results"] = query_gold
+                        self.new_df.loc[index, "query_error"] = error_gold
+                        self.new_df.loc[index, "sql_time"] = gold_time
+                        self.new_df.loc[index, "sql_date"] = gold_date
+                        self.new_df.loc[index, "r_row"] = 1
+                        self.new_df.loc[index, "p_row"] = 1
+                        self.new_df.loc[index, "r_col"] = 1
+                        self.new_df.loc[index, "p_col"] = 1
+                        self.new_df.loc[index, "N_perfect_row"] = 1
+                        self.new_df.loc[index, "N_perfect_col"] = 1
                         
                         # Obtain the gold values for metric calculation
                         oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
@@ -598,12 +626,26 @@ class metricsPipeline():
                             N_perfect_col = 0
                             
                         # Writing the pred values in the CSV
-                        self.new_df.loc[index] = [tag, self.llm,
-                                                  *sql_pred.iloc[0].to_list()[2:], 
-                                                  query_pred, error_pred,
-                                                  pred_time, pred_date, r_row,
-                                                  p_row, r_col, p_col,
-                                                  N_perfect_row, N_perfect_col]
+                        self.new_df.loc[index, "code_tag"] = tag
+                        self.new_df.loc[index, "llm_used"] = self.llm
+                        self.new_df.loc[index, "query_id"] = sql_pred["query_id"]
+                        self.new_df.loc[index, "query_run"] = sql_pred["query_run"]
+                        self.new_df.loc[index, "sql_query"] = sql_pred['gold_query']
+                        self.new_df.loc[index, "tab_schema"] = sql_pred["tab_schema"]
+                        self.new_df.loc[index, "label"] = sql_pred["label"]
+                        self.new_df.loc[index, "query_gen_time"] = sql_pred["query_gen_time"]
+                        self.new_df.loc[index, "query_gen_date"] = sql_pred["query_gen_date"]
+                        self.new_df.loc[index, "query_results"] = query_pred
+                        self.new_df.loc[index, "query_error"] = error_pred
+                        self.new_df.loc[index, "sql_time"] = pred_time
+                        self.new_df.loc[index, "sql_date"] = pred_date
+                        self.new_df.loc[index, "r_row"] = r_row
+                        self.new_df.loc[index, "p_row"] = p_row
+                        self.new_df.loc[index, "r_col"] = r_col
+                        self.new_df.loc[index, "p_col"] = p_col
+                        self.new_df.loc[index, "N_perfect_row"] = N_perfect_row
+                        self.new_df.loc[index, "N_perfect_col"] = N_perfect_col
+                        
                     
                 # Now save it appropiately
                 self.new_df.to_csv(file_path)
@@ -632,11 +674,25 @@ class metricsPipeline():
                         print("Failed gold query")
                         gold_time =  time.time() - gold_start
                         gold_date = datetime.now().isoformat(timespec='seconds')
-                        self.new_df.loc[row_count] = np.array([tag, None, row["req_id"], 0,
-                                                      row['gold_query'], None, None, None,
-                                                      None, query_gold, error_gold,
-                                                      gold_time, gold_date, 0, 0, 0,
-                                                      0, 0, 0]).reshape([1, 19])
+                        self.new_df.loc[row_count, "code_tag"] = tag
+                        self.new_df.loc[row_count, "llm_used"] = None
+                        self.new_df.loc[row_count, "query_id"] = row["req_id"]
+                        self.new_df.loc[row_count, "query_run"] = 0
+                        self.new_df.loc[row_count, "sql_query"] = row['gold_query']
+                        self.new_df.loc[row_count, "tab_schema"] = None
+                        self.new_df.loc[row_count, "label"] = None
+                        self.new_df.loc[row_count, "query_gen_time"] = None
+                        self.new_df.loc[row_count, "query_gen_date"] = None
+                        self.new_df.loc[row_count, "query_results"] = query_gold
+                        self.new_df.loc[row_count, "query_error"] = error_gold
+                        self.new_df.loc[row_count, "sql_time"] = gold_time
+                        self.new_df.loc[row_count, "sql_date"] = gold_date
+                        self.new_df.loc[row_count, "r_row"] = 0
+                        self.new_df.loc[row_count, "p_row"] = 0
+                        self.new_df.loc[row_count, "r_col"] = 0
+                        self.new_df.loc[row_count, "p_col"] = 0
+                        self.new_df.loc[row_count, "N_perfect_row"] = 0
+                        self.new_df.loc[row_count, "N_perfect_col"] = 0
                         continue
         
                 gold_time = time.time() - gold_start
@@ -646,11 +702,25 @@ class metricsPipeline():
                 query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                 
                 # Writing the gold values in the CSV
-                self.new_df.loc[row_count] = np.array([tag, None, row['req_id'], 0,
-                                              row['gold_query'], None, None, None,
-                                              None, query_gold, error_gold,
-                                              gold_time, gold_date, 1, 1, 1,
-                                              1, 1, 1]).reshape([1, 19])
+                self.new_df.loc[row_count, "code_tag"] = tag
+                self.new_df.loc[row_count, "llm_used"] = None
+                self.new_df.loc[row_count, "query_id"] = row["req_id"]
+                self.new_df.loc[row_count, "query_run"] = 0
+                self.new_df.loc[row_count, "sql_query"] = row['gold_query']
+                self.new_df.loc[row_count, "tab_schema"] = None
+                self.new_df.loc[row_count, "label"] = None
+                self.new_df.loc[row_count, "query_gen_time"] = None
+                self.new_df.loc[row_count, "query_gen_date"] = None
+                self.new_df.loc[row_count, "query_results"] = query_gold
+                self.new_df.loc[row_count, "query_error"] = error_gold
+                self.new_df.loc[row_count, "sql_time"] = gold_time
+                self.new_df.loc[row_count, "sql_date"] = gold_date
+                self.new_df.loc[row_count, "r_row"] = 1
+                self.new_df.loc[row_count, "p_row"] = 1
+                self.new_df.loc[row_count, "r_col"] = 1
+                self.new_df.loc[row_count, "p_col"] = 1
+                self.new_df.loc[row_count, "N_perfect_row"] = 1
+                self.new_df.loc[row_count, "N_perfect_col"] = 1
                 
                 # Obtain the gold values for metric calculation
                 oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
@@ -660,7 +730,7 @@ class metricsPipeline():
                 # Number of times a query is predicted (number of experiments)
                 for exp in range(total_exps):
                     # Predicted query info for this run
-                    sql_pred = sql_preds_use[sql_preds_use["query_run"] == exp+1].reset_index()
+                    sql_pred = sql_preds_use[sql_preds_use["query_run"] == exp+1]
                     
                     # Get output of the predicted SQL query
                     # If self-correction is enabled, use the respective prompts to correct
@@ -861,13 +931,26 @@ class metricsPipeline():
                         N_perfect_row = 0
                         N_perfect_col = 0
                         
-                    # Writing the pred values in the CSV
-                    self.new_df.loc[row_count+exp+1] = np.array([tag, self.llm,
-                                                        *sql_pred.iloc[0].to_list()[4:], 
-                                                        query_pred, error_pred, 
-                                                        pred_time, pred_date, 
-                                                        r_row, p_row, r_col, p_col, 
-                                                        N_perfect_row, N_perfect_col]).reshape([1, 19])
+                    # Writing the pred values in the CSV                                                        
+                    self.new_df.loc[row_count+exp+1, "code_tag"] = tag
+                    self.new_df.loc[row_count+exp+1, "llm_used"] = self.llm
+                    self.new_df.loc[row_count+exp+1, "query_id"] = sql_pred["query_id"]
+                    self.new_df.loc[row_count+exp+1, "query_run"] = exp+1
+                    self.new_df.loc[row_count+exp+1, "sql_query"] = sql_pred['sql_query']
+                    self.new_df.loc[row_count+exp+1, "tab_schema"] = sql_pred["tab_schema"]
+                    self.new_df.loc[row_count+exp+1, "label"] = sql_pred["label"]
+                    self.new_df.loc[row_count+exp+1, "query_gen_time"] = sql_pred["query_gen_time"]
+                    self.new_df.loc[row_count+exp+1, "query_gen_date"] = sql_pred["query_gen_date"]
+                    self.new_df.loc[row_count+exp+1, "query_results"] = query_pred
+                    self.new_df.loc[row_count+exp+1, "query_error"] = error_pred
+                    self.new_df.loc[row_count+exp+1, "sql_time"] = pred_time
+                    self.new_df.loc[row_count+exp+1, "sql_date"] = pred_date
+                    self.new_df.loc[row_count+exp+1, "r_row"] = r_row
+                    self.new_df.loc[row_count+exp+1, "p_row"] = p_row
+                    self.new_df.loc[row_count+exp+1, "r_col"] = r_col
+                    self.new_df.loc[row_count+exp+1, "p_col"] = p_col
+                    self.new_df.loc[row_count+exp+1, "N_perfect_row"] = N_perfect_row
+                    self.new_df.loc[row_count+exp+1, "N_perfect_col"] = N_perfect_col
                         
                     print(f"\n\n Evaluation {exp+1} finished. Closing connection \n\n", flush=True)
             
