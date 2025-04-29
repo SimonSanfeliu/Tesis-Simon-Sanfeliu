@@ -3,7 +3,6 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pandas as pd
-import csv
 import time
 from datetime import datetime
 
@@ -364,7 +363,7 @@ class queryPipeline():
         """
         # Name of the file to save the predicted queries
         file_path = f"experiments/preds_{self.llm}_{datetime.now().isoformat(timespec='seconds')}.csv".replace(":", "-")
-        bkp_path = f"experiments/bkp.csv"
+        bkp_path = "experiments/bkp.csv"
         
         # Columns to use
         column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
@@ -382,8 +381,7 @@ class queryPipeline():
         with open("tag.txt", "r") as f:
             tag = f.read().split("v")[1]
             f.close()
-            
-        # TODO: Optimize this code
+
         # Filling up the first columns
         row_count = 0
         for _, row in df.iterrows():
@@ -394,7 +392,7 @@ class queryPipeline():
             row_count += total_exps
         
         # Check if the process must be restarted
-        if self.new_df is not None and restart:
+        if os.path.exists(bkp_path) and restart:
             try:
                 print("Restarting")
                 # Restart the process where there is no query_gen_date
