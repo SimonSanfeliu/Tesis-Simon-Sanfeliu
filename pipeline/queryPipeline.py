@@ -364,6 +364,7 @@ class queryPipeline():
         """
         # Name of the file to save the predicted queries
         file_path = f"experiments/preds_{self.llm}_{datetime.now().isoformat(timespec='seconds')}.csv".replace(":", "-")
+        bkp_path = f"experiments/bkp.csv"
         
         # Columns to use
         column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
@@ -395,58 +396,75 @@ class queryPipeline():
         # Check if the process must be restarted
         if self.new_df is not None and restart:
             try:
+                print("Restarting")
                 # Restart the process where there is no query_gen_date
-                null_indexes = self.new_df[self.new_df["query_gen_date"].isna()].index.to_list()
+                restarted = pd.read_csv(bkp_path)
+                null_indexes = restarted[restarted["query_gen_date"].isna()].index.to_list()
                 for index in null_indexes:
                     # Get the NL query
-                    req_id = self.new_df.loc[index]["query_id"]
+                    req_id = restarted.loc[index]["query_id"]
                     temp_df = df[df["req_id"] == req_id].reset_index()
                     nl_req = temp_df["request"].iloc[0]
+                    print(f"Query ID: {req_id}, Run ID: {restarted.loc[index, 'query_run']}")
                     
                     # Run the pipeline and time it
                     pred_start = time.time()
+                    print("Running pipeline")
                     sql_pred, tables, label = self.run_pipeline(nl_req, 
                                                                 use_rag,
                                                                 use_direct_prompts)
                     pred_time = time.time() - pred_start
                     
                     # Fill in the resulting SQL query and the time it took to generate
-                    self.new_df.loc[index, "sql_query"] = sql_pred
-                    self.new_df.loc[index, "tab_schema"] = tables
-                    self.new_df.loc[index, "label"] = label
-                    self.new_df.loc[index, "query_gen_time"] = pred_time
-                    self.new_df.loc[index, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
+                    restarted.loc[index, "sql_query"] = sql_pred
+                    restarted.loc[index, "tab_schema"] = tables
+                    restarted.loc[index, "label"] = label
+                    restarted.loc[index, "query_gen_time"] = pred_time
+                    restarted.loc[index, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
+                    
+                    # Saving the DataFrame as a CSV file backup
+                    print("Saving backup")
+                    restarted.to_csv(bkp_path)
                     
                 # Now save it appropiately
-                self.new_df.to_csv(file_path)
+                print("Saving all")
+                restarted.to_csv(file_path)
                 
             except Exception as e:
                 print(f"An error has occurred while restarting the process: {e}")
                 print("Progress saved in new_df attribute of this object")
-        
-        try:
-            # Filling up the rest of the DataFrame
-            row_count = 0
-            for _, row in df.iterrows():
-                for exp in range(total_exps):                
-                    # Run the pipeline and time it
-                    pred_start = time.time()
-                    sql_pred, tables, label = self.run_pipeline(row['request'], 
-                                                         use_rag, 
-                                                         use_direct_prompts)
-                    pred_time = time.time() - pred_start
-                    
-                    # Fill in the resulting SQL query and the time it took to generate
-                    self.new_df.loc[row_count+exp, "sql_query"] = sql_pred
-                    self.new_df.loc[row_count+exp, "tab_schema"] = tables
-                    self.new_df.loc[row_count+exp, "label"] = label
-                    self.new_df.loc[row_count+exp, "query_gen_time"] = pred_time
-                    self.new_df.loc[row_count+exp, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
-                row_count += total_exps   
                 
-            # Saving the DataFrame as a CSV file
-            self.new_df.to_csv(file_path)
-            
-        except Exception as e:
-            print(f"An error has occurred: {e}")
-            print("Progress saved in new_df attribute of this object")
+        else:
+            try:
+                print("Running process")
+                # Filling up the rest of the DataFrame
+                row_count = 0
+                for _, row in df.iterrows():
+                    for exp in range(total_exps):                
+                        # Run the pipeline and time it
+                        pred_start = time.time()
+                        print("Running pipeline")
+                        sql_pred, tables, label = self.run_pipeline(row['request'], 
+                                                            use_rag, 
+                                                            use_direct_prompts)
+                        pred_time = time.time() - pred_start
+                        
+                        # Fill in the resulting SQL query and the time it took to generate
+                        self.new_df.loc[row_count+exp, "sql_query"] = sql_pred
+                        self.new_df.loc[row_count+exp, "tab_schema"] = tables
+                        self.new_df.loc[row_count+exp, "label"] = label
+                        self.new_df.loc[row_count+exp, "query_gen_time"] = pred_time
+                        self.new_df.loc[row_count+exp, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
+                        
+                        # Saving the DataFrame as a CSV file backup
+                        print("Saving backup")
+                        self.new_df.to_csv(bkp_path)
+                    row_count += total_exps   
+                    
+                # Saving the DataFrame as a CSV file
+                print("Saving all")
+                self.new_df.to_csv(file_path)
+                
+            except Exception as e:
+                print(f"An error has occurred: {e}")
+                print("Progress saved in new_df attribute of this object")
