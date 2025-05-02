@@ -1,3 +1,142 @@
 2025-05-01 20:07:16,208 - INFO - Query ID: Series([], Name: query_id, dtype: int64), Run ID: 0 (gold)
 2025-05-01 20:07:16,208 - ERROR - An error has occurred: 'gold_query'
 2025-05-01 20:07:16,208 - INFO - Progress saved in new_df attribute of this object
+2025-05-01 20:21:18,079 - INFO - Query ID: Series([], Name: query_id, dtype: int64), Run ID: 0 (gold)
+2025-05-01 20:21:18,081 - ERROR - An error has occurred: 'gold_query'
+2025-05-01 20:21:18,082 - INFO - Progress saved in new_df attribute of this object
+2025-05-01 20:48:07,897 - ERROR - An error has occurred: name 'for_creation' is not defined
+2025-05-01 20:48:07,899 - INFO - Progress saved in new_df attribute of this object
+2025-05-01 20:49:29,188 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-01 20:49:29,195 - ERROR - An error has occurred: 'gold_query'
+2025-05-01 20:49:29,196 - INFO - Progress saved in new_df attribute of this object
+2025-05-01 20:52:06,207 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-01 20:52:17,454 - ERROR - Failed gold query
+2025-05-01 20:52:17,458 - INFO - Saving backup
+2025-05-01 20:52:17,554 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-01 20:52:25,851 - ERROR - Failed gold query
+2025-05-01 20:52:25,853 - INFO - Saving backup
+2025-05-01 20:52:25,869 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-01 20:52:34,042 - ERROR - Failed gold query
+2025-05-01 20:52:34,044 - INFO - Saving backup
+2025-05-01 20:52:34,057 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-01 20:52:42,026 - ERROR - Failed gold query
+2025-05-01 20:52:42,026 - INFO - Saving backup
+2025-05-01 20:52:42,047 - INFO - Query ID: 0    8
+1    8
+2    8
+3    8
+4    8
+5    8
+6    8
+7    8
+8    8
+9    8
+Name: query_id, dtype: int64, Run ID: 0 (gold)
+2025-05-02 00:09:38,063 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 00:09:54,282 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 00:09:54,295 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 00:13:26,680 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 00:13:46,626 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 00:13:46,629 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 00:41:20,055 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 00:41:25,367 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 00:41:25,367 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 00:42:17,301 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 00:42:22,988 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 00:42:22,993 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 00:49:26,115 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 00:49:26,115 - ERROR - An error has occurred: cannot access local variable 'restart_row' where it is not associated with a value
+2025-05-02 00:49:26,130 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:04:38,435 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 01:04:58,097 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 01:04:58,102 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:06:27,322 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 01:06:33,467 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 01:06:33,467 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:13:40,120 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 01:13:46,027 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 01:13:46,028 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:16:50,870 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 01:16:56,579 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 01:16:56,585 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:19:28,360 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-02 01:19:33,604 - INFO - Saving backup
+2025-05-02 01:19:33,630 - INFO - Query ID: 0    8
+Name: query_id, dtype: int64, Run ID: 0    1
+Name: query_run, dtype: int64
+2025-05-02 01:19:36,893 - ERROR - An error has occurred: Incompatible indexer with Series
+2025-05-02 01:19:36,894 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:24:12,476 - INFO - Restarting
+2025-05-02 01:24:12,563 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:24:12,573 - ERROR - An error has occurred while restarting the process: cannot access local variable 'error_gold' where it is not associated with a value
+2025-05-02 01:24:12,573 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:29:42,981 - INFO - Restarting
+2025-05-02 01:29:43,016 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:29:43,022 - ERROR - An error has occurred while restarting the process: cannot access local variable 'error_gold' where it is not associated with a value
+2025-05-02 01:29:43,025 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:32:01,655 - INFO - Restarting
+2025-05-02 01:32:01,657 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:32:07,068 - ERROR - An error has occurred while restarting the process: 'str' object has no attribute 'item'
+2025-05-02 01:32:07,068 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:33:59,173 - INFO - Restarting
+2025-05-02 01:33:59,191 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:34:04,624 - ERROR - An error has occurred while restarting the process: 'str' object has no attribute 'item'
+2025-05-02 01:34:04,624 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:34:47,809 - INFO - Restarting
+2025-05-02 01:34:47,837 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:34:53,265 - ERROR - An error has occurred while restarting the process: 'str' object has no attribute 'item'
+2025-05-02 01:34:53,265 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:35:39,652 - INFO - Restarting
+2025-05-02 01:35:39,661 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:35:52,140 - ERROR - An error has occurred while restarting the process: Incompatible indexer with Series
+2025-05-02 01:35:52,146 - INFO - Progress saved in new_df attribute of this object
