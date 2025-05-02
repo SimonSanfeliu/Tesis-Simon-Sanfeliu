@@ -140,3 +140,7 @@ Name: query_run, dtype: int64
 2025-05-02 01:35:39,661 - INFO - Query ID: 8, Run ID: 1
 2025-05-02 01:35:52,140 - ERROR - An error has occurred while restarting the process: Incompatible indexer with Series
 2025-05-02 01:35:52,146 - INFO - Progress saved in new_df attribute of this object
+2025-05-02 01:37:10,393 - INFO - Restarting
+2025-05-02 01:37:10,399 - INFO - Query ID: 8, Run ID: 1
+2025-05-02 01:37:15,083 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
+2025-05-02 01:37:15,083 - INFO - Progress saved in new_df attribute of this object
