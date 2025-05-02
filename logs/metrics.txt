@@ -1,0 +1,3 @@
+2025-05-01 20:07:16,208 - INFO - Query ID: Series([], Name: query_id, dtype: int64), Run ID: 0 (gold)
+2025-05-01 20:07:16,208 - ERROR - An error has occurred: 'gold_query'
+2025-05-01 20:07:16,208 - INFO - Progress saved in new_df attribute of this object
