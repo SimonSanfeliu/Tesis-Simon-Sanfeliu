@@ -10,10 +10,14 @@ from pipeline.process import *
 from pipeline.eval import *
 from prompts.base.prompts import *
 
+from logger_setup import setup_logger
+
+logger = setup_logger(name="preds", log_file="logs/preds.txt")
+
 
 class queryPipeline():
     def __init__(self, query: str, llm: str, lang_type: str, max_tokens: int, 
-                 prompts: dict):
+                 prompts_path: str):
         """Query pipeline class. It has all the components to generate the
         predicted SQL queries from the natural language ones
 
@@ -23,14 +27,19 @@ class queryPipeline():
             lang_type (str): Programming language used for the queries ('sql' 
             or 'python')
             max_tokens (int): Maximum token output for the LLM
-            prompts (dict): Dictionary with all the corresponding prompts
+            prompts_path (str): Path to the dictionary with all the 
+            corresponding prompts
         """
         # Build attributes
         self.query = query
         self.llm = llm
         self.lang_type = lang_type
         self.max_tokens = max_tokens
-        self.prompts = prompts
+        self.prompts_path = prompts_path
+        
+        # Reading the prompt file
+        with open(prompts_path, "r", encoding="utf-8") as f:
+            self.prompts = json.load(f)
         
         # Fill-in attributes
         self.tab_schema_class = ""
@@ -333,7 +342,7 @@ class queryPipeline():
                 self.decomposition(query)
                 tables = self.tab_schema_decomp
             
-            # Generating the queries
+            # Generating the query
             sql_pred = self.query_generation()
                 
         # TODO: Add new pipeline
@@ -366,9 +375,9 @@ class queryPipeline():
         bkp_path = "experiments/bkp.csv"
         
         # Columns to use
-        column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
-                        'sql_query', 'tab_schema', 'label', 'query_gen_time', 
-                        'query_gen_date']
+        column_names = ['code_tag', 'llm_used', 'prompt_version', 'query_id', 
+                        'query_run', 'sql_query', 'tab_schema', 'label', 
+                        'query_gen_time', 'query_gen_date']
         
         # Generate an empty DataFrame with the corresponding columns and rows
         num_rows = len(df) * total_exps
@@ -381,12 +390,15 @@ class queryPipeline():
         with open("tag.txt", "r") as f:
             tag = f.read().split("v")[1]
             f.close()
+            
+        # Reading the prompts' version
+        prompt_version = self.prompts_path.split("/prompts_")[1].split(".json")[0]
 
         # Filling up the first columns
         row_count = 0
         for _, row in df.iterrows():
             for exp in range(total_exps):
-                to_fill = [tag, self.llm, row['req_id'], exp+1, None,
+                to_fill = [tag, self.llm, prompt_version, row['req_id'], exp+1, None,
                            None, None, None, None]
                 self.new_df.loc[row_count+exp] = to_fill
             row_count += total_exps
@@ -394,20 +406,26 @@ class queryPipeline():
         # Check if the process must be restarted
         if os.path.exists(bkp_path) and restart:
             try:
-                print("Restarting")
+                logger.info("Restarting")
                 # Restart the process where there is no query_gen_date
                 restarted = pd.read_csv(bkp_path)
                 null_indexes = restarted[restarted["query_gen_date"].isna()].index.to_list()
                 for index in null_indexes:
-                    # Get the NL query
-                    req_id = restarted.loc[index]["query_id"]
-                    temp_df = df[df["req_id"] == req_id].reset_index()
-                    nl_req = temp_df["request"].iloc[0]
-                    print(f"Query ID: {req_id}, Run ID: {restarted.loc[index, 'query_run']}")
+                    # Get the NL query from the given DataFrame
+                    req_id = restarted.loc[index, "query_id"]
+                    temp_df = df[df["req_id"] == req_id]
+                    nl_req = temp_df["request"].item()
+                    logger.info(f"Query ID: {req_id}, Run ID: {restarted.loc[index, 'query_run']}")
+                    
+                    # Updating the external and domain knowledge of the prompts for this query
+                    self.prompts["Decomposition"]["simple"]["external_knowledge"] = temp_df["external_knowledge"].item()
+                    self.prompts["Decomposition"]["simple"]["domain_knowledge"] = temp_df["domain_knowledge"].item()
+                    self.prompts["Direct"]["request_prompt"]["external_knowledge"] = temp_df["external_knowledge"].item()
+                    self.prompts["Direct"]["request_prompt"]["domain_knowledge"] = temp_df["domain_knowledge"].item()
                     
                     # Run the pipeline and time it
                     pred_start = time.time()
-                    print("Running pipeline")
+                    logger.info("Running pipeline")
                     sql_pred, tables, label = self.run_pipeline(nl_req, 
                                                                 use_rag,
                                                                 use_direct_prompts)
@@ -421,27 +439,33 @@ class queryPipeline():
                     restarted.loc[index, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
                     
                     # Saving the DataFrame as a CSV file backup
-                    print("Saving backup")
+                    logger.info("Saving backup")
                     restarted.to_csv(bkp_path)
                     
                 # Now save it appropiately
-                print("Saving all")
+                logger.info("Saving all")
                 restarted.to_csv(file_path)
                 
             except Exception as e:
-                print(f"An error has occurred while restarting the process: {e}")
-                print("Progress saved in new_df attribute of this object")
+                logger.error(f"An error has occurred while restarting the process: {e}")
+                logger.info("Progress saved in new_df attribute of this object")
                 
         else:
             try:
-                print("Running process")
+                logger.info("Running process")
                 # Filling up the rest of the DataFrame
                 row_count = 0
                 for _, row in df.iterrows():
-                    for exp in range(total_exps):                
+                    # Updating the external and domain knowledge of the prompts for this query                  
+                    self.prompts["Decomposition"]["simple"]["external_knowledge"] = row["external_knowledge"].item()
+                    self.prompts["Decomposition"]["simple"]["domain_knowledge"] = row["domain_knowledge"].item()
+                    self.prompts["Direct"]["request_prompt"]["external_knowledge"] = row["external_knowledge"].item()
+                    self.prompts["Direct"]["request_prompt"]["domain_knowledge"] = row["domain_knowledge"].item()
+                    
+                    for exp in range(total_exps):                                    
                         # Run the pipeline and time it
                         pred_start = time.time()
-                        print("Running pipeline")
+                        logger.info("Running pipeline")
                         sql_pred, tables, label = self.run_pipeline(row['request'], 
                                                             use_rag, 
                                                             use_direct_prompts)
@@ -455,14 +479,14 @@ class queryPipeline():
                         self.new_df.loc[row_count+exp, "query_gen_date"] = datetime.now().isoformat(timespec='seconds')
                         
                         # Saving the DataFrame as a CSV file backup
-                        print("Saving backup")
+                        logger.info("Saving backup")
                         self.new_df.to_csv(bkp_path)
                     row_count += total_exps   
                     
                 # Saving the DataFrame as a CSV file
-                print("Saving all")
+                logger.info("Saving all")
                 self.new_df.to_csv(file_path)
                 
             except Exception as e:
-                print(f"An error has occurred: {e}")
-                print("Progress saved in new_df attribute of this object")
+                logger.error(f"An error has occurred: {e}")
+                logger.info("Progress saved in new_df attribute of this object")
