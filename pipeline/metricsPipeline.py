@@ -3,18 +3,20 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import time
-import numpy as np
 
 from pipeline.process import *
 from pipeline.eval import *
-from pipeline.queryPipeline import queryPipeline
 from prompts.base.prompts import *
+
+from logger_setup import setup_logger
+
+logger = setup_logger(name="metrics", log_file="logs/metrics.txt")
 
 # TODO: Recreate the dynamic prompts for queryPipeline for the Self Correction prompts
 
 class metricsPipeline():
-    def __init__(self, llm, lang_type, max_tokens, df, t_conn, 
-                 n_tries, direct, self_corr, self_corr_prompts):
+    def __init__(self, llm, lang_type, max_tokens, t_conn, 
+                 n_tries, direct, self_corr, self_corr_prompts, prompts_path):
         """
         Metrics pipeline class
         """
@@ -22,12 +24,12 @@ class metricsPipeline():
         self.llm = llm
         self.lang_type = lang_type
         self.max_tokens = max_tokens
-        self.df = df
         self.t_conn = t_conn
         self.n_tries = n_tries
         self.direct = direct
         self.self_corr = self_corr
         self.self_corr_prompts = self_corr_prompts
+        self.prompts_path = prompts_path
         
         # Fill-in attributes
         self.new_df = None
@@ -120,145 +122,14 @@ class metricsPipeline():
         engine.dispose()
         return query, error
     
-    def run_pipeline(self, query: str, use_rag: bool = False, 
-                     use_direct_prompts: bool = False, 
-                     self_corr: bool = False) -> tuple[pd.DataFrame, str, str]:
-        """Function to run the whole SQL prediction pipeline
-
-        Args:
-            query (str): NL query
-            use_rag (bool): Indicates if the pipeline will be using RAG. 
-            Defaults to False
-            use_direct_prompts (bool): Indicates if the direct prompts are 
-            going to be used or the decomposition ones. Defaults to False
-            self_corr (bool): Indicates if the self-correction step is going to 
-            be used. Defaults to False
-        
-        Returns:
-            result (pandas.DataFrame): Table with the results of the generated 
-            SQL query
-            error (str): Error message if the query could not be executed. None 
-            if there is no error
-            sql_pred (str): Predicted SQL query by the pipeline
-        """
-        # Using the recreated pipeline
-        if not use_rag:
-            # Creating the pipeline
-            pipe = queryPipeline(
-                query,
-                self.llm, 
-                self.lang_type, 
-                self.max_tokens, 
-                self.prompts
-            )
-            
-            # Schema Linking
-            pipe.schema_linking(query)
-
-            # Classification
-            pipe.classify(query)
-
-            if use_direct_prompts:
-                # Direct prompt
-                pipe.direct(query)
-                tables = pipe.tab_schema_direct
-            else:
-                # Decomposition
-                pipe.decomposition(query)
-                tables = pipe.tab_schema_decomp
-            
-            # Generating the queries
-            sql_pred = pipe.query_generation()
-            
-            # If self-correction is enabled, use the respective prompts to correct
-            if self_corr:
-                # Check if there was an error. If there was, correct it
-                result, error = self.run_sql_alerce(sql_pred)
-                
-                # Correct it in the appropiate format      
-                if self.lang_type == "sql":
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(self.lang_type, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-                    
-                    # Run the corrected query
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-                    
-                elif self.lang_type == "python" and pipe.label == "simple":
-                    # Border case
-                    self.lang_type = "sql"
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(self.lang_type, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-                    
-                    # Run the corrected query  
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-                            
-                else:
-                    # Correcting the generated SQL
-                    corr_prompt = prompt_self_correction_v2(
-                        gen_task=general_context_selfcorr_v1_python, 
-                        tab_schema=tables, 
-                        req=query, 
-                        sql_pred=sql_pred, 
-                        error=str(error))
-                    new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                    new = format_response(format, new)
-                    
-                    # Adding prices and prompts
-                    pipe.usage["Self-correction"] = new_usage
-                    pipe.pricing()
-                    pipe.prompts["Self-correction"] = corr_prompt
-
-                    # Run the corrected query
-                    result, error = self.run_sql_alerce(new)
-                    
-                    # Standarizing the return variable
-                    sql_pred = new
-
-            # W/o self-correction
-            else:
-                result, error = self.run_sql_alerce(sql_pred)
-                
-        # TODO: Add new pipeline
-                
-        return result, error, sql_pred
-    
-    def run_metrics(self, sql_preds_path: str, total_exps: int = 10, 
-                    restart: bool = False):
+    def run_metrics(self, sql_preds_path: str, df: pd.DataFrame, 
+                    total_exps: int = 10, restart: bool = False):
         """Function to run the experiments
 
         Args:
             sql_preds_path (str): Path to the CSV with the predicted SQL 
             queries
+            df (pandas.DataFrame): DataFrame with all the original info
             total_exps (int, optional): Number of experiments. Defaults to 10
             restart (bool): Indicates if the experiment proccess must be 
             restarted. Defaults to False
@@ -274,23 +145,26 @@ class metricsPipeline():
         
         # Name of the file to save the predicted queries
         file_path = f"experiments/metrics_{self.llm}_{datetime.now().isoformat(timespec='seconds')}.csv".replace(":", "-")
-        bkp_path = "experiments/bkp.csv"
+        bkp_path = "experiments/bkp_metrics.csv"
         
         # Reading the CSV with the predicted SQL queries
         sql_preds = pd.read_csv(sql_preds_path)
+        
+        # Getting the number of unique queries
+        n_unique = len(sql_preds["query_id"].unique())
         
         # CHECK: If we assume the tag and LLM used dont change for the metrics and the preds, then we could edit
         # only the sql_preds DataFrame. In the mean time, assume that it is not.
         
         # Columns to use
-        column_names = ['code_tag', 'llm_used', 'query_id', 'query_run', 
+        column_names = ['code_tag', 'llm_used', 'prompt_version', 'query_id', 'query_run', 
                         'sql_query', 'tab_schema', 'label', 'query_gen_time', 
                         'query_gen_date', 'query_results', 'query_error', 
                         'sql_time', 'sql_date', 'r_row', 'p_row', 'r_col', 
                         'p_col', 'N_perfect_row', 'N_perfect_col']
         
         # Generate an empty DataFrame with the corresponding columns and rows
-        num_rows = len(self.df) * total_exps
+        num_rows = len(sql_preds) + n_unique
         self.new_df = pd.DataFrame(
             [[None]*len(column_names) for _ in range(num_rows)], 
             columns=column_names
@@ -301,29 +175,26 @@ class metricsPipeline():
             tag = f.read().split("v")[1]
             f.close()
             
-        # TODO: Optimize this code
+        # Reading the prompts' version
+        prompt_version = self.prompts_path.split("/prompts_")[1].split(".json")[0]
+
         # Filling up the first columns
         row_count = 0
-        for _, row in self.df.iterrows():
-            to_fill_0 = [tag, None, row['req_id'], 0, 
-                         None, None, None, None, 
-                         None, None, None, None,
-                         None, None, None, None,
-                         None, None, None]
-            self.new_df.loc[row_count] = to_fill_0
+        for query_id in sql_preds["query_id"].unique():
+            # Base row
+            to_fill_0 = [tag, None, None, query_id, 0, *[None]*15]
+            self.new_df.iloc[row_count] = to_fill_0
+
             for exp in range(total_exps):
-                to_fill = [tag, self.llm, row['req_id'], exp+1, 
-                           None, None, None, None, 
-                           None, None, None, None,
-                           None, None, None, None,
-                           None, None, None]
-                self.new_df.loc[row_count+exp+1] = to_fill
-            row_count += total_exps+1
+                to_fill = [tag, self.llm, prompt_version, query_id, exp + 1, *[None]*15]
+                self.new_df.iloc[row_count + exp + 1] = to_fill
+
+            row_count += total_exps + 1
         
         # Check if the process must be restarted
         if os.path.exists(bkp_path) and restart:
             try:
-                print("Restarting")
+                logger.info("Restarting")
                 # Restart the process where there is no sql_date
                 restarted = pd.read_csv(bkp_path)
                 null_indexes = restarted[restarted["sql_date"].isna()].index.to_list()
@@ -331,12 +202,12 @@ class metricsPipeline():
                     # Get the predicted SQL query
                     restart_row = restarted.loc[index]
                     sql_pred = sql_preds[sql_preds["query_id"] == restart_row["query_id"]]
-                    print(f"Query ID: {restarted.loc[index, 'query_id']}, Run ID: {restarted.loc[index, 'query_run']}")
+                    logger.info(f"Query ID: {restarted.loc[index, 'query_id']}, Run ID: {restarted.loc[index, 'query_run']}")
                     
                     # Check if it is a gold query or a pred query
-                    if sql_pred["query_run"] == 0:                        
+                    if restart_row["query_run"] == 0:                        
                         # Get output of the expected SQL query
-                        gold_query_test = str(sql_pred['sql_query'])
+                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"][0].item()
                         gold_start = time.time()  # start time gold_query
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         
@@ -345,14 +216,10 @@ class metricsPipeline():
                             query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                             if error_gold is not None:
                                 # If the second run fails, then save it as such
-                                print("Failed gold query")
+                                logger.error("Failed gold query")
                                 gold_time =  time.time() - gold_start
                                 gold_date = datetime.now().isoformat(timespec='seconds')
-                                restarted.loc[index, "code_tag"] = tag
-                                restarted.loc[index, "llm_used"] = None
-                                restarted.loc[index, "query_id"] = row["req_id"]
-                                restarted.loc[index, "query_run"] = 0
-                                restarted.loc[index, "sql_query"] = row['gold_query']
+                                restarted.loc[index, "sql_query"] = gold_query_test
                                 restarted.loc[index, "tab_schema"] = None
                                 restarted.loc[index, "label"] = None
                                 restarted.loc[index, "query_gen_time"] = None
@@ -367,6 +234,10 @@ class metricsPipeline():
                                 restarted.loc[index, "p_col"] = 0
                                 restarted.loc[index, "N_perfect_row"] = 0
                                 restarted.loc[index, "N_perfect_col"] = 0
+                                
+                                # Saving the DataFrame as a CSV file backup
+                                logger.info("Saving backup")
+                                self.new_df.to_csv(bkp_path)
                                 continue
                 
                         gold_time = time.time() - gold_start
@@ -376,11 +247,7 @@ class metricsPipeline():
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Writing the gold values in the CSV
-                        restarted.loc[index, "code_tag"] = tag
-                        restarted.loc[index, "llm_used"] = None
-                        restarted.loc[index, "query_id"] = row["req_id"]
-                        restarted.loc[index, "query_run"] = 0
-                        restarted.loc[index, "sql_query"] = row['gold_query']
+                        restarted.loc[index, "sql_query"] = gold_query_test
                         restarted.loc[index, "tab_schema"] = None
                         restarted.loc[index, "label"] = None
                         restarted.loc[index, "query_gen_time"] = None
@@ -396,24 +263,26 @@ class metricsPipeline():
                         restarted.loc[index, "N_perfect_row"] = 1
                         restarted.loc[index, "N_perfect_col"] = 1
                         
+                        # Saving the DataFrame as a CSV file backup
+                        logger.info("Saving backup")
+                        self.new_df.to_csv(bkp_path)
+                        
                         # Obtain the gold values for metric calculation
                         oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
                         
-                    else:
-                        # We need to run the gold query
-                        gold_row = restarted[(restarted["query_id"] == restart_row["query_id"]) & (restarted["query_run"] == 0)]
-                        
+                    else:                        
                         # Get output of the expected SQL query
-                        gold_query_test = str(gold_row['sql_query'])
+                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"][0]
+                        query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         
                         # Check if the gold query was executed correctly, if not try again
                         if error_gold is not None:
                             query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                             if error_gold is not None:
                                 # If the second run fails, then save it as such
-                                print("Failed gold query")
+                                logger.error("Failed gold query")
                                 n_rows_gold = 0
                                 n_cols_gold = 0
                         
@@ -424,10 +293,13 @@ class metricsPipeline():
                         oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
+                        
+                        # For self correction
+                        request = df[df["req_id"] == restart_row["query_id"]]["request"][0]
                     
                         # Run the SQL query and time it
                         pred_start = time.time()
-                        query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"])
+                        query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
                         pred_time = time.time() - pred_start
                         
                         # Fill in the resulting SQL query and the time it took to generate
@@ -435,16 +307,16 @@ class metricsPipeline():
                         if self.self_corr:
                             # Check if there was an error. If there was, correct it
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"])
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
                             
                             # Correct it in the appropiate format      
                             if self.lang_type == "sql":
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(self.lang_type, new)
@@ -462,9 +334,9 @@ class metricsPipeline():
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(self.lang_type, new)
@@ -478,9 +350,9 @@ class metricsPipeline():
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1_python, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(format, new)
@@ -493,7 +365,7 @@ class metricsPipeline():
                         # W/o self-correction
                         else:
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"])
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
                             
                         pred_time = time.time() - pred_start
                         pred_date = datetime.now().isoformat(timespec='seconds')
@@ -630,15 +502,11 @@ class metricsPipeline():
                             N_perfect_col = 0
                             
                         # Writing the pred values in the CSV
-                        restarted.loc[index, "code_tag"] = tag
-                        restarted.loc[index, "llm_used"] = self.llm
-                        restarted.loc[index, "query_id"] = sql_pred["query_id"]
-                        restarted.loc[index, "query_run"] = sql_pred["query_run"]
-                        restarted.loc[index, "sql_query"] = sql_pred['gold_query']
-                        restarted.loc[index, "tab_schema"] = sql_pred["tab_schema"]
-                        restarted.loc[index, "label"] = sql_pred["label"]
-                        restarted.loc[index, "query_gen_time"] = sql_pred["query_gen_time"]
-                        restarted.loc[index, "query_gen_date"] = sql_pred["query_gen_date"]
+                        restarted.loc[index, "sql_query"] = sql_pred['sql_query'].item()
+                        restarted.loc[index, "tab_schema"] = sql_pred["tab_schema"].item()
+                        restarted.loc[index, "label"] = sql_pred["label"].item()
+                        restarted.loc[index, "query_gen_time"] = sql_pred["query_gen_time"].item()
+                        restarted.loc[index, "query_gen_date"] = sql_pred["query_gen_date"].item()
                         restarted.loc[index, "query_results"] = query_pred
                         restarted.loc[index, "query_error"] = error_pred
                         restarted.loc[index, "sql_time"] = pred_time
@@ -651,27 +519,29 @@ class metricsPipeline():
                         restarted.loc[index, "N_perfect_col"] = N_perfect_col
                         
                     # Saving the DataFrame as a CSV file backup
-                    print("Saving backup")
+                    logger.info("Saving backup")
                     restarted.to_csv(bkp_path)
                            
                 # Now save it appropiately
-                print("Saving all")
+                logger.info("Saving all")
                 restarted.to_csv(file_path)
                 
             except Exception as e:
-                print(f"An error has occurred while restarting the process: {e}")
-                print("Progress saved in new_df attribute of this object")
+                logger.error(f"An error has occurred while restarting the process: {e}")
+                logger.info("Progress saved in new_df attribute of this object")
         
         else:
             # Filling up the rest of the DataFrame
             try:
                 row_count = 0
-                for _, row in self.df.iterrows():
+                for _, row in self.new_df.iterrows():
                     # Working only with the predicted queries for this request
-                    sql_preds_use = sql_preds[sql_preds["query_id"] == row["req_id"]]
+                    sql_preds_use = sql_preds[sql_preds["query_id"] == row["query_id"]]
+                    req_id = sql_preds_use['query_id'][0].item()
+                    logger.info(f"Query ID: {req_id}, Run ID: 0 (gold)")
                     
                     # Get output of the expected SQL query
-                    gold_query_test = str(row['gold_query'])
+                    gold_query_test = df[df["req_id"] == req_id]["gold_query"][0].item()
                     gold_start = time.time()  # start time gold_query
                     query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                     
@@ -680,14 +550,10 @@ class metricsPipeline():
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         if error_gold is not None:
                             # If the second run fails, then save it as such
-                            print("Failed gold query")
+                            logger.error("Failed gold query")
                             gold_time =  time.time() - gold_start
                             gold_date = datetime.now().isoformat(timespec='seconds')
-                            self.new_df.loc[row_count, "code_tag"] = tag
-                            self.new_df.loc[row_count, "llm_used"] = None
-                            self.new_df.loc[row_count, "query_id"] = row["req_id"]
-                            self.new_df.loc[row_count, "query_run"] = 0
-                            self.new_df.loc[row_count, "sql_query"] = row['gold_query']
+                            self.new_df.loc[row_count, "sql_query"] = gold_query_test
                             self.new_df.loc[row_count, "tab_schema"] = None
                             self.new_df.loc[row_count, "label"] = None
                             self.new_df.loc[row_count, "query_gen_time"] = None
@@ -702,6 +568,10 @@ class metricsPipeline():
                             self.new_df.loc[row_count, "p_col"] = 0
                             self.new_df.loc[row_count, "N_perfect_row"] = 0
                             self.new_df.loc[row_count, "N_perfect_col"] = 0
+                            
+                            # Saving the DataFrame as a CSV file backup
+                            logger.info("Saving backup")
+                            self.new_df.to_csv(bkp_path)
                             continue
             
                     gold_time = time.time() - gold_start
@@ -711,11 +581,7 @@ class metricsPipeline():
                     query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                     
                     # Writing the gold values in the CSV
-                    self.new_df.loc[row_count, "code_tag"] = tag
-                    self.new_df.loc[row_count, "llm_used"] = None
-                    self.new_df.loc[row_count, "query_id"] = row["req_id"]
-                    self.new_df.loc[row_count, "query_run"] = 0
-                    self.new_df.loc[row_count, "sql_query"] = row['gold_query']
+                    self.new_df.loc[row_count, "sql_query"] = gold_query_test
                     self.new_df.loc[row_count, "tab_schema"] = None
                     self.new_df.loc[row_count, "label"] = None
                     self.new_df.loc[row_count, "query_gen_time"] = None
@@ -731,31 +597,39 @@ class metricsPipeline():
                     self.new_df.loc[row_count, "N_perfect_row"] = 1
                     self.new_df.loc[row_count, "N_perfect_col"] = 1
                     
+                    # Saving the DataFrame as a CSV file backup
+                    logger.info("Saving backup")
+                    self.new_df.to_csv(bkp_path)
+                    
                     # Obtain the gold values for metric calculation
                     oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
                     n_rows_gold = len(oids_gold)
                     n_cols_gold = query_gold.shape[1]
                     
+                    # For self correction
+                    request = df[df["req_id"] == req_id]["request"][0].item()
+                    
                     # Number of times a query is predicted (number of experiments)
                     for exp in range(total_exps):
                         # Predicted query info for this run
                         sql_pred = sql_preds_use[sql_preds_use["query_run"] == exp+1]
+                        logger.info(f"Query ID: {sql_pred['query_id'].item()}, Run ID: {sql_pred['query_run'].item()}")
                         
                         # Get output of the predicted SQL query
                         # If self-correction is enabled, use the respective prompts to correct
                         if self.self_corr:
                             # Check if there was an error. If there was, correct it
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"])
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
                             
                             # Correct it in the appropiate format      
                             if self.lang_type == "sql":
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(self.lang_type, new)
@@ -773,9 +647,9 @@ class metricsPipeline():
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(self.lang_type, new)
@@ -789,9 +663,9 @@ class metricsPipeline():
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1_python, 
-                                    tab_schema=sql_pred["tab_schema"], 
-                                    req=row["request"], 
-                                    sql_pred=sql_pred["sql_query"], 
+                                    tab_schema=sql_pred["tab_schema"].item(), 
+                                    req=request, 
+                                    sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
                                 new = format_response(format, new)
@@ -804,7 +678,7 @@ class metricsPipeline():
                         # W/o self-correction
                         else:
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"])
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
                             
                         pred_time = time.time() - pred_start
                         pred_date = datetime.now().isoformat(timespec='seconds')
@@ -940,16 +814,13 @@ class metricsPipeline():
                             N_perfect_row = 0
                             N_perfect_col = 0
                             
-                        # Writing the pred values in the CSV                                                        
-                        self.new_df.loc[row_count+exp+1, "code_tag"] = tag
-                        self.new_df.loc[row_count+exp+1, "llm_used"] = self.llm
-                        self.new_df.loc[row_count+exp+1, "query_id"] = sql_pred["query_id"]
+                        # Writing the pred values in the CSV
                         self.new_df.loc[row_count+exp+1, "query_run"] = exp+1
-                        self.new_df.loc[row_count+exp+1, "sql_query"] = sql_pred['sql_query']
-                        self.new_df.loc[row_count+exp+1, "tab_schema"] = sql_pred["tab_schema"]
-                        self.new_df.loc[row_count+exp+1, "label"] = sql_pred["label"]
-                        self.new_df.loc[row_count+exp+1, "query_gen_time"] = sql_pred["query_gen_time"]
-                        self.new_df.loc[row_count+exp+1, "query_gen_date"] = sql_pred["query_gen_date"]
+                        self.new_df.loc[row_count+exp+1, "sql_query"] = sql_pred['sql_query'].item()
+                        self.new_df.loc[row_count+exp+1, "tab_schema"] = sql_pred["tab_schema"].item()
+                        self.new_df.loc[row_count+exp+1, "label"] = sql_pred["label"].item()
+                        self.new_df.loc[row_count+exp+1, "query_gen_time"] = sql_pred["query_gen_time"].item()
+                        self.new_df.loc[row_count+exp+1, "query_gen_date"] = sql_pred["query_gen_date"].item()
                         self.new_df.loc[row_count+exp+1, "query_results"] = query_pred
                         self.new_df.loc[row_count+exp+1, "query_error"] = error_pred
                         self.new_df.loc[row_count+exp+1, "sql_time"] = pred_time
@@ -961,19 +832,20 @@ class metricsPipeline():
                         self.new_df.loc[row_count+exp+1, "N_perfect_row"] = N_perfect_row
                         self.new_df.loc[row_count+exp+1, "N_perfect_col"] = N_perfect_col
                             
-                        print(f"\n\n Evaluation {exp+1} finished. Closing connection \n\n", flush=True)
+                        logger.info(f"\n\n Evaluation {exp+1} finished. Closing connection \n\n", flush=True)
                         
                         # Saving the DataFrame as a CSV file backup
-                        print("Saving backup")
+                        logger.info("Saving backup")
                         self.new_df.to_csv(bkp_path)
                 
                     # Adding up the row count
                     row_count += total_exps+1
                 
                 # Saving the DataFrame as a CSV file
+                logger.info("Saving all")
                 self.new_df.to_csv(file_path)
             
             except Exception as e:
-                print(f"An error has occurred: {e}")
-                print("Progress saved in new_df attribute of this object")
+                logger.error(f"An error has occurred: {e}")
+                logger.info("Progress saved in new_df attribute of this object")
                     
