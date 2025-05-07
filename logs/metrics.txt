@@ -144,3 +144,232 @@ Name: query_run, dtype: int64
 2025-05-02 01:37:10,399 - INFO - Query ID: 8, Run ID: 1
 2025-05-02 01:37:15,083 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
 2025-05-02 01:37:15,083 - INFO - Progress saved in new_df attribute of this object
+2025-05-06 23:20:21,964 - INFO - Restarting
+2025-05-06 23:20:21,984 - INFO - Query ID: 8, Run ID: 1
+2025-05-06 23:20:35,786 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
+2025-05-06 23:20:35,790 - INFO - Progress saved in new_df attribute of this object
+2025-05-06 23:54:49,200 - INFO - Restarting
+2025-05-06 23:54:49,205 - INFO - Query ID: 8, Run ID: 1
+2025-05-06 23:55:03,463 - INFO - test 1
+2025-05-06 23:55:03,473 - INFO - test 2
+2025-05-06 23:55:03,476 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
+2025-05-06 23:55:03,478 - INFO - Progress saved in new_df attribute of this object
+2025-05-06 23:56:25,242 - INFO - Restarting
+2025-05-06 23:56:25,250 - INFO - Query ID: 8, Run ID: 1
+2025-05-06 23:56:29,640 - INFO - test 1
+2025-05-06 23:56:29,649 - INFO - test 2
+2025-05-06 23:56:32,495 - INFO - test 3
+2025-05-06 23:56:32,498 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
+2025-05-06 23:56:32,500 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:05:37,614 - INFO - Restarting
+2025-05-07 00:05:37,620 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:05:41,957 - INFO - test 1
+2025-05-07 00:05:41,965 - INFO - test 2
+2025-05-07 00:05:58,254 - INFO - test 3
+2025-05-07 00:06:02,713 - ERROR - An error has occurred while restarting the process: can only convert an array of size 1 to a Python scalar
+2025-05-07 00:06:02,714 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:15:29,333 - INFO - Restarting
+2025-05-07 00:15:29,337 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:15:33,585 - INFO - test 1
+2025-05-07 00:15:33,594 - INFO - test 2
+2025-05-07 00:15:38,085 - INFO - test 3
+2025-05-07 00:15:42,649 - INFO - Saving backup
+2025-05-07 00:15:42,700 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 00:15:46,826 - INFO - test 1
+2025-05-07 00:15:46,836 - INFO - test 2
+2025-05-07 00:15:50,221 - INFO - test 3
+2025-05-07 00:15:53,523 - INFO - Saving backup
+2025-05-07 00:15:53,534 - INFO - Query ID: 8, Run ID: 3
+2025-05-07 00:15:57,697 - INFO - test 1
+2025-05-07 00:15:57,702 - INFO - test 2
+2025-05-07 00:17:55,227 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:17:55,229 - ERROR - An error has occurred: 'str' object has no attribute 'item'
+2025-05-07 00:17:55,229 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:18:49,935 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:18:54,370 - INFO - Saving backup
+2025-05-07 00:18:54,388 - ERROR - An error has occurred: 'str' object has no attribute 'item'
+2025-05-07 00:18:54,389 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:20:07,446 - INFO - Restarting
+2025-05-07 00:20:07,465 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:20:11,773 - INFO - test 1
+2025-05-07 00:20:11,780 - INFO - test 2
+2025-05-07 00:21:09,819 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:21:13,993 - INFO - Saving backup
+2025-05-07 00:21:14,012 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:21:18,443 - ERROR - An error has occurred: Logger._log() got an unexpected keyword argument 'flush'
+2025-05-07 00:21:18,444 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:23:32,088 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:23:53,203 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:23:57,783 - INFO - Saving backup
+2025-05-07 00:23:57,815 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:24:02,366 - INFO - 
+
+ Evaluation 1 finished. Closing connection 
+
+
+2025-05-07 00:24:02,370 - INFO - Saving backup
+2025-05-07 00:24:02,395 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 00:24:05,683 - ERROR - An error has occurred: Incompatible indexer with DataFrame
+2025-05-07 00:24:05,685 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 00:43:31,734 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 00:43:36,341 - INFO - Saving backup
+2025-05-07 00:43:36,367 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 00:43:41,036 - INFO -               oid   classifier_name      classifier_version class_name  \
+0    ZTF21abtejox  stamp_classifier  stamp_classifier_1.0.4         SN   
+1    ZTF21abutvjn  stamp_classifier  stamp_classifier_1.0.4         SN   
+2    ZTF21abtesqc  stamp_classifier  stamp_classifier_1.0.4         SN   
+3    ZTF21abteuck  stamp_classifier  stamp_classifier_1.0.4         SN   
+4    ZTF21abteudp  stamp_classifier  stamp_classifier_1.0.4         SN   
+..            ...               ...                     ...        ...   
+334  ZTF21abxllpn  stamp_classifier  stamp_classifier_1.0.4         SN   
+335  ZTF21abvwwqq  stamp_classifier  stamp_classifier_1.0.4         SN   
+336  ZTF21abvwwgs  stamp_classifier  stamp_classifier_1.0.4         SN   
+337  ZTF21abufjnr  stamp_classifier  stamp_classifier_1.0.4         SN   
+338  ZTF21abvdltv  stamp_classifier  stamp_classifier_1.0.4         SN   
+
+     probability  ranking           oid  ndethist  ncovhist  mjdstarthist  \
+0       0.529095        1  ZTF21abtejox         1       489  59440.205197   
+1       0.857029        1  ZTF21abutvjn        96      5298  59439.220787   
+2       0.549392        1  ZTF21abtesqc         1       786  59440.232095   
+3       0.828872        1  ZTF21abteuck         1      1221  59440.236343   
+4       0.503110        1  ZTF21abteudp         1      1180  59440.236343   
+..           ...      ...           ...       ...       ...           ...   
+334     0.745351        1  ZTF21abxllpn        13      1575  59442.445405   
+335     0.674082        1  ZTF21abvwwqq        23       454  58423.241701   
+336     0.682571        1  ZTF21abvwwgs         6       279  59443.461377   
+337     0.619830        1  ZTF21abufjnr         1       660  59443.490914   
+338     0.506918        1  ZTF21abvdltv        15      1173  59443.501690   
+
+     ...      meanra    meandec   sigmara  sigmadec    deltajd      firstmjd  \
+0    ...  236.856718  -1.634621       NaN       NaN   0.000000  59440.205197   
+1    ...  252.004023  63.415915  0.000109  0.000053  24.065463  59440.220556   
+2    ...  301.175785  -3.955767       NaN       NaN   0.000000  59440.232095   
+3    ...  305.716111  18.670238       NaN       NaN   0.000000  59440.236343   
+4    ...  303.724745  17.881649       NaN       NaN   0.000000  59440.236343   
+..   ...         ...        ...       ...       ...        ...           ...   
+334  ...   26.954372  34.990300  0.000086  0.000031  16.917558  59443.452199   
+335  ...   13.348513 -18.165224  0.000045  0.000036  26.938391  59443.460903   
+336  ...   20.362105 -27.456790  0.000044  0.000039  25.914896  59443.461377   
+337  ...   97.162826  40.439433       NaN       NaN   0.000000  59443.490914   
+338  ...  105.919604  18.306382  0.000080  0.000114  22.972593  59443.501690   
+
+          lastmjd      step_id_corr  diffpos  reference_change  
+0    59440.205197  correction_1.0.6     True             False  
+1    59464.286019  correction_1.0.6     True             False  
+2    59440.232095  correction_1.0.6     True             False  
+3    59440.236343  correction_1.0.6     True             False  
+4    59440.236343  correction_1.0.6     True             False  
+..            ...               ...      ...               ...  
+334  59460.369757  correction_1.0.6     True             False  
+335  59470.399294  correction_1.0.6     True             False  
+336  59469.376273  correction_1.0.6     True             False  
+337  59443.490914  correction_1.0.6     True             False  
+338  59466.474282  correction_1.0.6     True             False  
+
+[339 rows x 28 columns]
+2025-05-07 00:43:41,064 - INFO -               oid   classifier_name      classifier_version class_name  \
+0    ZTF21abtejox  stamp_classifier  stamp_classifier_1.0.4         SN   
+1    ZTF21abutvjn  stamp_classifier  stamp_classifier_1.0.4         SN   
+2    ZTF21abtesqc  stamp_classifier  stamp_classifier_1.0.4         SN   
+3    ZTF21abteuck  stamp_classifier  stamp_classifier_1.0.4         SN   
+4    ZTF21abteudp  stamp_classifier  stamp_classifier_1.0.4         SN   
+..            ...               ...                     ...        ...   
+334  ZTF21abxllpn  stamp_classifier  stamp_classifier_1.0.4         SN   
+335  ZTF21abvwwqq  stamp_classifier  stamp_classifier_1.0.4         SN   
+336  ZTF21abvwwgs  stamp_classifier  stamp_classifier_1.0.4         SN   
+337  ZTF21abufjnr  stamp_classifier  stamp_classifier_1.0.4         SN   
+338  ZTF21abvdltv  stamp_classifier  stamp_classifier_1.0.4         SN   
+
+     probability  ranking  ndethist  ncovhist  mjdstarthist    mjdendhist  \
+0       0.529095        1         1       489  59440.205197  59440.205197   
+1       0.857029        1        96      5298  59439.220787  59464.286019   
+2       0.549392        1         1       786  59440.232095  59440.232095   
+3       0.828872        1         1      1221  59440.236343  59440.236343   
+4       0.503110        1         1      1180  59440.236343  59440.236343   
+..           ...      ...       ...       ...           ...           ...   
+334     0.745351        1        13      1575  59442.445405  59460.369757   
+335     0.674082        1        23       454  58423.241701  59470.399294   
+336     0.682571        1         6       279  59443.461377  59469.376273   
+337     0.619830        1         1       660  59443.490914  59443.490914   
+338     0.506918        1        15      1173  59443.501690  59466.474282   
+
+     ...      meanra    meandec   sigmara  sigmadec    deltajd      firstmjd  \
+0    ...  236.856718  -1.634621       NaN       NaN   0.000000  59440.205197   
+1    ...  252.004023  63.415915  0.000109  0.000053  24.065463  59440.220556   
+2    ...  301.175785  -3.955767       NaN       NaN   0.000000  59440.232095   
+3    ...  305.716111  18.670238       NaN       NaN   0.000000  59440.236343   
+4    ...  303.724745  17.881649       NaN       NaN   0.000000  59440.236343   
+..   ...         ...        ...       ...       ...        ...           ...   
+334  ...   26.954372  34.990300  0.000086  0.000031  16.917558  59443.452199   
+335  ...   13.348513 -18.165224  0.000045  0.000036  26.938391  59443.460903   
+336  ...   20.362105 -27.456790  0.000044  0.000039  25.914896  59443.461377   
+337  ...   97.162826  40.439433       NaN       NaN   0.000000  59443.490914   
+338  ...  105.919604  18.306382  0.000080  0.000114  22.972593  59443.501690   
+
+          lastmjd      step_id_corr  diffpos  reference_change  
+0    59440.205197  correction_1.0.6     True             False  
+1    59464.286019  correction_1.0.6     True             False  
+2    59440.232095  correction_1.0.6     True             False  
+3    59440.236343  correction_1.0.6     True             False  
+4    59440.236343  correction_1.0.6     True             False  
+..            ...               ...      ...               ...  
+334  59460.369757  correction_1.0.6     True             False  
+335  59470.399294  correction_1.0.6     True             False  
+336  59469.376273  correction_1.0.6     True             False  
+337  59443.490914  correction_1.0.6     True             False  
+338  59466.474282  correction_1.0.6     True             False  
+
+[339 rows x 27 columns]
+2025-05-07 00:43:41,081 - INFO - Evaluation 1 finished. Closing connection
+2025-05-07 00:43:41,083 - INFO - Saving backup
+2025-05-07 00:43:41,091 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 00:43:44,381 - INFO - Empty DataFrame
+Columns: [oid, ndethist, ncovhist, mjdstarthist, mjdendhist, corrected, stellar, ndet, g_r_max, g_r_max_corr, g_r_mean, g_r_mean_corr, meanra, meandec, sigmara, sigmadec, deltajd, firstmjd, lastmjd, step_id_corr, diffpos, reference_change, oid, classifier_name, classifier_version, class_name, probability, ranking]
+Index: []
+
+[0 rows x 28 columns]
+2025-05-07 00:43:44,391 - INFO - Empty DataFrame
+Columns: [oid, ndethist, ncovhist, mjdstarthist, mjdendhist, corrected, stellar, ndet, g_r_max, g_r_max_corr, g_r_mean, g_r_mean_corr, meanra, meandec, sigmara, sigmadec, deltajd, firstmjd, lastmjd, step_id_corr, diffpos, reference_change, classifier_name, classifier_version, class_name, probability, ranking]
+Index: []
+
+[0 rows x 27 columns]
+2025-05-07 00:43:44,398 - ERROR - An error has occurred: Incompatible indexer with DataFrame
+2025-05-07 00:43:44,399 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 01:04:36,254 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 01:04:40,815 - INFO - Saving backup
+2025-05-07 01:04:40,832 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 01:04:45,385 - INFO - Evaluation 1 finished. Closing connection
+2025-05-07 01:04:45,386 - INFO - Saving backup
+2025-05-07 01:04:45,395 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 01:04:48,806 - ERROR - An error has occurred: Incompatible indexer with DataFrame
+2025-05-07 01:04:48,807 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 01:06:55,070 - INFO - Restarting
+2025-05-07 01:06:55,099 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 01:07:03,147 - INFO - Saving backup
+2025-05-07 01:07:03,164 - INFO - Query ID: 8, Run ID: 3
+2025-05-07 01:08:17,762 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 01:08:22,324 - INFO - Saving backup
+2025-05-07 01:08:22,367 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 01:08:27,259 - INFO - Evaluation 1 finished. Closing connection
+2025-05-07 01:08:27,262 - INFO - Saving backup
+2025-05-07 01:08:27,293 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 01:08:30,809 - INFO - Evaluation 2 finished. Closing connection
+2025-05-07 01:08:30,810 - INFO - Saving backup
+2025-05-07 01:08:30,837 - INFO - Query ID: 8, Run ID: 3
+2025-05-07 01:10:43,181 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 01:10:47,659 - INFO - Saving backup
+2025-05-07 01:10:47,675 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 01:10:52,272 - INFO - Evaluation 1 finished. Closing connection
+2025-05-07 01:10:52,272 - INFO - Saving backup
+2025-05-07 01:10:52,280 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 01:10:55,872 - ERROR - An error has occurred: Incompatible indexer with DataFrame
+2025-05-07 01:10:55,874 - INFO - Progress saved in new_df attribute of this object
+2025-05-07 01:16:23,782 - INFO - Query ID: 8, Run ID: 0 (gold)
+2025-05-07 01:16:28,088 - INFO - Saving backup
+2025-05-07 01:16:28,114 - INFO - Query ID: 8, Run ID: 1
+2025-05-07 01:16:32,688 - INFO - Evaluation 1 finished. Closing connection
+2025-05-07 01:16:32,690 - INFO - Saving backup
+2025-05-07 01:16:32,721 - INFO - Query ID: 8, Run ID: 2
+2025-05-07 01:16:36,104 - INFO - Evaluation 2 finished. Closing connection
+2025-05-07 01:16:36,105 - INFO - Saving backup
+2025-05-07 01:16:36,129 - INFO - Query ID: 8, Run ID: 3

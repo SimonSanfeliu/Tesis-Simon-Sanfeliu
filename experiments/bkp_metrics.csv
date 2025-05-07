@@ -16,9 +16,135 @@ WHERE
     AND probability.ranking=1
     AND (probability.probability>0.5
     OR object.ndet>1)
-",,,,,,,5.242628574371338,2025-05-02T01:19:33,1,1,1,1,1,1
-1,0.16.0,gpt-4o,v1,8,1,,,,,,,,,,,,,,,
-2,0.16.0,gpt-4o,v1,8,2,,,,,,,,,,,,,,,
+",,,,,"[              oid  ndethist  ncovhist  mjdstarthist    mjdendhist  corrected  \
+0    ZTF23aaygkbn         1       805  60173.250000  60173.250000       True   
+1    ZTF23aaygleo         1       801  60173.250000  60173.250000       True   
+2    ZTF21abvqbxd        35      4229  58290.250000  60173.250000      False   
+3    ZTF18aaoihga        40      3828  58231.500000  60173.250000      False   
+4    ZTF19abvashq        62      4100  58284.277732  60532.194178      False   
+..            ...       ...       ...           ...           ...        ...   
+179  ZTF23aazhofz         2      1852  59788.250000  60175.250000       True   
+180  ZTF23aazhlya         8      2799  60175.250000  60194.250000       True   
+181  ZTF23aazvaet         2      1895  60175.250000  60182.250000       True   
+182  ZTF18aanykdg        16      3532  58230.500000  60175.250000       True   
+183  ZTF20abkrbep        18      5024  58230.283079  60465.343935       True   
+
+     stellar  ndet   g_r_max  g_r_max_corr  ...      firstmjd       lastmjd  \
+0      False     1       NaN           NaN  ...  60173.169005  60173.169005   
+1      False     1       NaN           NaN  ...  60173.169005  60173.169005   
+2      False     1       NaN           NaN  ...  60173.176100  60173.176100   
+3      False     1       NaN           NaN  ...  60173.178461  60173.178461   
+4      False     6       NaN           NaN  ...  60173.180822  60532.194178   
+..       ...   ...       ...           ...  ...           ...           ...   
+179    False     1       NaN           NaN  ...  60175.181007  60175.181007   
+180    False     8 -0.032068      0.637914  ...  60175.184363  60194.201111   
+181     True     2       NaN           NaN  ...  60175.192697  60182.239526   
+182    False     1       NaN           NaN  ...  60175.194340  60175.194340   
+183     True     2       NaN           NaN  ...  60175.185301  60465.343935   
+
+     step_id_corr  diffpos  reference_change   classifier_name  \
+0           1.2.0     True             False  stamp_classifier   
+1           1.2.0     True             False  stamp_classifier   
+2           1.2.0     True             False  stamp_classifier   
+3           1.2.0     True             False  stamp_classifier   
+4        24.5.2a6     True             False  stamp_classifier   
+..            ...      ...               ...               ...   
+179         1.2.0     True             False  stamp_classifier   
+180         1.2.0     True             False  stamp_classifier   
+181         1.2.0     True             False  stamp_classifier   
+182         1.2.0     True             False  stamp_classifier   
+183        24.5.1     True             False  stamp_classifier   
+
+         classifier_version  class_name  probability ranking  
+0    stamp_classifier_1.0.4          SN     0.639198       1  
+1    stamp_classifier_1.0.4          SN     0.514766       1  
+2    stamp_classifier_1.0.4          SN     0.526146       1  
+3    stamp_classifier_1.0.4          SN     0.657241       1  
+4    stamp_classifier_1.0.4          SN     0.306560       1  
+..                      ...         ...          ...     ...  
+179  stamp_classifier_1.0.4          SN     0.622088       1  
+180  stamp_classifier_1.0.4          SN     0.698527       1  
+181  stamp_classifier_1.0.4          SN     0.631699       1  
+182  stamp_classifier_1.0.4          SN     0.569558       1  
+183  stamp_classifier_1.0.4          SN     0.317975       1  
+
+[184 rows x 27 columns]]",,4.302566289901733,2025-05-07T01:16:28,1,1,1,1,1,1
+1,0.16.0,gpt-4o,v1,8,1,"
+SELECT * 
+FROM probability 
+INNER JOIN object ON probability.oid = object.oid
+WHERE probability.class_name = 'SN' 
+  AND probability.classifier_name = 'stamp_classifier'
+  AND probability.probability > 0.5
+  AND object.firstmjd BETWEEN 59440 AND 59444  -- Julian dates for August 17 to August 21, 2021
+  AND (object.ndet >= 2 OR probability.probability > 0.5)
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', 'CREATE TABLE detection (  /* this table contains information about the object detections, or its light curve. Avoid doing filters on this table in any parameter other than oid */\n    candid BIGINT PRIMARY KEY, /* unique candidate identifier */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */\n    fid INTEGER NOT NULL, /* filter identifier  (1=g; 2=r; 3=i)*/\n    pid FLOAT NOT NULL, /* program identifier */\n    diffmaglim DOUBLE PRECISION, /* limiting difference magnitud */\n    isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */\n    nid INTEGER, /* unique night identifier */\n    ra DOUBLE PRECISION NOT NULL, /* inferred right ascension */\n    dec DOUBLE PRECISION NOT NULL, /* inferred declination */\n    magpsf DOUBLE PRECISION NOT NULL, /* point spread function (psf) difference magnitude */\n    sigmapsf DOUBLE PRECISION NOT NULL, /* psf difference magnitude error */\n    magap DOUBLE PRECISION, /* aperture difference magnitude */\n    sigmagap DOUBLE PRECISION, /* aperture difference magnitud error */\n    distnr DOUBLE PRECISION, /* distance to the nearest source in the reference image */\n    rb DOUBLE PRECISION, /* ZTF real bogus score */\n    rbversion VARCHAR, /* version of the ZTF real bogus score */\n    drb DOUBLE PRECISION, /* ZTF deep learning based real bogus score */\n    drbversion VARCHAR, /* versio  of the ZTF deep learning based real bogus score */\n    magapbig DOUBLE PRECISION, /* large aperture magnitude */\n    sigmagapbig DOUBLE PRECISION, /* large aperture magnitude error */\n    rfid INTEGER, /* identifier of the reference image used for the difference image */\n    magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */\n    sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */\n    sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */\n    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */\n    dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */\n    parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */\n    has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */\n    step_id_corr VARCHAR NOT NULL /* identifier of the correction step */\n);\nCREATE INDEX ix_ndetection_oid ON detection USING hash (oid);\n']",medium,13.512856245040894,2025-04-28T23:34:39,"[              oid   classifier_name      classifier_version class_name  \
+0    ZTF21abtejox  stamp_classifier  stamp_classifier_1.0.4         SN   
+1    ZTF21abutvjn  stamp_classifier  stamp_classifier_1.0.4         SN   
+2    ZTF21abtesqc  stamp_classifier  stamp_classifier_1.0.4         SN   
+3    ZTF21abteuaa  stamp_classifier  stamp_classifier_1.0.4         SN   
+4    ZTF21abteuck  stamp_classifier  stamp_classifier_1.0.4         SN   
+..            ...               ...                     ...        ...   
+334  ZTF21abxcmil  stamp_classifier  stamp_classifier_1.0.4         SN   
+335  ZTF21abvwwqq  stamp_classifier  stamp_classifier_1.0.4         SN   
+336  ZTF21abvwwgs  stamp_classifier  stamp_classifier_1.0.4         SN   
+337  ZTF21abufjnr  stamp_classifier  stamp_classifier_1.0.4         SN   
+338  ZTF21abvdltv  stamp_classifier  stamp_classifier_1.0.4         SN   
+
+     probability  ranking  ndethist  ncovhist  mjdstarthist    mjdendhist  \
+0       0.529095        1         1       489  59440.205197  59440.205197   
+1       0.857029        1        96      5298  59439.220787  59464.286019   
+2       0.549392        1         1       786  59440.232095  59440.232095   
+3       0.749310        1         9       832  58666.317245  59440.235868   
+4       0.828872        1         1      1221  59440.236343  59440.236343   
+..           ...      ...       ...       ...           ...           ...   
+334     0.662962        1        12       655  59443.354120  59463.317604   
+335     0.674082        1        23       454  58423.241701  59470.399294   
+336     0.682571        1         6       279  59443.461377  59469.376273   
+337     0.619830        1         1       660  59443.490914  59443.490914   
+338     0.506918        1        15      1173  59443.501690  59466.474282   
+
+     ...      meanra    meandec   sigmara  sigmadec    deltajd      firstmjd  \
+0    ...  236.856718  -1.634621       NaN       NaN   0.000000  59440.205197   
+1    ...  252.004023  63.415915  0.000109  0.000053  24.065463  59440.220556   
+2    ...  301.175785  -3.955767       NaN       NaN   0.000000  59440.232095   
+3    ...  307.429357  10.671598       NaN       NaN   0.000000  59440.235868   
+4    ...  305.716111  18.670238       NaN       NaN   0.000000  59440.236343   
+..   ...         ...        ...       ...       ...        ...           ...   
+334  ...    5.849329   1.555741  0.000022  0.000065  19.963484  59443.354120   
+335  ...   13.348513 -18.165224  0.000045  0.000036  26.938391  59443.460903   
+336  ...   20.362105 -27.456790  0.000044  0.000039  25.914896  59443.461377   
+337  ...   97.162826  40.439433       NaN       NaN   0.000000  59443.490914   
+338  ...  105.919604  18.306382  0.000080  0.000114  22.972593  59443.501690   
+
+          lastmjd      step_id_corr  diffpos  reference_change  
+0    59440.205197  correction_1.0.6     True             False  
+1    59464.286019  correction_1.0.6     True             False  
+2    59440.232095  correction_1.0.6     True             False  
+3    59440.235868  correction_1.0.6     True             False  
+4    59440.236343  correction_1.0.6     True             False  
+..            ...               ...      ...               ...  
+334  59463.317604  correction_1.0.6     True             False  
+335  59470.399294  correction_1.0.6     True             False  
+336  59469.376273  correction_1.0.6     True             False  
+337  59443.490914  correction_1.0.6     True             False  
+338  59466.474282  correction_1.0.6     True             False  
+
+[339 rows x 27 columns]]",,4.565808296203613,2025-05-07T01:16:32,0.0,0.0,1.0,1.0,0,1
+2,0.16.0,gpt-4o,v1,8,2,"
+SELECT * 
+FROM object 
+INNER JOIN probability ON object.oid = probability.oid
+WHERE probability.class_name = 'SN'
+  AND probability.classifier_name = 'stamp_classifier'
+  AND probability.ranking = 1
+  AND object.firstmjd BETWEEN 60000 AND 60004  -- Replace with actual Julian dates for August 17 to August 21, 2023
+  AND (probability.probability > 0.5 OR object.ndet >= 2)
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', 'CREATE TABLE detection (  /* this table contains information about the object detections, or its light curve. Avoid doing filters on this table in any parameter other than oid */\n    candid BIGINT PRIMARY KEY, /* unique candidate identifier */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */\n    fid INTEGER NOT NULL, /* filter identifier  (1=g; 2=r; 3=i)*/\n    pid FLOAT NOT NULL, /* program identifier */\n    diffmaglim DOUBLE PRECISION, /* limiting difference magnitud */\n    isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */\n    nid INTEGER, /* unique night identifier */\n    ra DOUBLE PRECISION NOT NULL, /* inferred right ascension */\n    dec DOUBLE PRECISION NOT NULL, /* inferred declination */\n    magpsf DOUBLE PRECISION NOT NULL, /* point spread function (psf) difference magnitude */\n    sigmapsf DOUBLE PRECISION NOT NULL, /* psf difference magnitude error */\n    magap DOUBLE PRECISION, /* aperture difference magnitude */\n    sigmagap DOUBLE PRECISION, /* aperture difference magnitud error */\n    distnr DOUBLE PRECISION, /* distance to the nearest source in the reference image */\n    rb DOUBLE PRECISION, /* ZTF real bogus score */\n    rbversion VARCHAR, /* version of the ZTF real bogus score */\n    drb DOUBLE PRECISION, /* ZTF deep learning based real bogus score */\n    drbversion VARCHAR, /* versio  of the ZTF deep learning based real bogus score */\n    magapbig DOUBLE PRECISION, /* large aperture magnitude */\n    sigmagapbig DOUBLE PRECISION, /* large aperture magnitude error */\n    rfid INTEGER, /* identifier of the reference image used for the difference image */\n    magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */\n    sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */\n    sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */\n    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */\n    dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */\n    parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */\n    has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */\n    step_id_corr VARCHAR NOT NULL /* identifier of the correction step */\n);\nCREATE INDEX ix_ndetection_oid ON detection USING hash (oid);\n']",medium,10.834654569625854,2025-04-28T23:34:50,"[Empty DataFrame
+Columns: [oid, ndethist, ncovhist, mjdstarthist, mjdendhist, corrected, stellar, ndet, g_r_max, g_r_max_corr, g_r_mean, g_r_mean_corr, meanra, meandec, sigmara, sigmadec, deltajd, firstmjd, lastmjd, step_id_corr, diffpos, reference_change, classifier_name, classifier_version, class_name, probability, ranking]
+Index: []
+
+[0 rows x 27 columns]]",,3.379636764526367,2025-05-07T01:16:36,0,0,1.0,1.0,0,1
 3,0.16.0,gpt-4o,v1,8,3,,,,,,,,,,,,,,,
 4,0.16.0,gpt-4o,v1,8,4,,,,,,,,,,,,,,,
 5,0.16.0,gpt-4o,v1,8,5,,,,,,,,,,,,,,,
