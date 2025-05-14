@@ -202,12 +202,12 @@ class metricsPipeline():
                     # Get the predicted SQL query
                     restart_row = restarted.loc[index]
                     sql_pred = sql_preds[sql_preds["query_id"] == restart_row["query_id"]]
-                    logger.info(f"Query ID: {restarted.loc[index, 'query_id']}, Run ID: {restarted.loc[index, 'query_run']}")
+                    logger.info(f"Query ID: {restart_row['query_id']}, Run ID: {restart_row['query_run']}")
                     
                     # Check if it is a gold query or a pred query
                     if restart_row["query_run"] == 0:            
                         # Get output of the expected SQL query
-                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"][0].item()
+                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
                         gold_start = time.time()  # start time gold_query
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         
@@ -274,7 +274,7 @@ class metricsPipeline():
                         
                     else:                        
                         # Get output of the expected SQL query
-                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"][0]
+                        gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         
                         # Check if the gold query was executed correctly, if not try again
