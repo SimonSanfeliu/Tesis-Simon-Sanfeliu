@@ -3,6 +3,8 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import time
+import tempfile
+import shutil
 
 from pipeline.process import *
 from pipeline.eval import *
@@ -121,6 +123,15 @@ class metricsPipeline():
                         continue
         engine.dispose()
         return query, error
+
+    def safe_to_csv(self, df: pd.DataFrame, path: str):
+        """Safely write a DataFrame to CSV using a temporary file."""
+        dir_name = os.path.dirname(path)
+        with tempfile.NamedTemporaryFile(mode='w', dir=dir_name, delete=False, suffix='.csv') as tmp_file:
+            tmp_path = tmp_file.name
+            df.to_csv(tmp_path, index=False)
+        shutil.move(tmp_path, path)
+
     
     def run_metrics(self, sql_preds_path: str, df: pd.DataFrame, 
                     total_exps: int = 10, restart: bool = False):
@@ -161,7 +172,7 @@ class metricsPipeline():
                         'p_col', 'N_perfect_row', 'N_perfect_col']
         
         # Generate an empty DataFrame with the corresponding columns and rows if it doesn't exist already
-        if self.new_df is None:
+        if self.new_df is None and not os.path.exists(bkp_path):
             num_rows = len(sql_preds) + n_unique
             self.new_df = pd.DataFrame(
                 [[None]*len(column_names) for _ in range(num_rows)], 
@@ -195,7 +206,7 @@ class metricsPipeline():
                 logger.info("Restarting")
                 # Restart the process where there is no sql_date
                 restarted = pd.read_csv(bkp_path)
-                null_indexes = restarted[restarted["sql_date"].isna()].index.to_list()
+                null_indexes = restarted[restarted["sql_date"].isna()].index.tolist()
                 for index in null_indexes:
                     # Get the predicted SQL query
                     restart_row = restarted.loc[index]
@@ -210,9 +221,9 @@ class metricsPipeline():
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                         
                         # Check if the gold query was executed correctly, if not try again
-                        if error_gold is not None:
+                        if error_gold is not None or query_gold is None:
                             query_gold, error_gold = self.run_sql_alerce(gold_query_test)
-                            if error_gold is not None:
+                            if error_gold is not None or query_gold is None:
                                 # If the second run fails, then save it as such
                                 logger.error("Failed gold query")
                                 gold_time =  time.time() - gold_start
@@ -235,13 +246,14 @@ class metricsPipeline():
                                 
                                 # Saving the DataFrame as a CSV file backup
                                 logger.info("Saving backup")
-                                self.new_df.to_csv(bkp_path)
+                                self.safe_to_csv(restarted, bkp_path)
                                 continue
                 
                         gold_time = time.time() - gold_start
                         gold_date = datetime.now().isoformat(timespec='seconds')
                         
                         # Drop duplicated columns
+                        logger.info(f"Query ID: {restart_row['query_id']}, Run ID: {restart_row['query_run']}, Query gold: {query_gold}")
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Writing the gold values in the CSV
@@ -263,11 +275,11 @@ class metricsPipeline():
                         
                         # Saving the DataFrame as a CSV file backup
                         logger.info("Saving backup")
-                        self.new_df.to_csv(bkp_path)
+                        self.safe_to_csv(restarted, bkp_path)
                         
                         # Obtain the gold values for metric calculation
-                        oids_names = ["oid", "oid_catalog"]
-                        check = [name for name in query_gold.columns() if name in oids_names]
+                        oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
+                        check = [name for name in query_gold.columns.tolist() if name in oids_names]
                         oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
@@ -288,10 +300,11 @@ class metricsPipeline():
                                 n_cols_gold = 0
                         
                         # Drop duplicated columns
+                        logger.info(f"Query ID: {restart_row['query_id']}, Run ID: {restart_row['query_run']}, Query gold: {query_gold}")
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Obtain the gold values for metric calculation
-                        oids_names = ["oid", "oid_catalog"]
+                        oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
                         check = [name for name in query_gold.columns.tolist() if name in oids_names]
                         oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
@@ -521,11 +534,11 @@ class metricsPipeline():
                         
                     # Saving the DataFrame as a CSV file backup
                     logger.info("Saving backup")
-                    restarted.to_csv(bkp_path)
+                    self.safe_to_csv(restarted, bkp_path)
                            
                 # Now save it appropiately
                 logger.info("Process ended. Saving it all")
-                restarted.to_csv(file_path)
+                self.safe_to_csv(restarted, file_path)
                 
             except Exception as e:
                 logger.error(f"An error has occurred while restarting the process: {e}")
@@ -572,7 +585,7 @@ class metricsPipeline():
                             
                             # Saving the DataFrame as a CSV file backup
                             logger.info("Saving backup")
-                            self.new_df.to_csv(bkp_path)
+                            self.safe_to_csv(self.new_df, bkp_path)
                             continue
             
                     gold_time = time.time() - gold_start
@@ -600,10 +613,10 @@ class metricsPipeline():
                     
                     # Saving the DataFrame as a CSV file backup
                     logger.info("Saving backup")
-                    self.new_df.to_csv(bkp_path)
+                    self.safe_to_csv(self.new_df, bkp_path)
                     
                     # Obtain the gold values for metric calculation
-                    oids_names = ["oid", "oid_catalog"]
+                    oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
                     check = [name for name in query_gold.columns.tolist() if name in oids_names]
                     oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                     n_rows_gold = len(oids_gold)
@@ -878,14 +891,14 @@ class metricsPipeline():
                         
                         # Saving the DataFrame as a CSV file backup
                         logger.info("Saving backup")
-                        self.new_df.to_csv(bkp_path)
+                        self.safe_to_csv(self.new_df, bkp_path)
                 
                     # Adding up the row count
                     row_count += total_exps+1
                 
                 # Saving the DataFrame as a CSV file
                 logger.info("Process ended. Saving it all")
-                self.new_df.to_csv(file_path)
+                self.safe_to_csv(self.new_df, file_path)
             
             except Exception as e:
                 logger.error(f"An error has occurred: {e}")
