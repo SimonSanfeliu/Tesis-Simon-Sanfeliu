@@ -153,9 +153,6 @@ class metricsPipeline():
         # Getting the number of unique queries
         n_unique = len(sql_preds["query_id"].unique())
         
-        # CHECK: If we assume the tag and LLM used dont change for the metrics and the preds, then we could edit
-        # only the sql_preds DataFrame. In the mean time, assume that it is not.
-        
         # Columns to use
         column_names = ['code_tag', 'llm_used', 'prompt_version', 'query_id', 'query_run', 
                         'sql_query', 'tab_schema', 'label', 'query_gen_time', 
@@ -275,7 +272,8 @@ class metricsPipeline():
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
                         
-                    else:                        
+                    else:
+                        logger.info("Getting the gold values to compare")                    
                         # Get output of the expected SQL query
                         gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test)
@@ -294,17 +292,19 @@ class metricsPipeline():
                         
                         # Obtain the gold values for metric calculation
                         oids_names = ["oid", "oid_catalog"]
-                        check = [name for name in query_gold.columns() if name in oids_names]
+                        check = [name for name in query_gold.columns.tolist() if name in oids_names]
                         oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
                         
                         # For self correction
+                        logger.info("Getting the request for self correction")
                         request = df[df["req_id"] == restart_row["query_id"]]["request"].item()
                         
                         # Fill in the resulting SQL query and the time it took to generate
                         # If self-correction is enabled, use the respective prompts to correct
                         if self.self_corr:
+                            logger.info("Self-correction")
                             # Check if there was an error. If there was, correct it
                             pred_start = time.time()
                             query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item())
@@ -364,6 +364,7 @@ class metricsPipeline():
 
                         # W/o self-correction
                         else:
+                            logger.info("No self-correction")
                             pred_start = time.time()
                             query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item())
                             
@@ -603,8 +604,7 @@ class metricsPipeline():
                     
                     # Obtain the gold values for metric calculation
                     oids_names = ["oid", "oid_catalog"]
-                    check = [name for name in query_gold.columns() if name in oids_names]
-                    logger.info(check)
+                    check = [name for name in query_gold.columns.tolist() if name in oids_names]
                     oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                     n_rows_gold = len(oids_gold)
                     n_cols_gold = query_gold.shape[1]
