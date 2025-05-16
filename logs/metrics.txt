@@ -5543,3 +5543,455 @@ Index: []
 0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
 2025-05-16 12:23:34,054 - ERROR - An error has occurred while restarting the process: list index out of range
 2025-05-16 12:23:34,059 - INFO - Progress saved in new_df attribute of this object
+2025-05-16 12:26:17,893 - INFO - Restarting
+2025-05-16 12:26:17,984 - INFO - Query ID: 78, Run ID: 1
+2025-05-16 12:26:17,986 - INFO - Getting the gold values to compare
+2025-05-16 12:26:22,940 - INFO - Query ID: 78, Run ID: 1, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:26:22,947 - INFO - Getting the request for self correction
+2025-05-16 12:26:22,954 - INFO - No self-correction
+2025-05-16 12:26:27,556 - INFO - Saving backup
+2025-05-16 12:26:27,842 - INFO - Query ID: 78, Run ID: 2
+2025-05-16 12:26:27,844 - INFO - Getting the gold values to compare
+2025-05-16 12:26:32,065 - INFO - Query ID: 78, Run ID: 2, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:26:32,072 - INFO - Getting the request for self correction
+2025-05-16 12:26:32,077 - INFO - No self-correction
+2025-05-16 12:26:36,342 - INFO - Saving backup
+2025-05-16 12:26:36,743 - INFO - Query ID: 78, Run ID: 3
+2025-05-16 12:26:36,745 - INFO - Getting the gold values to compare
+2025-05-16 12:26:41,108 - INFO - Query ID: 78, Run ID: 3, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:26:41,111 - INFO - Getting the request for self correction
+2025-05-16 12:26:41,113 - INFO - No self-correction
+2025-05-16 12:26:45,523 - INFO - Saving backup
+2025-05-16 12:26:45,871 - INFO - Query ID: 78, Run ID: 4
+2025-05-16 12:26:45,872 - INFO - Getting the gold values to compare
+2025-05-16 12:26:50,299 - INFO - Query ID: 78, Run ID: 4, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:26:50,304 - INFO - Getting the request for self correction
+2025-05-16 12:26:50,311 - INFO - No self-correction
+2025-05-16 12:26:54,493 - INFO - Saving backup
+2025-05-16 12:26:54,943 - INFO - Query ID: 78, Run ID: 5
+2025-05-16 12:26:54,946 - INFO - Getting the gold values to compare
+2025-05-16 12:26:59,668 - INFO - Query ID: 78, Run ID: 5, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:26:59,673 - INFO - Getting the request for self correction
+2025-05-16 12:26:59,679 - INFO - No self-correction
+2025-05-16 12:27:04,315 - INFO - Saving backup
+2025-05-16 12:27:04,691 - INFO - Query ID: 78, Run ID: 6
+2025-05-16 12:27:04,693 - INFO - Getting the gold values to compare
+2025-05-16 12:27:08,789 - INFO - Query ID: 78, Run ID: 6, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:27:08,796 - INFO - Getting the request for self correction
+2025-05-16 12:27:08,800 - INFO - No self-correction
+2025-05-16 12:27:13,431 - INFO - Saving backup
+2025-05-16 12:27:13,669 - INFO - Query ID: 78, Run ID: 7
+2025-05-16 12:27:13,671 - INFO - Getting the gold values to compare
+2025-05-16 12:27:17,797 - INFO - Query ID: 78, Run ID: 7, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:27:17,799 - INFO - Getting the request for self correction
+2025-05-16 12:27:17,801 - INFO - No self-correction
+2025-05-16 12:27:21,954 - INFO - Saving backup
+2025-05-16 12:27:22,342 - INFO - Query ID: 78, Run ID: 8
+2025-05-16 12:27:22,343 - INFO - Getting the gold values to compare
+2025-05-16 12:27:26,632 - INFO - Query ID: 78, Run ID: 8, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:27:26,637 - INFO - Getting the request for self correction
+2025-05-16 12:27:26,643 - INFO - No self-correction
+2025-05-16 12:27:30,820 - INFO - Saving backup
+2025-05-16 12:27:31,163 - INFO - Query ID: 78, Run ID: 9
+2025-05-16 12:27:31,164 - INFO - Getting the gold values to compare
+2025-05-16 12:27:35,528 - INFO - Query ID: 78, Run ID: 9, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:27:35,534 - INFO - Getting the request for self correction
+2025-05-16 12:27:35,538 - INFO - No self-correction
+2025-05-16 12:27:39,861 - INFO - Saving backup
+2025-05-16 12:27:40,057 - INFO - Query ID: 78, Run ID: 10
+2025-05-16 12:27:40,058 - INFO - Getting the gold values to compare
+2025-05-16 12:27:44,095 - INFO - Query ID: 78, Run ID: 10, Query gold:   classifier_name                classifier_version  \
+0   lc_classifier  hierarchical_random_forest_1.0.0   
+
+                                             classes  
+0  [SNIa, SNIbc, SNII, SLSN, QSO, AGN, Blazar, CV...  
+2025-05-16 12:27:44,100 - INFO - Getting the request for self correction
+2025-05-16 12:27:44,106 - INFO - No self-correction
+2025-05-16 12:27:48,069 - INFO - Saving backup
+2025-05-16 12:27:48,301 - INFO - Query ID: 39, Run ID: 0
+2025-05-16 12:27:55,483 - INFO - Query ID: 39, Run ID: 0, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:27:55,507 - INFO - Saving backup
+2025-05-16 12:27:55,949 - INFO - Saving backup
+2025-05-16 12:27:56,155 - INFO - Query ID: 39, Run ID: 1
+2025-05-16 12:27:56,156 - INFO - Getting the gold values to compare
+2025-05-16 12:28:01,018 - INFO - Query ID: 39, Run ID: 1, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:28:01,028 - INFO - Getting the request for self correction
+2025-05-16 12:28:01,033 - INFO - No self-correction
+2025-05-16 12:28:11,908 - INFO - Saving backup
+2025-05-16 12:28:12,270 - INFO - Query ID: 39, Run ID: 2
+2025-05-16 12:28:12,271 - INFO - Getting the gold values to compare
+2025-05-16 12:28:17,003 - INFO - Query ID: 39, Run ID: 2, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:28:17,011 - INFO - Getting the request for self correction
+2025-05-16 12:28:17,017 - INFO - No self-correction
+2025-05-16 12:30:21,375 - INFO - Saving backup
+2025-05-16 12:30:21,757 - INFO - Query ID: 39, Run ID: 3
+2025-05-16 12:30:21,760 - INFO - Getting the gold values to compare
+2025-05-16 12:30:26,523 - INFO - Query ID: 39, Run ID: 3, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:30:26,534 - INFO - Getting the request for self correction
+2025-05-16 12:30:26,541 - INFO - No self-correction
+2025-05-16 12:30:31,718 - INFO - Saving backup
+2025-05-16 12:30:32,323 - INFO - Query ID: 39, Run ID: 4
+2025-05-16 12:30:32,325 - INFO - Getting the gold values to compare
+2025-05-16 12:30:36,797 - INFO - Query ID: 39, Run ID: 4, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:30:36,808 - INFO - Getting the request for self correction
+2025-05-16 12:30:36,812 - INFO - No self-correction
+2025-05-16 12:32:41,003 - INFO - Saving backup
+2025-05-16 12:32:41,229 - INFO - Query ID: 39, Run ID: 5
+2025-05-16 12:32:41,231 - INFO - Getting the gold values to compare
+2025-05-16 12:32:46,044 - INFO - Query ID: 39, Run ID: 5, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:32:46,048 - INFO - Getting the request for self correction
+2025-05-16 12:32:46,050 - INFO - No self-correction
+2025-05-16 12:32:50,418 - INFO - Saving backup
+2025-05-16 12:32:50,701 - INFO - Query ID: 39, Run ID: 6
+2025-05-16 12:32:50,702 - INFO - Getting the gold values to compare
+2025-05-16 12:32:55,145 - INFO - Query ID: 39, Run ID: 6, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:32:55,155 - INFO - Getting the request for self correction
+2025-05-16 12:32:55,161 - INFO - No self-correction
+2025-05-16 12:34:59,327 - INFO - Saving backup
+2025-05-16 12:34:59,711 - INFO - Query ID: 39, Run ID: 7
+2025-05-16 12:34:59,712 - INFO - Getting the gold values to compare
+2025-05-16 12:35:04,242 - INFO - Query ID: 39, Run ID: 7, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:35:04,253 - INFO - Getting the request for self correction
+2025-05-16 12:35:04,260 - INFO - No self-correction
+2025-05-16 12:37:08,545 - INFO - Saving backup
+2025-05-16 12:37:09,094 - INFO - Query ID: 39, Run ID: 8
+2025-05-16 12:37:09,097 - INFO - Getting the gold values to compare
+2025-05-16 12:37:13,860 - INFO - Query ID: 39, Run ID: 8, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:37:13,868 - INFO - Getting the request for self correction
+2025-05-16 12:37:13,875 - INFO - No self-correction
+2025-05-16 12:37:18,646 - INFO - Saving backup
+2025-05-16 12:37:18,888 - INFO - Query ID: 39, Run ID: 9
+2025-05-16 12:37:18,889 - INFO - Getting the gold values to compare
+2025-05-16 12:37:23,371 - INFO - Query ID: 39, Run ID: 9, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:37:23,383 - INFO - Getting the request for self correction
+2025-05-16 12:37:23,389 - INFO - No self-correction
+2025-05-16 12:39:27,600 - INFO - Saving backup
+2025-05-16 12:39:27,992 - INFO - Query ID: 39, Run ID: 10
+2025-05-16 12:39:27,993 - INFO - Getting the gold values to compare
+2025-05-16 12:39:32,394 - INFO - Query ID: 39, Run ID: 10, Query gold:               oid      meanra    meandec               candid  f_id  \
+0    ZTF17aaaaanb  324.816860  45.593583   537475640115015008     2   
+1    ZTF17aaaaanb  324.816860  45.593583   607270780115015027     2   
+2    ZTF17aaaaanb  324.816860  45.593583   613325340115010003     2   
+3    ZTF17aaaaanb  324.816860  45.593583   536383390115015014     2   
+4    ZTF17aaaaanb  324.816860  45.593583   529390300115015005     2   
+..            ...         ...        ...                  ...   ...   
+995  ZTF17aaadgdr  116.399044  32.744831  1496215692515015015     2   
+996  ZTF17aaadgdr  116.399044  32.744831  1563162532515010015     2   
+997  ZTF17aaadgdr  116.399044  32.744831  1582202532515015009     2   
+998  ZTF17aaadgdr  116.399044  32.744831  1563162532515020015     2   
+999  ZTF17aaadgdr  116.399044  32.744831  1097435112515015025     2   
+
+        magpsf  sigmapsf_corr  sigmapsf_corr_ext  
+0    19.760700       0.021343           0.031418  
+1    19.648392       0.026439           0.034795  
+2    19.791729       0.025855           0.043814  
+3    19.882864       0.022219           0.032339  
+4    19.678644     100.000000           0.019559  
+..         ...            ...                ...  
+995  19.048782     100.000000           0.004847  
+996  16.900568       0.001213           0.020301  
+997  18.424658     100.000000           0.008501  
+998  16.900600       0.001202           0.020300  
+999  18.897345     100.000000           0.008676  
+
+[1000 rows x 8 columns]
+2025-05-16 12:39:32,405 - INFO - Getting the request for self correction
+2025-05-16 12:39:32,409 - INFO - No self-correction
+2025-05-16 12:41:36,646 - INFO - Saving backup
+2025-05-16 12:41:37,062 - INFO - Process ended. Saving it all
