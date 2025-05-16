@@ -163,33 +163,37 @@ class metricsPipeline():
                         'sql_time', 'sql_date', 'r_row', 'p_row', 'r_col', 
                         'p_col', 'N_perfect_row', 'N_perfect_col']
         
-        # Generate an empty DataFrame with the corresponding columns and rows
-        num_rows = len(sql_preds) + n_unique
-        self.new_df = pd.DataFrame(
-            [[None]*len(column_names) for _ in range(num_rows)], 
-            columns=column_names
-        )
+        # Generate an empty DataFrame with the corresponding columns and rows if it doesn't exist already
+        if self.new_df is None:
+            num_rows = len(sql_preds) + n_unique
+            self.new_df = pd.DataFrame(
+                [[None]*len(column_names) for _ in range(num_rows)], 
+                columns=column_names
+            )
         
-        # Reading the tag
-        with open("tag.txt", "r") as f:
-            tag = f.read().split("v")[1]
-            f.close()
+            # Reading the tag
+            with open("tag.txt", "r") as f:
+                tag = f.read().split("v")[1]
+                f.close()
+                
+            # Reading the prompts' version
+            prompt_version = self.prompts_path.split("/prompts_")[1].split(".json")[0]
+
+            # Filling up the first columns
+            row_count = 0
+            for query_id in sql_preds["query_id"].unique():
+                # Base row
+                to_fill_0 = [tag, None, None, query_id, 0, *[None]*15]
+                self.new_df.iloc[row_count] = to_fill_0
+
+                for exp in range(total_exps):
+                    to_fill = [tag, self.llm, prompt_version, query_id, exp + 1, *[None]*15]
+                    self.new_df.iloc[row_count + exp + 1] = to_fill
+
+                row_count += total_exps + 1
             
-        # Reading the prompts' version
-        prompt_version = self.prompts_path.split("/prompts_")[1].split(".json")[0]
-
-        # Filling up the first columns
-        row_count = 0
-        for query_id in sql_preds["query_id"].unique():
-            # Base row
-            to_fill_0 = [tag, None, None, query_id, 0, *[None]*15]
-            self.new_df.iloc[row_count] = to_fill_0
-
-            for exp in range(total_exps):
-                to_fill = [tag, self.llm, prompt_version, query_id, exp + 1, *[None]*15]
-                self.new_df.iloc[row_count + exp + 1] = to_fill
-
-            row_count += total_exps + 1
+        # DELETE AFTER TEST
+        self.new_df.loc[0]["query_id"] = 40
         
         # Check if the process must be restarted
         if os.path.exists(bkp_path) and restart:
@@ -268,7 +272,9 @@ class metricsPipeline():
                         self.new_df.to_csv(bkp_path)
                         
                         # Obtain the gold values for metric calculation
-                        oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        oids_names = ["oid", "oid_catalog"]
+                        check = [name for name in query_gold.columns() if name in oids_names]
+                        oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
                         
@@ -290,7 +296,9 @@ class metricsPipeline():
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Obtain the gold values for metric calculation
-                        oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                        oids_names = ["oid", "oid_catalog"]
+                        check = [name for name in query_gold.columns() if name in oids_names]
+                        oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
                         n_cols_gold = query_gold.shape[1]
                         
@@ -518,7 +526,7 @@ class metricsPipeline():
                     restarted.to_csv(bkp_path)
                            
                 # Now save it appropiately
-                logger.info("Saving all")
+                logger.info("Process ended. Saving it all")
                 restarted.to_csv(file_path)
                 
             except Exception as e:
@@ -531,12 +539,12 @@ class metricsPipeline():
                 row_count = 0
                 for _, row in self.new_df.iterrows():
                     # Working only with the predicted queries for this request
-                    sql_preds_use = sql_preds[sql_preds["query_id"] == row["query_id"]]
+                    sql_preds_use = sql_preds[sql_preds["query_id"] == row["query_id"]].reset_index()
                     req_id = sql_preds_use['query_id'][0]
                     logger.info(f"Query ID: {req_id}, Run ID: 0 (gold)")
                     
                     # Get output of the expected SQL query
-                    gold_query_test = df[df["req_id"] == req_id]["gold_query"][0]
+                    gold_query_test = df[df["req_id"] == req_id]["gold_query"].item()
                     gold_start = time.time()  # start time gold_query
                     query_gold, error_gold = self.run_sql_alerce(gold_query_test)
                     
@@ -597,7 +605,10 @@ class metricsPipeline():
                     self.new_df.to_csv(bkp_path)
                     
                     # Obtain the gold values for metric calculation
-                    oids_gold = query_gold.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                    oids_names = ["oid", "oid_catalog"]
+                    check = [name for name in query_gold.columns() if name in oids_names]
+                    logger.info(check)
+                    oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                     n_rows_gold = len(oids_gold)
                     n_cols_gold = query_gold.shape[1]
                     
@@ -876,7 +887,7 @@ class metricsPipeline():
                     row_count += total_exps+1
                 
                 # Saving the DataFrame as a CSV file
-                logger.info("Saving all")
+                logger.info("Process ended. Saving it all")
                 self.new_df.to_csv(file_path)
             
             except Exception as e:
