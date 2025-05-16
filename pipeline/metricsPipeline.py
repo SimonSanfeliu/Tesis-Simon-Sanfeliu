@@ -191,9 +191,6 @@ class metricsPipeline():
                     self.new_df.iloc[row_count + exp + 1] = to_fill
 
                 row_count += total_exps + 1
-            
-        # DELETE AFTER TEST
-        self.new_df.loc[0]["query_id"] = 40
         
         # Check if the process must be restarted
         if os.path.exists(bkp_path) and restart:
