@@ -1,0 +1,125 @@
+2025-06-10 18:03:13,411 - INFO - Restarting
+2025-06-10 18:03:13,483 - INFO - Saving all
+2025-06-10 18:55:55,956 - INFO - Restarting
+2025-06-10 18:55:56,003 - INFO - Saving all
+2025-06-10 18:56:25,841 - INFO - Running process
+2025-06-10 18:56:25,846 - ERROR - An error has occurred: 'str' object has no attribute 'item'
+2025-06-10 18:56:25,849 - INFO - Progress saved in new_df attribute of this object
+2025-06-10 18:56:30,955 - INFO - Running process
+2025-06-10 18:56:30,957 - ERROR - An error has occurred: 'str' object has no attribute 'item'
+2025-06-10 18:56:30,958 - INFO - Progress saved in new_df attribute of this object
+2025-06-10 18:57:03,478 - INFO - Running process
+2025-06-10 18:57:03,479 - ERROR - An error has occurred: 'str' object has no attribute 'item'
+2025-06-10 18:57:03,480 - INFO - Progress saved in new_df attribute of this object
+2025-06-10 18:58:56,933 - INFO - Running process
+2025-06-10 18:58:56,934 - INFO - Running pipeline
+2025-06-10 18:59:02,876 - INFO - Saving backup
+2025-06-10 18:59:02,885 - INFO - Running pipeline
+2025-06-10 18:59:17,101 - INFO - Saving backup
+2025-06-10 18:59:17,118 - INFO - Running pipeline
+2025-06-10 18:59:37,650 - INFO - Saving backup
+2025-06-10 18:59:37,666 - INFO - Saving all
+2025-06-10 19:02:51,941 - INFO - Restarting
+2025-06-10 19:02:51,961 - INFO - Saving all
+2025-06-10 19:03:26,673 - INFO - Running process
+2025-06-10 19:03:26,675 - INFO - Running pipeline
+2025-06-10 19:03:33,556 - INFO - Saving backup
+2025-06-10 19:03:33,564 - INFO - Running pipeline
+2025-06-10 19:03:58,297 - INFO - Saving backup
+2025-06-10 19:03:58,300 - INFO - Running pipeline
+2025-06-10 19:04:20,043 - INFO - Saving backup
+2025-06-10 19:04:20,056 - INFO - Saving all
+2025-06-11 16:22:03,102 - INFO - Restarting
+2025-06-11 16:22:03,163 - INFO - Saving all
+2025-06-11 16:23:46,417 - INFO - Restarting
+2025-06-11 16:23:46,427 - INFO - Saving all
+2025-06-11 16:27:09,976 - INFO - Running process
+2025-06-11 16:27:09,983 - INFO - Running pipeline
+2025-06-11 16:27:15,355 - INFO - Saving backup
+2025-06-11 16:27:15,390 - INFO - Running pipeline
+2025-06-11 16:27:48,087 - ERROR - An error has occurred: list index out of range
+2025-06-11 16:27:48,092 - INFO - Progress saved in new_df attribute of this object
+2025-06-11 16:28:34,824 - INFO - Restarting
+2025-06-11 16:28:34,902 - INFO - Query ID: 10, Run ID: 1
+2025-06-11 16:28:34,903 - INFO - Running pipeline
+2025-06-11 16:28:55,678 - INFO - Saving backup
+2025-06-11 16:28:55,718 - INFO - Query ID: 15, Run ID: 1
+2025-06-11 16:28:55,721 - INFO - Running pipeline
+2025-06-11 16:29:41,467 - INFO - Saving backup
+2025-06-11 16:29:41,496 - INFO - Saving all
+2025-06-11 16:30:13,068 - INFO - Restarting
+2025-06-11 16:30:13,117 - INFO - Saving all
+2025-06-13 01:46:22,929 - INFO - Restarting
+2025-06-13 01:46:22,951 - INFO - Saving all
+2025-06-13 09:52:24,630 - INFO - Running process
+2025-06-13 09:52:24,635 - INFO - Running pipeline
+2025-06-13 09:52:30,396 - INFO - Saving backup
+2025-06-13 09:52:30,465 - INFO - Running pipeline
+2025-06-13 09:52:45,675 - ERROR - An error has occurred: list index out of range
+2025-06-13 09:52:45,679 - INFO - Progress saved in new_df attribute of this object
+2025-06-13 09:53:03,799 - INFO - Restarting
+2025-06-13 09:53:03,810 - INFO - Query ID: 10, Run ID: 1
+2025-06-13 09:53:03,812 - INFO - Running pipeline
+2025-06-13 09:53:21,886 - INFO - Saving backup
+2025-06-13 09:53:21,898 - INFO - Query ID: 15, Run ID: 1
+2025-06-13 09:53:21,901 - INFO - Running pipeline
+2025-06-13 09:53:43,801 - INFO - Saving backup
+2025-06-13 09:53:43,828 - INFO - Saving all
+2025-06-13 10:22:24,912 - INFO - Running process
+2025-06-13 10:22:24,918 - INFO - Running pipeline
+2025-06-13 10:22:32,614 - INFO - Saving backup
+2025-06-13 10:22:32,640 - INFO - Running pipeline
+2025-06-13 10:22:50,459 - ERROR - An error has occurred: list index out of range
+2025-06-13 10:22:50,463 - INFO - Progress saved in new_df attribute of this object
+2025-06-13 10:23:12,945 - INFO - Restarting
+2025-06-13 10:23:12,992 - INFO - Query ID: 10, Run ID: 1
+2025-06-13 10:23:12,994 - INFO - Running pipeline
+2025-06-13 10:23:35,645 - INFO - Saving backup
+2025-06-13 10:23:35,657 - INFO - Query ID: 15, Run ID: 1
+2025-06-13 10:23:35,658 - INFO - Running pipeline
+2025-06-13 10:23:57,622 - INFO - Saving backup
+2025-06-13 10:23:57,650 - INFO - Saving all
+2025-06-13 10:25:26,006 - INFO - Restarting
+2025-06-13 10:25:26,016 - INFO - Saving all
+2025-06-13 10:26:09,729 - INFO - Running process
+2025-06-13 10:26:09,731 - INFO - Running pipeline
+2025-06-13 10:26:15,741 - INFO - Saving backup
+2025-06-13 10:26:15,749 - INFO - Running pipeline
+2025-06-13 10:26:31,180 - ERROR - An error has occurred: list index out of range
+2025-06-13 10:26:31,183 - INFO - Progress saved in new_df attribute of this object
+2025-06-13 10:26:33,819 - INFO - Restarting
+2025-06-13 10:26:33,858 - INFO - Query ID: 10, Run ID: 1
+2025-06-13 10:26:33,860 - INFO - Running pipeline
+2025-06-13 10:26:52,613 - INFO - Saving backup
+2025-06-13 10:26:52,634 - INFO - Query ID: 15, Run ID: 1
+2025-06-13 10:26:52,638 - INFO - Running pipeline
+2025-06-13 10:27:14,652 - INFO - Saving backup
+2025-06-13 10:27:14,678 - INFO - Saving all
+2025-06-13 10:30:26,182 - INFO - Running process
+2025-06-13 10:30:26,187 - INFO - Running pipeline
+2025-06-13 10:30:30,683 - INFO - Saving backup
+2025-06-13 10:30:30,708 - INFO - Running pipeline
+2025-06-13 10:30:46,705 - ERROR - An error has occurred: list index out of range
+2025-06-13 10:30:46,708 - INFO - Progress saved in new_df attribute of this object
+2025-06-13 10:31:04,530 - INFO - Restarting
+2025-06-13 10:31:04,584 - INFO - Query ID: 10, Run ID: 1
+2025-06-13 10:31:04,587 - INFO - Running pipeline
+2025-06-13 10:31:31,152 - INFO - Saving backup
+2025-06-13 10:31:31,162 - INFO - Query ID: 15, Run ID: 1
+2025-06-13 10:31:31,164 - INFO - Running pipeline
+2025-06-13 10:31:49,665 - INFO - Saving backup
+2025-06-13 10:31:49,700 - INFO - Saving all
+2025-06-13 10:33:57,810 - INFO - Running process
+2025-06-13 10:33:57,816 - INFO - Running pipeline
+2025-06-13 10:34:01,991 - INFO - Saving backup
+2025-06-13 10:34:02,011 - INFO - Running pipeline
+2025-06-13 10:34:17,260 - ERROR - An error has occurred: list index out of range
+2025-06-13 10:34:17,262 - INFO - Progress saved in new_df attribute of this object
+2025-06-13 10:34:39,068 - INFO - Restarting
+2025-06-13 10:34:39,089 - INFO - Query ID: 10, Run ID: 1
+2025-06-13 10:34:39,090 - INFO - Running pipeline
+2025-06-13 10:34:56,347 - INFO - Saving backup
+2025-06-13 10:34:56,352 - INFO - Query ID: 15, Run ID: 1
+2025-06-13 10:34:56,354 - INFO - Running pipeline
+2025-06-13 10:35:17,137 - INFO - Saving backup
+2025-06-13 10:35:17,142 - INFO - Saving all
