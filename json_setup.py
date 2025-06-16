@@ -27,6 +27,7 @@ prompts = {
             "decomp_plan": {
                 "base_prompt": medium_decomp_prompt,
                 "decomp_task": medium_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2,
+                "decomp_task_python": medium_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2_python,
                 "query_context": medium_query_cntx,
                 "query_instructions": medium_query_instructions_1_v2
             },
@@ -37,9 +38,9 @@ prompts = {
                     "query_instructions": medium_query_instructions_2_v2,
                 },
                 "python": {
-                    "base_prompt": "placeholder",
-                    "query_task": "placeholder",
-                    "query_instructions": "placeholder",
+                    "base_prompt": medium_decomp_gen_vf_python,
+                    "query_task": medium_query_task_v2,
+                    "query_instructions": medium_query_instructions_2_v2_python,
                 }
             }
         },
@@ -47,6 +48,7 @@ prompts = {
             "decomp_plan": {
                 "base_prompt": adv_decomp_prompt,
                 "decomp_task": adv_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2,
+                "decomp_task_python": adv_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2_python,
                 "query_context": adv_query_cntx,
                 "query_instructions": adv_query_instructions_1_v3
             },
@@ -57,9 +59,9 @@ prompts = {
                     "query_instructions": adv_query_instructions_2_v3,
                 },
                 "python": {
-                    "base_prompt": "placeholder",
-                    "query_task": "placeholder",
-                    "query_instructions": "placeholder",
+                    "base_prompt": adv_decomp_gen_vf_python,
+                    "query_task": adv_query_task_v2,
+                    "query_instructions": adv_query_instructions_2_v3_python,
                 }
             }
         }
@@ -78,5 +80,5 @@ prompts = {
 }
 
 # Write the dictionary to a JSON file
-with open("final_prompts/prompts_v1.json", "w", encoding="utf-8") as f:
+with open("final_prompts/prompts_v2.json", "w", encoding="utf-8") as f:
     json.dump(prompts, f, ensure_ascii=False, indent=4)
