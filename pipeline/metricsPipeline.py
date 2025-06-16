@@ -24,6 +24,7 @@ class metricsPipeline():
         """
         # metricsPipeline specific attributes
         self.llm = llm
+        self.original_lang_type = lang_type
         self.lang_type = lang_type
         self.max_tokens = max_tokens
         self.t_conn = t_conn
@@ -95,11 +96,13 @@ class metricsPipeline():
         
         return results, error            
 
-    def run_sql_alerce(self, sql: str) -> tuple[pd.DataFrame, str]:
+    def run_sql_alerce(self, sql: str, label: str, gold: bool) -> tuple[pd.DataFrame, str]:
         """Execute the SQL query at the ALeRCE database and return the result
         
         Args:
             sql (str): SQL query to execute
+            label (str): Predicted difficulty label for the SQL query
+            gold (bool): Flag to tell if the query is the gold one
             
         Returns:
             query (pandas.DataFrame): The result of the query 
@@ -115,6 +118,16 @@ class metricsPipeline():
                 error = None
                 with engine.begin() as conn:
                     try:
+                        # Catching borderline cases
+                        if gold:
+                            self.lang_type = "sql"
+                        
+                        elif self.lang_type == "python" and label == "simple":
+                            self.lang_type = "sql"
+                            
+                        elif self.original_lang_type == "python" and self.lang_type == "sql" and label != "simple":
+                            self.lang_type = "python"
+
                         query, error = self.run_query(self.lang_type, sql, 
                                                       conn)
                         break
@@ -132,7 +145,6 @@ class metricsPipeline():
             df.to_csv(tmp_path, index=False)
         shutil.move(tmp_path, path)
 
-    
     def run_metrics(self, sql_preds_path: str, df: pd.DataFrame, 
                     total_exps: int = 10, restart: bool = False):
         """Function to run the experiments
@@ -218,11 +230,11 @@ class metricsPipeline():
                         # Get output of the expected SQL query
                         gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
                         gold_start = time.time()  # start time gold_query
-                        query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                        query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == restart_row["query_id"]]["difficulty"].item(), True)
                         
                         # Check if the gold query was executed correctly, if not try again
                         if error_gold is not None or query_gold is None:
-                            query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                            query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == restart_row["query_id"]]["difficulty"].item(), True)
                             if error_gold is not None or query_gold is None:
                                 # If the second run fails, then save it as such
                                 logger.error("Failed gold query")
@@ -288,11 +300,11 @@ class metricsPipeline():
                         logger.info("Getting the gold values to compare")                    
                         # Get output of the expected SQL query
                         gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
-                        query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                        query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == restart_row["query_id"]]["difficulty"].item(), True)
                         
                         # Check if the gold query was executed correctly, if not try again
                         if error_gold is not None:
-                            query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                            query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == restart_row["query_id"]]["difficulty"].item(), True)
                             if error_gold is not None:
                                 # If the second run fails, then save it as such
                                 logger.error("Failed gold query")
@@ -320,7 +332,9 @@ class metricsPipeline():
                             logger.info("Self-correction")
                             # Check if there was an error. If there was, correct it
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item())
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item(),
+                                                                         sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(),
+                                                                         False)
                             
                             # Correct it in the appropiate format      
                             if self.lang_type == "sql":
@@ -337,11 +351,11 @@ class metricsPipeline():
                                 # TODO: Add correction prompts to CSV
                                 
                                 # Run the corrected query
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(), False)
                                 
                             # TODO: Review this border case
                             
-                            elif self.lang_type == "python" and sql_pred["label"] == "simple":
+                            elif self.lang_type == "python" and sql_pred["label"].item() == "simple":
                                 # Border case
                                 self.lang_type = "sql"
                                 # Correcting the generated SQL
@@ -357,7 +371,7 @@ class metricsPipeline():
                                 # TODO: Add correction prompts to CSV
                                 
                                 # Run the corrected query  
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(), False)
                                         
                             else:
                                 # Correcting the generated SQL
@@ -368,24 +382,76 @@ class metricsPipeline():
                                     sql_pred=sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                                new = format_response(format, new)
+                                new = format_response(self.lang_type, new)
                                 
                                 # TODO: Add correction prompts to CSV
 
                                 # Run the corrected query
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(), False)
 
                         # W/o self-correction
                         else:
                             logger.info("No self-correction")
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item())
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item(),
+                                                                         sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(),
+                                                                         False)
                             
                         pred_time = time.time() - pred_start
                         pred_date = datetime.now().isoformat(timespec='seconds')
                         
+                        # If the DataFrame is None
+                        if query_pred is None:
+                            # metrics
+                            r_row = 0
+                            p_row = 0
+                            r_col = 0
+                            p_col = 0
+                            N_perfect_row = 0
+                            N_perfect_col = 0
+                        
+                        # Border case for empty DataFrame (it has columns)
+                        elif query_pred.empty:
+                            # Drop duplicated columns, it is assumed that the column name is exactly 'oid'
+                            query_pred = query_pred.loc[:, ~query_pred.columns.duplicated()]
+                            n_cols_pred = query_pred.shape[1]
+                            
+                            ## Metrics for columns
+                            
+                            # Compare the columns of the predicted and expected SQL queries
+                            cols_pred = query_pred.columns.values.tolist()
+                            cols_gold = query_gold.columns.values.tolist()
+                            true_pred_column = 0
+                            false_pred_column = 0
+                            true_gold_column = 0
+                            false_gold_column = 0
+                            # Get the number of columns that match between the predicted and expected SQL queries
+                            for col in cols_pred:
+                                if col in cols_gold:
+                                    true_pred_column += 1
+                                else:
+                                    false_pred_column += 1
+                            for col in cols_gold:
+                                if col in cols_pred:
+                                    true_gold_column += 1
+                                else:
+                                    false_gold_column += 1
+                                    
+                            # Calculating r and p
+                            r_col = 0 if n_cols_gold == 0 else true_pred_column / n_cols_gold
+                            p_col = 0 if n_cols_pred == 0 else true_gold_column / n_cols_pred
+                            
+                            # Calculating N_perfect
+                            N_perfect_col = 1 if r_col == 1 else 0
+                            
+                            ## Metrics for rows
+                            
+                            r_row = 0
+                            p_row = 0
+                            N_perfect_row = 0
+                        
                         # Predicted query is valid
-                        if query_pred is not None and error_pred is None:
+                        elif query_pred is not None and error_pred is None:
                             # Drop duplicated columns, it is assumed that the column name is exactly 'oid'
                             query_pred = query_pred.loc[:, ~query_pred.columns.duplicated()]
                             n_rows_pred = query_pred.shape[0]
@@ -557,11 +623,11 @@ class metricsPipeline():
                     # Get output of the expected SQL query
                     gold_query_test = df[df["req_id"] == req_id]["gold_query"].item()
                     gold_start = time.time()  # start time gold_query
-                    query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                    query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == req_id]["difficulty"].item(), True)
                     
                     # Check if the gold query was executed correctly, if not try again
                     if error_gold is not None:
-                        query_gold, error_gold = self.run_sql_alerce(gold_query_test)
+                        query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == req_id]["difficulty"].item(), True)
                         if error_gold is not None:
                             # If the second run fails, then save it as such
                             logger.error("Failed gold query")
@@ -636,7 +702,7 @@ class metricsPipeline():
                         if self.self_corr:
                             # Check if there was an error. If there was, correct it
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item(), sql_pred["label"].item(), False)
                             
                             # Correct it in the appropiate format      
                             if self.lang_type == "sql":
@@ -653,11 +719,11 @@ class metricsPipeline():
                                 # TODO: Add correction prompts to CSV
                                 
                                 # Run the corrected query
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred["label"].item(), False)
                                 
                             # TODO: Review this border case
                             
-                            elif self.lang_type == "python" and sql_pred["label"] == "simple":
+                            elif self.lang_type == "python" and sql_pred["label"].item() == "simple":
                                 # Border case
                                 self.lang_type = "sql"
                                 # Correcting the generated SQL
@@ -673,7 +739,7 @@ class metricsPipeline():
                                 # TODO: Add correction prompts to CSV
                                 
                                 # Run the corrected query  
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred["label"].item(), False)
                                         
                             else:
                                 # Correcting the generated SQL
@@ -684,25 +750,36 @@ class metricsPipeline():
                                     sql_pred=sql_pred["sql_query"].item(), 
                                     error=str(error_pred))
                                 new, new_usage = api_call(self.llm, self.max_tokens, corr_prompt)
-                                new = format_response(format, new)
+                                new = format_response(self.lang_type, new)
                                 
                                 # TODO: Add correction prompts to CSV
 
                                 # Run the corrected query
-                                query_pred, error_pred = self.run_sql_alerce(new)
+                                query_pred, error_pred = self.run_sql_alerce(new, sql_pred["label"].item(), False)
 
                         # W/o self-correction
                         else:
                             pred_start = time.time()
-                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item())
+                            query_pred, error_pred = self.run_sql_alerce(sql_pred["sql_query"].item(), sql_pred["label"].item(), False)
                             
                         pred_time = time.time() - pred_start
                         pred_date = datetime.now().isoformat(timespec='seconds')
                         
-                        # Border case for empty DataFrame
-                        if query_pred.empty:
+                        # If the DataFrame is None
+                        if query_pred is None:
+                            # metrics
+                            r_row = 0
+                            p_row = 0
+                            r_col = 0
+                            p_col = 0
+                            N_perfect_row = 0
+                            N_perfect_col = 0
+                        
+                        # Border case for empty DataFrame (it has columns)
+                        elif query_pred.empty:
                             # Drop duplicated columns, it is assumed that the column name is exactly 'oid'
                             query_pred = query_pred.loc[:, ~query_pred.columns.duplicated()]
+                            n_cols_pred = query_pred.shape[1]
                             
                             ## Metrics for columns
                             

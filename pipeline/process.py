@@ -141,6 +141,7 @@ def format_response(specified_format: str, response: str) -> str:
     elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
+        formatted_response = formatted_response.replace('"""""', '"""')
         
     else:
         raise Exception("No valid format specified")

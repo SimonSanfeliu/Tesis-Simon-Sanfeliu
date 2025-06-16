@@ -112,7 +112,7 @@ medium_query_instructions_1_v2 = '''
 - Use the exact table and column names as they are in the database. This is crucial for the query to work correctly.
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 
-# If you need to use 2 tables, try using a sub-query or INNER JPIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', choosing the best option for the query.
+# If you need to use 2 tables, try using a sub-query or INNER JOIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', choosing the best option for the query.
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 '''
 
@@ -174,6 +174,27 @@ medium_query_instructions_2_v2 = '''
 # Answer ONLY with the final SQL query, with the following format: 
   ```sql SQL_QUERY_HERE ```
 DON'T include anything else in your answer. If you want to add comments, use the SQL comment format inside the query.
+'''
+
+medium_query_instructions_2_v2_python = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities, if the user request all ranking probabilities, don't use it.
+- 'probability.classifier_name='lc_classifier' ; this will return the classifications by the light curve classifier
+### GENERAL
+### Important points to consider
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from ALL the tables used, including the ones from the sub-queries.
+- Mantain the EXACT COLUMN names as they are in the database, unless the user explicitly asks you to do so in the request, giving you the new name to use. This is crucial for the query to work correctly.
+- Mantain the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+# If you need to use 2 tables, try using a INNER JOIN statement, or a sub-query over 'probability' or 'object', if the query requires it. It is important to be really careful with the use of sub-queries or JOINs, as they can slow down the query.
+# Answer ONLY with the Python code with the subqueries in variables, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL or Python format so that the user can understand.
+# Answer ONLY with the final SQL query, with the following format: 
+# Generate a query for each step, resolving and analysing it, with the following format:
+```python [VARIABLE SUB-QUERY HERE] ```
+# Finally, join all the steps in a final query like so: 
+```python full_query = [FINAL QUERY HERE] ```
+DON'T include anything else in your answer. Remember to create correctly the Python strings inbetween """
 '''
 
 # medium generation prompt format
@@ -380,6 +401,78 @@ ORDER BY
 Remember that the actual query will depend on the specific schema and requirements of the ALeRCE database. Always test your queries to ensure they perform as expected and return accurate results. 
 '''
 
+gpt4turbo1106_decomposed_prompt_2_python = '''Creating a decomposition plan to generate a PostgreSQL query using Python variables for retrieving information from the ALeRCE astronomy broker database involves several steps. ALeRCE (Automatic Learning for the Rapid Classification of Events) is a system designed to classify large amounts of astronomical data, typically from surveys like the Zwicky Transient Facility (ZTF). To create a detailed and understandable plan, follow these steps:
+
+1. **Understand the Database Schema:**
+   - Obtain the database schema, which includes tables, columns, data types, relationships, and constraints.
+   - Identify the relevant tables and columns that contain the information you need.
+
+2. **Define the Information Needed:**
+   - Clearly specify what information you want to retrieve. For example, you might be interested in transient events, their classifications, light curves, or cross-matches with other catalogs.
+   - Determine the level of detail required (e.g., specific time ranges, magnitude limits, or particular sky regions).
+
+3. **Formulate the Query Requirements:**
+   - Decide on the selection criteria (e.g., date, magnitude, classification confidence).
+   - Determine if you need to join multiple tables and how they are related.
+   - Consider if you need to aggregate data (e.g., average magnitudes, count of events).
+
+4. **Design the Query:**
+   - Start with the main table that contains the bulk of the information you need.
+   - Use `JOIN` clauses to combine related tables based on common keys.
+   - Apply `WHERE` clauses to filter the data according to your criteria.
+   - Use `GROUP BY` and aggregate functions if necessary.
+   - Decide on the sorting order of the results using `ORDER BY`.
+
+5. **Document the Query:**
+   - Write comments within the SQL code to explain the purpose of different parts of the query.
+   - Create external documentation that describes the query's purpose, the information it retrieves, and any assumptions or limitations.
+
+Here's an example of a simple PostgreSQL query structure based on the steps above:
+
+```python
+# Step 1: SELECT clause
+select_clause = """
+SELECT
+    e.event_id,
+    e.ra,
+    e.dec,
+    c.classification,
+    c.confidence,
+    lc.mag,
+    lc.time
+"""
+
+# Step 2: FROM and JOINs
+from_clause = """
+FROM
+    events e
+JOIN
+    classifications c ON e.event_id = c.event_id
+JOIN
+    light_curves lc ON e.event_id = lc.event_id
+"""
+
+# Step 3: WHERE clause with literal values
+where_clause = """
+WHERE
+    e.time_observed BETWEEN '2023-01-01' AND '2023-01-31'
+    AND lc.mag < 20
+"""
+
+# Step 4: ORDER BY clause
+order_clause = """
+ORDER BY
+    e.time_observed DESC,
+    lc.time ASC
+"""
+
+# Step 5: Combine all parts
+sql_query = select_clause + from_clause + where_clause + order_clause
+```
+
+Remember that the actual query will depend on the specific schema and requirements of the ALeRCE database. Always test your queries to ensure they perform as expected and return accurate results. 
+'''
+
 # Decomposition version 4
 medium_decomp_prompt_v4 = f'''
 {medium_decomp_task_v2}
@@ -480,6 +573,7 @@ VI. Add the remaining conditions to the final result of step V, using the 'proba
 # If you need to use 2 or 3 tables, try using a sub-query or INNER JOIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
 # DON'T RETURN ANY SQL CODE, just the description of each step required to generate it.
 '''
+
 adv_query_instructions_2_v3 = '''
 ## DEFAULT CONDITIONS YOU NEED TO SET
 ### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
@@ -504,6 +598,35 @@ VI. Add the remaining conditions to the final result of step V, using the 'proba
 # Finally, join all the steps in a final query, with the following format: 
 ```sql [FINAL QUERY HERE] ```
 DON'T include anything else inside and after your FINAL answer.
+'''
+
+adv_query_instructions_2_v3_python = '''
+## DEFAULT CONDITIONS YOU NEED TO SET
+### IF THE 'probability' TABLE is used, use always the next conditions, unless the user explicitly specifies different probability conditions.
+- 'probability.ranking' = 1 ; this only return the most likely probabilities, if the user request all ranking probabilities, don't use it.
+- 'probability.classifier_name='lc_classifier'
+### IF THE 'feature' TABLE is used with 2 or more features, you need to take the following steps, because it is a transposed table (each feature is in a different row).
+I. Create a sub-query using the 'probability' TABLE filtering the desired objects.
+II. For each feature, you have to make a sub-query retrieving the specific feature adding the condition of its value, taking only the oids in the 'probability' sub-query with an INNER JOIN inside each 'feature' sub-query to retrieve only the features associated with the desired spatial objects.
+III. Make an UNION between the sub-queries of each feature from step II
+IV. Make an INTERSECT between the sub-queries of each feature from step II
+V. Filter the 'UNION' query from step III selecting only the 'oids' that are in the 'INTERSECT' query from step IV
+VI. Add the remaining conditions to the final result of step V, using the 'probability' sub-query from step I.
+### GENERAL
+### Important points to consider
+- If the user doesn't specify explicit columns or information that is not in a column, choose all the columns, for example by using the "SELECT *" SQL statement, from ALL the tables used, including the ones from the sub-queries.
+- Mantain the EXACT COLUMN names as they are in the database, unless the user explicitly asks you to do so in the request, giving you the new name to use. This is crucial for the query to work correctly.
+- Mantain the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
+
+
+# If you need to use 2 or 3 tables, try using a sub-query or INNER JOIN over 'probability' TABLE or 'object' TABLE, or an INNER JOIN between 'probabbility' and 'object', or over an INNER JOIN between 'probability', 'object' and 'magstat', if it is necessary (priority in this order).
+# Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
+# Finally, join all the steps in a final query, with the following format: 
+# Generate a query for each step, resolving and analysing it, with the following format:
+```python [VARIABLE SUB-QUERY HERE] ```
+# Finally, join all the steps in a final query like so: 
+```python full_query = [FINAL QUERY HERE] ```
+DON'T include anything else inside and after your FINAL answer. Remember to create correctly the Python strings inbetween """
 '''
 
 # version 4s
@@ -627,9 +750,9 @@ medium_decomp_gen_vf_python = '''
 {user_request_with_tables}
 {medium_query_instructions_2}
 # Generate a query for each step, resolving and analysing it, with the following format:
-```step_number [STEP QUERY HERE] ```
-# Finally, join all the steps in a final query, with the following format: 
-```sql [FINAL QUERY HERE] ```
+```python [VARIABLE SUB-QUERY HERE] ```
+# Finally, join all the steps in a final query like so: 
+```python full_query = [FINAL QUERY HERE] ```
 DON'T include anything else inside and after your FINAL answer.
 
 # Use the next decomposed planification to write the query:

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from pipeline.process import *
 from pipeline.eval import *
+from pipeline.ragStep import *
 from prompts.base.prompts import *
 
 from logger_setup import setup_logger
@@ -33,6 +34,7 @@ class queryPipeline():
         # Build attributes
         self.query = query
         self.llm = llm
+        self.original_lang_type = lang_type
         self.lang_type = lang_type
         self.max_tokens = max_tokens
         self.prompts_path = prompts_path
@@ -50,12 +52,21 @@ class queryPipeline():
         self.usage = {}
         self.new_df = None
         
-    def schema_linking(self, query: str = None):
-        """Function to make the schema linking of a NL query. This means it will
-        obtain the tables necessary to create the corresponding SQL query 
+    def schema_linking(self, query: str = None, use_rag: bool = False, 
+                       size: int = 700, overlap: int = 300, quantity: int = 7):
+        """Function to make the schema linking of a NL query. This means it 
+        will obtain the tables necessary to create the corresponding SQL query 
 
         Args:
-            query (str, optional): NL query. Defaults to None.
+            query (str, optional): NL query. Defaults to None
+            use_rag (bool, optional): Indicates if the pipeline will be using 
+            RAG. Defaults to False
+            size (int, optional): Size of the chunks for the character text 
+            splitter. Defaults to 700
+            overlap (int, optional): Size of the overlap of the chunks. 
+            Defaults to 300
+            quantity (int, optional): The amount of most similar chunks to 
+            consider. Defaults to 7
             
         Returns:
             None
@@ -64,13 +75,35 @@ class queryPipeline():
         if query is None:
             query = self.query
             
-        # Make the schema linking prompt
-        prompt = self.prompts["Schema Linking"]["base_prompt"] + \
-            f"\nThe user request is the following: {query}"
+        if use_rag:
+            # Context for the RAG process
+            with open('prompts/schema_linking/DBSchema.txt', 'r') as file:
+                context = file.read()
+                
+            # Creating the RAG instruction
+            ragInstruction = f"""
+            Given the user request, select the tables needed to generate a SQL query. 
+            Give the answer in the following format: [table1, table2, ...]. For 
+            example, if the answer is table object and table taxonomy, then you should 
+            type: [object, taxonomy].
             
-        # Obtain the tables necessary for the SQL query
-        tables, usage = api_call(self.llm, 1000, prompt)
-        content = tables.strip("[]").replace("'", "").split(", ")
+            User request: {query}
+            """
+            
+            # Initiating RAG
+            rag_info, usage = rag_step(size, overlap, context, ragInstruction, 
+                                            quantity)
+            content = rag_info.strip("[]").replace("'", "").split(", ")
+            
+        else:
+            # Make the schema linking prompt
+            prompt = self.prompts["Schema Linking"]["base_prompt"] + \
+                f"\nThe user request is the following: {query}"
+                
+            # Obtain the tables necessary for the SQL query
+            tables, usage = api_call(self.llm, 1000, prompt)
+            content = tables.strip("[]").replace("'", "").split(", ")
+
         self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
         self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Esta usarla para decomposition de Jorge
         self.tab_schema_direct = f"{[self.prompts['Schema Linking']['context3'][c] for c in content]}"  # Esta usarla para direct de Jorge
@@ -155,8 +188,6 @@ class queryPipeline():
                     decomp_plan = decomp_plan_true
                 )
             else:
-                # TODO: Asimilar al de SQL corregido
-                
                 # Through Python variables
                 prompt = self.prompts["Decomposition"]["medium"]["decomp_gen"]["python"]["base_prompt"].format(
                     medium_query_task = self.prompts["Decomposition"]["medium"]["decomp_gen"]["python"]["query_task"],
@@ -184,8 +215,6 @@ class queryPipeline():
                     decomp_plan = decomp_plan_true
                 )
             else:
-                # TODO: Asimilar al de SQL corregido
-                
                 # Through Python variables
                 prompt = self.prompts["Decomposition"]["advanced"]["decomp_gen"]["python"]["base_prompt"].format(
                     adv_query_task = self.prompts["Decomposition"]["advanced"]["decomp_gen"]["python"]["query_task"],
@@ -240,16 +269,20 @@ class queryPipeline():
             
         Returns:
             gen_query (str): Generated SQL query 
-        """
+        """        
         # Obtaining the SQL query
         response, usage = api_call(self.llm, self.max_tokens, self.final_prompt)
         
         # Catching borderline cases
         if self.lang_type == "python" and self.label == "simple":
             self.lang_type = "sql"
+            
+        if self.original_lang_type == "python" and self.lang_type == "sql" and self.label != "simple":
+            self.lang_type = "python"
         
         # Formatting the response
         gen_query = format_response(self.lang_type, response)
+        print(gen_query)
         
         # Saving the usage
         self.usage["Query Generation"] = usage
@@ -322,30 +355,26 @@ class queryPipeline():
             sql_pred (str): Predicted SQL query by the pipeline
             tables (str): Table schema used for the query generation
         """
-        # Using the recreated pipeline
-        if not use_rag:
-            # Creating the pipeline
+        # Creating the pipeline
                        
-            # Schema Linking
-            self.schema_linking(query)
+        # Schema Linking
+        self.schema_linking(query, use_rag)
 
-            # Classification
-            self.classify(query)
-            label = self.label
+        # Classification
+        self.classify(query)
+        label = self.label
 
-            if use_direct_prompts:
-                # Direct prompt
-                self.direct(query)
-                tables = self.tab_schema_direct
-            else:
-                # Decomposition
-                self.decomposition(query)
-                tables = self.tab_schema_decomp
+        if use_direct_prompts:
+            # Direct prompt
+            self.direct(query)
+            tables = self.tab_schema_direct
+        else:
+            # Decomposition
+            self.decomposition(query)
+            tables = self.tab_schema_decomp
             
-            # Generating the query
-            sql_pred = self.query_generation()
-                
-        # TODO: Add new pipeline
+        # Generating the query
+        sql_pred = self.query_generation()
                 
         return sql_pred, tables, label
     
@@ -457,10 +486,10 @@ class queryPipeline():
                 row_count = 0
                 for _, row in df.iterrows():
                     # Updating the external and domain knowledge of the prompts for this query                  
-                    self.prompts["Decomposition"]["simple"]["external_knowledge"] = row["external_knowledge"].item()
-                    self.prompts["Decomposition"]["simple"]["domain_knowledge"] = row["domain_knowledge"].item()
-                    self.prompts["Direct"]["request_prompt"]["external_knowledge"] = row["external_knowledge"].item()
-                    self.prompts["Direct"]["request_prompt"]["domain_knowledge"] = row["domain_knowledge"].item()
+                    self.prompts["Decomposition"]["simple"]["external_knowledge"] = row["external_knowledge"]
+                    self.prompts["Decomposition"]["simple"]["domain_knowledge"] = row["domain_knowledge"]
+                    self.prompts["Direct"]["request_prompt"]["external_knowledge"] = row["external_knowledge"]
+                    self.prompts["Direct"]["request_prompt"]["domain_knowledge"] = row["domain_knowledge"]
                     
                     for exp in range(total_exps):                                    
                         # Run the pipeline and time it
