@@ -147,7 +147,7 @@ def format_response(specified_format: str, response: str) -> str:
         raise Exception("No valid format specified")
     
     # Adding more formatting
-    formatted_response = formatted_response.replace(";", "")
+    formatted_response = formatted_response.replace(";", "").replace("\n", "")
     
     return formatted_response
 

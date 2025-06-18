@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import time
 import tempfile
 import shutil
+import traceback
 
 from pipeline.process import *
 from pipeline.eval import *
@@ -67,7 +68,8 @@ class metricsPipeline():
             'sql' for a singular query string or 'python' for the 
             decomposition in variables
             formatted_response (str): The response ready to be used in the 
-            database engine (sqlalchemy.engine.base.Engine): The engine to 
+            database 
+            engine (sqlalchemy.engine.base.Engine): The engine to 
             access the database
             
         Returns:
@@ -83,16 +85,21 @@ class metricsPipeline():
                 results = pd.read_sql_query(formatted_response, con=engine)
             except Exception as e:
                 error = e
-                print(f"Running SQL exception in run_query: {e}", flush=True)
+                logger.error(f"Running SQL exception in run_query: {e}")
         elif specified_format == "python":
             try:
                 exec(formatted_response, globals())
-                results = pd.read_sql_query(full_query, con=engine)
+                if 'full_query' in globals():
+                    results = pd.read_sql_query(full_query, con=engine)
+                else:
+                    error = "No 'full_query' variable in Python code"
+                    logger.error(error)
             except Exception as e:
-                error = e
-                print(f"Running SQL exception in run_query: {e}", flush=True)
+                error = str(e)
+                logger.error(f"Running SQL exception in run_query: {e}")
         else:
             error = "No valid format specified"
+            logger.error(error)
         
         return results, error            
 
@@ -112,10 +119,10 @@ class metricsPipeline():
         # Create the instance
         engine = self.create_conn()
         query = None
+        error = None
         with engine.connect() as conn:
             # Try the query a number of times
             for n_ in range(0, self.n_tries):
-                error = None
                 with engine.begin() as conn:
                     try:
                         # Catching borderline cases
@@ -133,6 +140,7 @@ class metricsPipeline():
                         break
                     except Exception as e:
                         error = e
+                        traceback.print_exc()
                         continue
         engine.dispose()
         return query, error
@@ -300,6 +308,7 @@ class metricsPipeline():
                         logger.info("Getting the gold values to compare")                    
                         # Get output of the expected SQL query
                         gold_query_test = df[df["req_id"] == restart_row["query_id"]]["gold_query"].item()
+                        gold_start = time.time()
                         query_gold, error_gold = self.run_sql_alerce(gold_query_test, df[df["req_id"] == restart_row["query_id"]]["difficulty"].item(), True)
                         
                         # Check if the gold query was executed correctly, if not try again
@@ -308,8 +317,25 @@ class metricsPipeline():
                             if error_gold is not None:
                                 # If the second run fails, then save it as such
                                 logger.error("Failed gold query")
-                                n_rows_gold = 0
-                                n_cols_gold = 0
+                                gold_time =  time.time() - gold_start
+                                gold_date = datetime.now().isoformat(timespec='seconds')
+                                restarted.loc[index, "tab_schema"] = None
+                                restarted.loc[index, "label"] = None
+                                restarted.loc[index, "query_gen_time"] = None
+                                restarted.loc[index, "query_gen_date"] = None
+                                restarted.loc[index, "sql_time"] = gold_time
+                                restarted.loc[index, "sql_date"] = gold_date
+                                restarted.loc[index, "r_row"] = 0
+                                restarted.loc[index, "p_row"] = 0
+                                restarted.loc[index, "r_col"] = 0
+                                restarted.loc[index, "p_col"] = 0
+                                restarted.loc[index, "N_perfect_row"] = 0
+                                restarted.loc[index, "N_perfect_col"] = 0
+                                
+                                # Saving the DataFrame as a CSV file backup
+                                logger.info("Saving backup")
+                                self.safe_to_csv(restarted, bkp_path)
+                                continue
                         
                         # Drop duplicated columns
                         logger.info(f"Query ID: {restart_row['query_id']}, Run ID: {restart_row['query_run']}, Query gold: {query_gold}")
@@ -335,9 +361,9 @@ class metricsPipeline():
                             query_pred, error_pred = self.run_sql_alerce(sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["sql_query"].item(),
                                                                          sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(),
                                                                          False)
-                            
                             # Correct it in the appropiate format      
                             if self.lang_type == "sql":
+                                logger.info("Using SQL")
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1, 
@@ -355,7 +381,8 @@ class metricsPipeline():
                                 
                             # TODO: Review this border case
                             
-                            elif self.lang_type == "python" and sql_pred["label"].item() == "simple":
+                            elif self.lang_type == "python" and sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item() == "simple":
+                                logger.info("Using SQL because of Python and simple query")
                                 # Border case
                                 self.lang_type = "sql"
                                 # Correcting the generated SQL
@@ -374,6 +401,7 @@ class metricsPipeline():
                                 query_pred, error_pred = self.run_sql_alerce(new, sql_pred[sql_pred["query_run"] == restart_row["query_run"]]["label"].item(), False)
                                         
                             else:
+                                logger.info("Using Python")
                                 # Correcting the generated SQL
                                 corr_prompt = prompt_self_correction_v2(
                                     gen_task=general_context_selfcorr_v1_python, 
@@ -607,6 +635,7 @@ class metricsPipeline():
                 self.safe_to_csv(restarted, file_path)
                 
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f"An error has occurred while restarting the process: {e}")
                 logger.info("Progress saved in new_df attribute of this object")
         
