@@ -80,5 +80,5 @@ prompts = {
 }
 
 # Write the dictionary to a JSON file
-with open("final_prompts/prompts_v2.json", "w", encoding="utf-8") as f:
+with open("final_prompts/prompts_v3.json", "w", encoding="utf-8") as f:
     json.dump(prompts, f, ensure_ascii=False, indent=4)

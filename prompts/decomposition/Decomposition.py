@@ -194,7 +194,7 @@ medium_query_instructions_2_v2_python = '''
 ```python [VARIABLE SUB-QUERY HERE] ```
 # Finally, join all the steps in a final query like so: 
 ```python full_query = [FINAL QUERY HERE] ```
-DON'T include anything else in your answer. Remember to create correctly the Python strings inbetween """
+DON'T include anything else in your answer. ALWAYS return the variable full_query.
 '''
 
 # medium generation prompt format
@@ -626,7 +626,7 @@ VI. Add the remaining conditions to the final result of step V, using the 'proba
 ```python [VARIABLE SUB-QUERY HERE] ```
 # Finally, join all the steps in a final query like so: 
 ```python full_query = [FINAL QUERY HERE] ```
-DON'T include anything else inside and after your FINAL answer. Remember to create correctly the Python strings inbetween """
+DON'T include anything else inside and after your FINAL answer.ALWAYS return the variable full_query.
 '''
 
 # version 4s
