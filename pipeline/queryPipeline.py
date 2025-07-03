@@ -105,8 +105,8 @@ class queryPipeline():
             content = tables.strip("[]").replace("'", "").split(", ")
 
         self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
-        self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Esta usarla para decomposition de Jorge
-        self.tab_schema_direct = f"{[self.prompts['Schema Linking']['context3'][c] for c in content]}"  # Esta usarla para direct de Jorge
+        self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Jorge's decomposition
+        self.tab_schema_direct = f"{[self.prompts['Schema Linking']['context3'][c] for c in content]}"  # Jorge's direct
         
         # Saving the usage
         self.usage["Schema Linking"] = usage
@@ -282,7 +282,6 @@ class queryPipeline():
         
         # Formatting the response
         gen_query = format_response(self.lang_type, response)
-        print(gen_query)
         
         # Saving the usage
         self.usage["Query Generation"] = usage

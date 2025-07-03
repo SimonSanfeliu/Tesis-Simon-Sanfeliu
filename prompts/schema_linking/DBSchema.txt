@@ -148,17 +148,17 @@ reference(oid) VARCHAR REFERENCES object(oid)
 ### object
 
 CREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */
-    oid VARCHAR PRIMARY KEY,  /* object identifier */
-    ndethist INTEGER,  /* number of posible detections above 3 sigma */
-    ncovhist INTEGER,  /* number of visits */
+    oid VARCHAR PRIMARY KEY,  /* unique object identifier */
+    ndethist INTEGER,  /* Number of times input candidate position fell on any field and readout-channel going back to beginning of survey */
+    ncovhist INTEGER,  /* Number of spatially-coincident detections falling within 1.5 arcsec going back to beginning of survey */
     mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected */
     mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected */
-    corrected BOOLEAN, /* whether the object was corrected */
+    corrected BOOLEAN, /* whether the object's light curve was corrected */
     stellar BOOLEAN, /* whether the object is likely psf shaped */
     ndet INTEGER, /* number of detections */
-    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */
+    g_r_max DOUBLE PRECISION, /* g-r difference magnitude color at maximum */
     g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/
-    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */
+    g_r_mean DOUBLE PRECISION, /* mean g-r difference magnitude color */
     g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */
     meanra DOUBLE PRECISION,  /* mean right ascencion */
     meandec DOUBLE PRECISION,  /* mean declination */
@@ -167,7 +167,7 @@ CREATE TABLE object ( /* this is the most important table. It contains the main 
     deltajd DOUBLE PRECISION, /* time difference between last and first detection */
     firstmjd DOUBLE PRECISION, /* time of first detection */
     lastmjd DOUBLE PRECISION, /* time of last detection */
-    step_id_corr VARCHAR,
+    step_id_corr VARCHAR, /* correction step identifier */
     diffpos BOOLEAN, /* whether the first detection was positive or negative */
     reference_change BOOLEAN /* whether the reference image changes */
 );
@@ -175,7 +175,7 @@ CREATE TABLE object ( /* this is the most important table. It contains the main 
 ### probability
 
 CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */
-    oid VARCHAR REFERENCES object(oid),
+    oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     class_name VARCHAR, /* name of the class */
     classifier_name VARCHAR, /* name of the classifier */
     classifier_version VARCHAR, /* version of the classiifer */
@@ -203,7 +203,7 @@ CREATE TABLE magstat ( /* different statistics for the object divided by band or
     stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */
     corrected BOOLEAN NOT NULL, /* whether the object's light curve has been corrected */
     ndet INTEGER NOT NULL, /* the object number of detection in the given band */
-    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don't trust  */
+    ndubious INTEGER NOT NULL, /* number of points in the light curve in the given band that we don't trust  */
     dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */
     dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */
     sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */
@@ -230,10 +230,10 @@ CREATE TABLE magstat ( /* different statistics for the object divided by band or
 
 ### non_detection
 
-CREATE TABLE non_detection (
+CREATE TABLE non_detection (  /* contains the limiting magnitudes of previous non-detections separated by filter */
     oid VARCHAR REFERENCES object(oid), /* unique identifier for this object */
     fid INTEGER NOT NULL, /* Filter ID (1=g; 2=r; 3=i) */
-    mjd DOUBLE PRECISION NOT NULL, /* Observation Julian date at start of exposure [days] */
+    mjd DOUBLE PRECISION NOT NULL, /* Observation Modified Julian date at start of exposure [days] */
     diffmaglim DOUBLE PRECISION, /* 5-sigma mag limit in difference image based on PSF-fit photometry [mag] */
     PRIMARY KEY (oid, fid, mjd)
 );
@@ -246,7 +246,7 @@ CREATE TABLE detection (  /* this table contains information about the object de
     mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */
     fid INTEGER NOT NULL, /* filter identifier */
     pid FLOAT NOT NULL, /* program identifier */
-    diffmaglim DOUBLE PRECISION, /* limiting difference magnitud */
+    diffmaglim DOUBLE PRECISION, /* limiting difference magnitude */
     isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */
     nid INTEGER, /* unique night identifier */
     ra DOUBLE PRECISION NOT NULL, /* inferred right ascension */
@@ -259,7 +259,7 @@ CREATE TABLE detection (  /* this table contains information about the object de
     rb DOUBLE PRECISION, /* ZTF real bogus score */
     rbversion VARCHAR, /* version of the ZTF real bogus score */
     drb DOUBLE PRECISION, /* ZTF deep learning based real bogus score */
-    drbversion VARCHAR, /* versio  of the ZTF deep learning based real bogus score */
+    drbversion VARCHAR, /* version of the ZTF deep learning based real bogus score */
     magapbig DOUBLE PRECISION, /* large aperture magnitude */
     sigmagapbig DOUBLE PRECISION, /* large aperture magnitude error */
     rfid INTEGER, /* identifier of the reference image used for the difference image */
@@ -275,7 +275,7 @@ CREATE TABLE detection (  /* this table contains information about the object de
 
 ### step
 
-CREATE TABLE step (
+CREATE TABLE step (  /* contains the different pipeline steps and their versions */
     step_id VARCHAR PRIMARY KEY, /* unique identifier of the step */
     name VARCHAR NOT NULL, /* stamp, corr, feat, clf, out */
     version VARCHAR NOT NULL, /* relevant versions as a dictionary */
@@ -285,7 +285,7 @@ CREATE TABLE step (
 
 ### taxonomy
 
-CREATE TABLE taxonomy (
+CREATE TABLE taxonomy (  /* contains details about the different taxonomies used in our stamp and light curve classifiers, which can evolve with time */
     classifier_name VARCHAR PRIMARY KEY, /* name of the taxonomy */
     classifier_version VARCHAR PRIMARY KEY, /* taxonomy version */
     classes VARCHAR[] NOT NULL /* classes in the hierarchical form they are computed */
@@ -293,7 +293,7 @@ CREATE TABLE taxonomy (
 
 ### feature_version
 
-CREATE TABLE feature_version (
+CREATE TABLE feature_version (  /* contains the version of the feature extraction and preprocessing steps used to generate the features */
     version VARCHAR PRIMARY KEY, /* feature processing version */
     step_id_feature VARCHAR REFERENCES step(step_id), /* feture step docker id*/
     step_id_preprocess VARCHAR REFERENCES step(step_id) /* preprocess step docker id*/
@@ -301,18 +301,18 @@ CREATE TABLE feature_version (
 
 ### xmatch
 
-CREATE TABLE xmatch (
-    oid VARCHAR REFERENCES object(oid), /* ZTF object Id */
-    catid VARCHAR, /* Catalog Id / Name */
-    oid_catalog VARCHAR NOT NULL, /* Object Id in Catalog */
+CREATE TABLE xmatch (  /* contains the object cross-matches and associated cross-match catalog */
+    oid VARCHAR REFERENCES object(oid), /* ZTF unique object identifier */
+    catid VARCHAR, /* Catalog identifier */
+    oid_catalog VARCHAR NOT NULL, /* unique identifier in the given catalog */
     dist DOUBLE PRECISION NOT NULL, /* Distance to the closest ZTF object [arcsec] */
-    class_catalog VARCHAR, /* Class in the given gatalog if reported */
+    class_catalog VARCHAR, /* Class in the given catalog if reported */
     period DOUBLE PRECISION /* Period in the given catalog if reported  [days] */
 );
 
 ### allwise
 
-CREATE TABLE allwise (
+CREATE TABLE allwise (  /* contains the AllWISE catalog information for the object */
     oid_catalog VARCHAR PRIMARY KEY, /* object Id inside catalog, correspond to column: designation  in ALLWISE : Sexagesimal, equatorial position-based source name in the form: hhmmss.ss+ddmmss.s. The full naming convention for AllWISE Source Catalog sources has the form "WISEA  Jhhmmss.ss+ddmmss.s," where "WISEA" indicates the source is from the AllWISE Source Catalog, and "J" indicates the position is J2000. The "WISEA" acronym is not listed explicitly in the designation column. */
     ra DOUBLE PRECISION NOT NULL, /* J2000 right ascension with respect to the 2MASS PSC reference frame from the non-moving source extraction. */
     dec DOUBLE PRECISION NOT NULL, /* J2000 declination with respect to the 2MASS PSC reference frame from the non-moving source extraction. */
@@ -334,16 +334,16 @@ CREATE TABLE allwise (
 
 ### dataquality
 
-CREATE TABLE dataquality (
-    candid BIGINT PRIMARY KEY, /* unique identifier for the subtraction candidate */
-    oid VARCHAR NOT NULL, /* unique identifier for this object */
+CREATE TABLE dataquality (  /* detailed object information regarding the quality of the data */
+    candid BIGINT PRIMARY KEY, /* unique candidate identifier */
+    oid VARCHAR NOT NULL, /* unique object identifier */
     fid INTEGER NOT NULL, /* Filter ID (1=g; 2=r; 3=i) */
     xpos DOUBLE PRECISION, /* x-image position of candidate [pixels] */
     ypos DOUBLE PRECISION, /* y-image position of candidate [pixels] */
     chipsf DOUBLE PRECISION, /* Reduced chi-square for PSF-fit */
     sky DOUBLE PRECISION, /* Local sky background estimate [DN] */
     fwhm DOUBLE PRECISION, /* Full Width Half Max assuming a Gaussian core, from SExtractor [pixels] */
-    classtar DOUBLE PRECISION, /* Star/Galaxy classification score from SExtractor */
+    classtar DOUBLE PRECISION, /* Star(1)/Galaxy(0) classification score from SExtractor */
     mindtoedge DOUBLE PRECISION, /* Distance to nearest edge in image [pixels] */
     seeratio DOUBLE PRECISION, /* Ratio: difffwhm / fwhm */
     aimage DOUBLE PRECISION, /* Windowed profile RMS afloat major axis from SExtractor [pixels] */
@@ -372,9 +372,9 @@ CREATE TABLE dataquality (
 
 ### gaia_ztf
 
-CREATE TABLE gaia_ztf (
-    oid VARCHAR REFERENCES object(oid), /* unique identifier for this object */
-    candid BIGINT NOT NULL, /* unique identifier for the subtraction candidate */
+CREATE TABLE gaia_ztf (  /* GAIA objects near detected ZTF objects */
+    oid VARCHAR REFERENCES object(oid), /* unique object identifier */
+    candid BIGINT NOT NULL, /* unique candidate identifier */
     neargaia DOUBLE PRECISION, /* Distance to closest source from Gaia DR1 catalog irrespective of magnitude; if exists within 90 arcsec [arcsec] */
     neargaiabright DOUBLE PRECISION, /* Distance to closest source from Gaia DR1 catalog brighter than magnitude 14; if exists within 90 arcsec [arcsec] */
     maggaia DOUBLE PRECISION, /* Gaia (G-band) magnitude of closest source from Gaia DR1 catalog irrespective of magnitude; if exists within 90 arcsec [mag] */
@@ -386,11 +386,11 @@ CREATE TABLE gaia_ztf (
 ### ss_ztf
 
 CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */
-    oid VARCHAR REFERENCES object(oid),
+    oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     candid BIGINT NOT NULL, /* unique candidate identifier */
-    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */
-    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */
-    ssnamenr VARCHAR /* name to nearest known solar system object */
+    ssdistnr DOUBLE PRECISION, /* distance to the nearest known solar system object */
+    ssmagnr DOUBLE PRECISION, /* magnitude of the nearest known solar system object */
+    ssnamenr VARCHAR /* name of the nearest known solar system object */
     PRIMARY KEY (oid)
 );
 
@@ -429,10 +429,10 @@ CREATE TABLE ps1_ztf ( /* information about the three closest sources in Pan STA
 
 ### reference
 
-CREATE TABLE reference (
-    oid VARCHAR REFERENCES object(oid), /* unique identifier for this object */
-    rfid BIGINT, /* Processing ID for reference image to facilitate archive retrieval */
-    candid BIGINT NOT NULL, /* unique identifier for the subtraction candidate (first detection for the template) */
+CREATE TABLE reference (  /* properties of the reference images used to build templates */
+    oid VARCHAR REFERENCES object(oid), /* unique object identifier */
+    rfid BIGINT, /* reference image identifier */
+    candid BIGINT NOT NULL, /* unique candidate identifier (first detection for the template) */
     fid INTEGER NOT NULL, /* Filter ID (1=g; 2=r; 3=i) */
     rcid INTEGER, /* Readout channel ID [00 .. 63] */
     field INTEGER, /* ZTF field ID */
@@ -450,22 +450,20 @@ CREATE TABLE reference (
 
 ### pipeline
 
-CREATE TABLE pipeline (
+CREATE TABLE pipeline (  /* information about the different pipeline steps and their versions */
     pipeline_id VARCHAR PRIMARY KEY, /* Pipeline version */
-    step_id_corr VARCHAR, /* step version */
-    step_id_feat VARCHAR, /* step version */
-    step_id_clf VARCHAR, /* step version */
-    step_id_out VARCHAR, /* step version */
-    step_id_stamp VARCHAR, /* step version */
+    step_id_corr VARCHAR, /* correction step version */
+    step_id_feat VARCHAR, /* features step version */
+    step_id_clf VARCHAR, /* light curve classifier step version */
+    step_id_out VARCHAR, /* outliers step version */
+    step_id_stamp VARCHAR, /* stamp classifier step version */
     date TIMESTAMP NOT NULL /* date of implementation */
 );
-
-### information_schema --> ???
 
 ### forced_photometry
 
 CREATE TABLE forced_photometry ( /* this table contains information about the forced photometry */
-    pid BIGINT PRIMARY KEY, /* unique candidate identifier */
+    pid BIGINT PRIMARY KEY, /* unique image identifier */
     oid VARCHAR REFERENCES object(oid), /* unique object identifier */
     mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */
     fid INTEGER NOT NULL, /* filter identifier */
