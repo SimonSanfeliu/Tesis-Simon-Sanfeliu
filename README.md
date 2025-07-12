@@ -35,5 +35,5 @@ Repositorio para el desarrollo de mi proyecto de tesis.
 |:-----:|:------:|
 |  Direct / No self - correction   |   experiments/RAG_Python/metrics_gpt-4o_2025-07-07T15-54-24.csv    |
 |  Ste-by-step / No self - correction   |   experiments/RAG_Python/metrics_gpt-4o_2025-07-07T13-50-18.csv    |
-|  Direct / Self - correction   |   experiments\RAG_Python\metrics_gpt-4o_2025-07-07T18-52-36.csv    |
+|  Direct / Self - correction   |   experiments/RAG_Python/metrics_gpt-4o_2025-07-07T18-52-36.csv    |
 |  Ste-by-step / Self - correction   |   experiments/RAG_Python/metrics_gpt-4o_2025-07-07T11-13-30.csv    |
