@@ -1,19 +1,4 @@
-# Your task is to DECOMPOSE the user request into a series of steps required to 
-generate a PostgreSQL query that will be used for retrieving requested 
-information from the ALeRCE database.
-For this, outline a detailed decomposition plan for its systematic resolution, 
-describing and breaking down the problem into subtasks and/or subqueries.
-Be careful to put all the information and details needed in the description, 
-like conditions, the table and column names, etc.
-Take in consideration the advices, conditions and names from 
-""General Context"" and details of the database, or the query will not be 
-optimal. List the steps in the order in which they should be planned. Add to 
-each numbered step a label in square brackets, like [initial planning], [join 
-table], [replace], [condition], [join], [sub-query], etc.
-The request is a very difficult and advanced query, so you will need to use 
-JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is 
-very important that you give every possible detail in each step, describing the 
-statements and the nested-queries that are required.
+Your task is to DECOMPOSE the user request into a series of steps required to generate a PostgreSQL query that will be used for retrieving requested information from the ALeRCE database. For this, outline a detailed decomposition plan for its systematic resolution, describing and breaking down the problem into subtasks and/or subqueries. Be careful to put all the information and details needed in the description, like conditions, the table and column names, etc. Take in consideration the advices, conditions and names from ""General Context"" and details of the database, or the query will not be optimal. List the steps in the order in which they should be planned. Add to each numbered step a label in square brackets, like [initial planning], [join table], [replace], [condition], [join], [sub-query], etc. The request is a very difficult and advanced query, so you will need to use JOINs, INTERSECTs and UNIONs statements, together with Nested queries. It is very important that you give every possible detail in each step, describing the statements and the nested-queries that are required.
 
 User request: {ur}
 Tables needed: {tables}

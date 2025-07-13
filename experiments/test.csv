@@ -1,0 +1,238 @@
+query_id,query_run,sql_query,query_results,query_error,query_time,r_row,p_row,r_col,p_col,N_perfect_row,N_perfect_col
+15,0,"
+SELECT
+    sq.oid, sq.probability, sq.candid, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+  detection.oid, detection.candid, detection.fid, detection.mjd,
+  obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    detection ON detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+","             oid  probability               candid  fid           mjd  \
+0   ZTF18aaiaclp     0.520409  2434223984915015031    2  60188.223982   
+1   ZTF18aakjgzj     0.319556  2434219693515015039    2  60188.219699   
+2   ZTF18aaleydm     0.613368  2434217801715015066    2  60188.217801   
+3   ZTF18aamxief     0.323881  2434223031815015040    2  60188.223032   
+4   ZTF18aanglcr     0.336435  2434215873315015004    2  60188.215880   
+5   ZTF18aaouvke     0.282244  2434220161815015099    2  60188.220162   
+6   ZTF18aaqsuyn     0.414416  2434215875015015115    2  60188.215880   
+7   ZTF18aattenu     0.599858  2434216851815015097    2  60188.216852   
+8   ZTF18aaxkcvg     0.492333  2434224440015015034    2  60188.224444   
+9   ZTF18abgaubg     0.367991  2434219694115015021    2  60188.219699   
+10  ZTF18abglnwb     0.329889  2434216353715015103    2  60188.216354   
+11  ZTF18abhwgok     0.365993  2434182950715015047    1  60188.182951   
+12  ZTF18ablaynw     0.342683  2434184374315015053    1  60188.184375   
+13  ZTF18ableqag     0.379848  2434216850215015033    2  60188.216852   
+14  ZTF18acdasef     0.323562  2434185780915015012    1  60188.185787   
+15  ZTF18acxanzv     0.381807  2434171450015015078    1  60188.171458   
+16  ZTF19aamctar     0.611254  2434170520115015077    1  60188.170521   
+17  ZTF19aaqjtmu     0.316548  2434185785515015196    1  60188.185787   
+18  ZTF19aaxcivg     0.387324  2434185784315015146    1  60188.185787   
+19  ZTF19abvvndq     0.439971  2434172404115015076    1  60188.172407   
+20  ZTF19acpkrqy     0.336011  2434171450015015085    1  60188.171458   
+21  ZTF20abkqomr     0.584670  2434220160015015096    2  60188.220162   
+22  ZTF20abkrdwi     0.378856  2434220632315015080    2  60188.220637   
+23  ZTF20achfwjr     0.386997  2434226822515015233    2  60188.226829   
+24  ZTF20adimwph     0.373529  2434215400115015120    2  60188.215405   
+25  ZTF21abevufp     0.402187  2434183903615015008    1  60188.183901   
+26  ZTF22aaqqlbm     0.382260  2434170992215015013    1  60188.170995   
+27  ZTF22aatmbdd     0.404035  2434169570815015161    1  60188.169572   
+28  ZTF23abasyxe     0.323214  2434170523915015034    1  60188.170521   
+29  ZTF23abatcyd     0.278659  2434182954115015147    1  60188.182951   
+30  ZTF23abatdoy     0.344793  2434168631015015070    1  60188.168634   
+31  ZTF23abatgxx     0.449466  2434191153815015239    2  60188.191157   
+32  ZTF23abatlea     0.376271  2434186272115015073    1  60188.186273   
+33  ZTF23abatmhd     0.359963  2434185783715015163    1  60188.185787   
+34  ZTF23abatokz     0.528303  2434216352615015059    2  60188.216354   
+35  ZTF23abatqpu     0.351905  2434216851815015039    2  60188.216852   
+36  ZTF23abatqpw     0.702023  2434216851815015088    2  60188.216852   
+37  ZTF23abatriq     0.453436  2434219690515015189    2  60188.219699   
+38  ZTF23abatwjf     0.262842  2434223983715015179    2  60188.223982   
+39  ZTF23abatxuz     0.614179  2434215870415015187    2  60188.215880   
+40  ZTF23abaudpp     0.348228  2434226822115015013    2  60188.226829   
+41  ZTF23abaudrd     0.735403  2434220160015015156    2  60188.220162   
+
+    magstat_fid  dmdt_first  
+0             2   -0.445361  
+1             2   -0.341342  
+2             2   -0.830610  
+3             2   -0.298997  
+4             2   -0.713267  
+5             2   -0.333054  
+6             2   -0.880376  
+7             2   -0.651601  
+8             2   -0.346522  
+9             2   -0.415153  
+10            2   -0.443484  
+11            1   -0.580608  
+12            1   -0.970855  
+13            2   -0.522742  
+14            1   -0.901711  
+15            1   -0.696760  
+16            1   -0.363331  
+17            1   -0.542452  
+18            1   -0.414204  
+19            1   -0.426276  
+20            1   -0.363061  
+21            2   -0.253318  
+22            2   -0.471683  
+23            2   -0.389240  
+24            2   -0.539711  
+25            1   -1.214308  
+26            1   -0.456345  
+27            1   -0.795624  
+28            1   -0.389963  
+29            1   -0.554422  
+30            1   -0.672678  
+31            2   -0.514062  
+32            1   -0.330905  
+33            1   -0.894516  
+34            2   -0.714582  
+35            2   -0.452335  
+36            2   -0.469563  
+37            2   -0.268780  
+38            2   -0.348651  
+39            2   -0.719351  
+40            2   -0.973436  
+41            2   -0.334129  ",,51.1976683139801,1,1,1,1,1,1
+15,1,"
+WITH highest_prob_sn AS (
+    SELECT oid, probability
+    FROM probability
+    WHERE class_name = 'SN'
+      AND classifier_name = 'stamp_classifier'
+      AND ranking = 1
+),
+first_detection_september AS (
+    SELECT oid
+    FROM object
+    WHERE firstmjd BETWEEN 59800 AND 59802  -- Assuming 59800 and 59802 are the MJDs for the first two days of September 2023
+),
+fast_risers AS (
+    SELECT oid, fid AS magstat_fid, dmdt_first
+    FROM magstat
+    WHERE dmdt_first IS NOT NULL  -- Assuming a non-null dmdt_first indicates a fast riser
+),
+filtered_objects AS (
+    SELECT hp.oid, hp.probability, fr.magstat_fid, fr.dmdt_first
+    FROM highest_prob_sn hp
+    INNER JOIN first_detection_september fd ON hp.oid = fd.oid
+    INNER JOIN fast_risers fr ON hp.oid = fr.oid
+)
+SELECT fo.oid, fo.probability, d.candid, d.fid, fo.magstat_fid, fo.dmdt_first
+FROM filtered_objects fo
+INNER JOIN detection d ON fo.oid = d.oid
+ORDER BY fo.oid
+","               oid  probability               candid  fid  magstat_fid  \
+0     ZTF17aablcym     0.346393  2046491053915015016    2            2   
+1     ZTF17aabnuqi     0.462096  2046491523815015030    2            2   
+2     ZTF17aabvmhe     0.324600  2046382030815015120    1            1   
+3     ZTF18aacstrz     0.849426  2046494930915015023    2            2   
+4     ZTF18aadqkmr     0.392495  2046496045015015055    2            2   
+...            ...          ...                  ...  ...          ...   
+1092  ZTF22abejrna     0.426552  2069258192115015006    2            2   
+1093  ZTF22abfctsi     0.333685  2046370390415015007    1            1   
+1094  ZTF22abfctsi     0.333685  2072280870415015010    2            1   
+1095  ZTF22abfctsi     0.333685  2046370390415015007    1            2   
+1096  ZTF22abfctsi     0.333685  2072280870415015010    2            2   
+
+      dmdt_first  
+0      -0.684187  
+1      -0.067883  
+2      -0.368441  
+3      -0.437475  
+4      -0.273568  
+...          ...  
+1092   -0.182736  
+1093   -0.776433  
+1094   -0.776433  
+1095   -1.576218  
+1096   -1.576218  
+
+[1097 rows x 6 columns]",,115.85390830039978,0.0,0.0,0.8571428571428571,1.0,0,0
+15,2,"
+WITH highest_probability_sn AS (
+    SELECT oid, probability
+    FROM probability
+    WHERE classifier_name = 'stamp_classifier'
+      AND class_name = 'SN'
+      AND ranking = 1
+),
+first_detection_september AS (
+    SELECT oid
+    FROM object
+    WHERE firstmjd BETWEEN 60000 AND 60002  -- Assuming 60000 is the MJD for September 1st, 2023
+),
+fast_risers AS (
+    SELECT oid, fid AS magstat_fid, dmdt_first
+    FROM magstat
+    WHERE dmdt_first > 0  -- Assuming a positive dmdt_first indicates a fast riser
+),
+combined_results AS (
+    SELECT hp.oid, hp.probability, fd.magstat_fid, fr.dmdt_first
+    FROM highest_probability_sn hp
+    INNER JOIN first_detection_september fd ON hp.oid = fd.oid
+    INNER JOIN fast_risers fr ON hp.oid = fr.oid
+)
+SELECT cr.oid, cr.probability, d.candid, d.fid, cr.magstat_fid, cr.dmdt_first
+FROM combined_results cr
+INNER JOIN detection d ON cr.oid = d.oid
+ORDER BY cr.oid
+",,"(psycopg2.errors.UndefinedColumn) column fd.magstat_fid does not exist
+LINE 20:     SELECT hp.oid, hp.probability, fd.magstat_fid, fr.dmdt_f...
+                                            ^
+HINT:  Perhaps you meant to reference the column ""fr.magstat_fid"".
+
+[SQL: 
+WITH highest_probability_sn AS (
+    SELECT oid, probability
+    FROM probability
+    WHERE classifier_name = 'stamp_classifier'
+      AND class_name = 'SN'
+      AND ranking = 1
+),
+first_detection_september AS (
+    SELECT oid
+    FROM object
+    WHERE firstmjd BETWEEN 60000 AND 60002  -- Assuming 60000 is the MJD for September 1st, 2023
+),
+fast_risers AS (
+    SELECT oid, fid AS magstat_fid, dmdt_first
+    FROM magstat
+    WHERE dmdt_first > 0  -- Assuming a positive dmdt_first indicates a fast riser
+),
+combined_results AS (
+    SELECT hp.oid, hp.probability, fd.magstat_fid, fr.dmdt_first
+    FROM highest_probability_sn hp
+    INNER JOIN first_detection_september fd ON hp.oid = fd.oid
+    INNER JOIN fast_risers fr ON hp.oid = fr.oid
+)
+SELECT cr.oid, cr.probability, d.candid, d.fid, cr.magstat_fid, cr.dmdt_first
+FROM combined_results cr
+INNER JOIN detection d ON cr.oid = d.oid
+ORDER BY cr.oid
+]
+(Background on this error at: https://sqlalche.me/e/20/f405)",19.442617893218994,0,0,0,0,0,0

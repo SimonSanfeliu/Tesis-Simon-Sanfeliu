@@ -1,0 +1,192 @@
+code_tag,llm_used,prompt_version,query_id,query_run,sql_query,tab_schema,label,query_gen_time,query_gen_date,query_results,query_error,sql_time,sql_date,r_row,p_row,r_col,p_col,N_perfect_row,N_perfect_col
+0.17.0,,,13,0,"
+SELECT
+    object.oid, probability.class_name, object.lastmjd, object.firstmjd
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND probability.ranking = 1
+    AND object.firstmjd < 60217.0
+    AND object.firstmjd > 59914.0
+",,,,,"[               oid class_name       lastmjd      firstmjd
+0     ZTF23aamzkrs       SNIa  60124.189074  60097.242882
+1     ZTF23aamxbpd       SNIa  60120.218900  60100.190417
+2     ZTF23aafwzmi       SNIa  60078.406505  60050.470231
+3     ZTF23aackdba       SNII  60073.174653  59992.212407
+4     ZTF23aajfere      SNIbc  60165.191285  60076.375208
+...            ...        ...           ...           ...
+4481  ZTF23abajdyl       SNIa  60821.320232  60159.333079
+4482  ZTF23aaaboss      SNIbc  60822.180336  59951.435162
+4483  ZTF23aaqyrrb       SLSN  60831.460880  60110.442639
+4484  ZTF19adgjnhl       SNII  60821.482940  59956.282535
+4485  ZTF23aatudcn       SNII  60838.294074  60128.293449
+
+[4486 rows x 4 columns]]",,4.255423069000244,2025-06-13T00:55:14,1.0,1.0,1.0,1.0,1.0,1.0
+0.17.0,gpt-4o,v1,13,1,"
+SELECT 
+    p.class_name, 
+    o.firstmjd, 
+    o.lastmjd, 
+    o.oid
+FROM 
+    object o
+INNER JOIN 
+    probability p ON o.oid = p.oid
+WHERE 
+    p.ranking = 1
+    AND p.classifier_name = 'lc_classifier'
+    AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n']",simple,5.368486642837524,2025-06-11T16:27:15,"[     class_name      firstmjd       lastmjd           oid
+0          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+1          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+2          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+3          SNII  59992.212407  60073.174653  ZTF23aackdba
+4         SNIbc  60076.375208  60165.191285  ZTF23aajfere
+...         ...           ...           ...           ...
+4481      SNIbc  60115.357176  60823.383056  ZTF23aanmygn
+4482       SNII  60128.293449  60838.294074  ZTF23aatudcn
+4483      SNIbc  59951.435162  60822.180336  ZTF23aaaboss
+4484       SLSN  60110.442639  60831.460880  ZTF23aaqyrrb
+4485       SLSN  60161.337188  60832.374687  ZTF18adruagg
+
+[4486 rows x 4 columns]]",,11.038354396820068,2025-06-13T00:55:26,1.0,1.0,1.0,1.0,1.0,1.0
+0.17.0,,,10,0,"
+SELECT
+    object.oid, probability.class_name, object.lastmjd, object.firstmjd
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND probability.ranking = 1
+    AND object.firstmjd < 60217.0
+    AND object.firstmjd > 59914.0
+",,,,,"[               oid class_name       lastmjd      firstmjd
+0     ZTF23aamzkrs       SNIa  60124.189074  60097.242882
+1     ZTF23aamxbpd       SNIa  60120.218900  60100.190417
+2     ZTF23aafwzmi       SNIa  60078.406505  60050.470231
+3     ZTF23aackdba       SNII  60073.174653  59992.212407
+4     ZTF23aajfere      SNIbc  60165.191285  60076.375208
+...            ...        ...           ...           ...
+4481  ZTF19adgjnhl       SNII  60821.482940  59956.282535
+4482  ZTF23aaaboss      SNIbc  60822.180336  59951.435162
+4483  ZTF18adruagg       SLSN  60832.374687  60161.337188
+4484  ZTF23aaqyrrb       SLSN  60831.460880  60110.442639
+4485  ZTF23aatudcn       SNII  60838.294074  60128.293449
+
+[4486 rows x 4 columns]]",,4.037422180175781,2025-06-13T00:55:30,1.0,1.0,1.0,1.0,1.0,1.0
+0.17.0,gpt-4o,v1,10,1,"
+SELECT 
+    p.class_name, 
+    o.firstmjd, 
+    o.lastmjd, 
+    o.oid
+FROM 
+    object o
+INNER JOIN 
+    probability p ON o.oid = p.oid
+WHERE 
+    p.ranking = 1
+    AND p.classifier_name = 'lc_classifier'
+    AND p.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND o.firstmjd BETWEEN 59914.0 AND 60217.0
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n']",simple,5.368486642837524,2025-06-11T16:27:15,"[     class_name      firstmjd       lastmjd           oid
+0          SNIa  60097.242882  60124.189074  ZTF23aamzkrs
+1          SNIa  60100.190417  60120.218900  ZTF23aamxbpd
+2          SNIa  60050.470231  60078.406505  ZTF23aafwzmi
+3          SNII  59992.212407  60073.174653  ZTF23aackdba
+4         SNIbc  60076.375208  60165.191285  ZTF23aajfere
+...         ...           ...           ...           ...
+4481       SLSN  60161.337188  60832.374687  ZTF18adruagg
+4482       SNII  59956.282535  60821.482940  ZTF19adgjnhl
+4483      SNIbc  59951.435162  60822.180336  ZTF23aaaboss
+4484       SNII  60128.293449  60838.294074  ZTF23aatudcn
+4485       SLSN  60110.442639  60831.460880  ZTF23aaqyrrb
+
+[4486 rows x 4 columns]]",,10.881097793579102,2025-06-13T00:55:41,1.0,1.0,1.0,1.0,1.0,1.0
+0.17.0,,,15,0,"
+SELECT
+  sq1.oid, sq1.probability as SN_prob, sq2.probability as CV_prob
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='SNIa'
+    AND probability.ranking = 1
+) AS sq1
+  INNER JOIN (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='CV/Nova'
+    AND probability.ranking = 2
+) as sq2
+  ON sq1.oid = sq2.oid
+WHERE
+  sq1.probability - sq2.probability < 0.1
+",,,,,"[              oid   sn_prob   cv_prob
+0    ZTF20abbgnpu  0.161424  0.132300
+1    ZTF21aaqsfce  0.119040  0.153360
+2    ZTF20abwurfg  0.222384  0.187248
+3    ZTF22aaiwnyi  0.144396  0.126280
+4    ZTF18ackboax  0.149968  0.140304
+..            ...       ...       ...
+186  ZTF21aagmpsk  0.166164  0.115068
+187  ZTF21aahbjlh  0.148980  0.138620
+188  ZTF20aaxmpxy  0.101752  0.099680
+189  ZTF22aaaxtpx  0.112200  0.104784
+190  ZTF22abeedof  0.140448  0.127200
+
+[191 rows x 3 columns]]",,3.883461236953736,2025-06-13T00:55:44,1.0,1.0,1.0,1.0,1.0,1.0
+0.17.0,gpt-4o,v1,15,1,"
+probability_subquery = """"""
+SELECT oid
+FROM probability
+WHERE ranking = 1
+  AND classifier_name = 'stamp_classifier'
+  AND class_name = 'SN'
+""""""
+
+object_subquery = """"""
+SELECT oid
+FROM object
+WHERE firstmjd >= 59835 AND firstmjd < 59837
+""""""
+
+magstat_subquery = """"""
+SELECT oid, fid AS magstat_fid
+FROM magstat
+WHERE dmdt_first IS NOT NULL
+""""""
+
+final_query = """"""
+SELECT o.oid, p.probability, d.candid, d.fid, m.magstat_fid, m.dmdt_first
+FROM ({probability_subquery}) AS p
+INNER JOIN ({object_subquery}) AS o ON p.oid = o.oid
+INNER JOIN ({magstat_subquery}) AS m ON o.oid = m.oid
+INNER JOIN detection d ON o.oid = d.oid
+ORDER BY o.oid
+"""""".format(probability_subquery=probability_subquery, object_subquery=object_subquery, magstat_subquery=magstat_subquery)
+
+full_query = final_query
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', 'CREATE TABLE detection (  /* this table contains information about the object detections, or its light curve. Avoid doing filters on this table in any parameter other than oid */\n    candid BIGINT PRIMARY KEY, /* unique candidate identifier */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    mjd DOUBLE PRECISION NOT NULL, /* time of detection in modified julian date */\n    fid INTEGER NOT NULL, /* filter identifier  (1=g; 2=r; 3=i)*/\n    pid FLOAT NOT NULL, /* program identifier */\n    diffmaglim DOUBLE PRECISION, /* limiting difference magnitud */\n    isdiffpos INTEGER NOT NULL, /* whether the difference is positive or negative */\n    nid INTEGER, /* unique night identifier */\n    ra DOUBLE PRECISION NOT NULL, /* inferred right ascension */\n    dec DOUBLE PRECISION NOT NULL, /* inferred declination */\n    magpsf DOUBLE PRECISION NOT NULL, /* point spread function (psf) difference magnitude */\n    sigmapsf DOUBLE PRECISION NOT NULL, /* psf difference magnitude error */\n    magap DOUBLE PRECISION, /* aperture difference magnitude */\n    sigmagap DOUBLE PRECISION, /* aperture difference magnitud error */\n    distnr DOUBLE PRECISION, /* distance to the nearest source in the reference image */\n    rb DOUBLE PRECISION, /* ZTF real bogus score */\n    rbversion VARCHAR, /* version of the ZTF real bogus score */\n    drb DOUBLE PRECISION, /* ZTF deep learning based real bogus score */\n    drbversion VARCHAR, /* versio  of the ZTF deep learning based real bogus score */\n    magapbig DOUBLE PRECISION, /* large aperture magnitude */\n    sigmagapbig DOUBLE PRECISION, /* large aperture magnitude error */\n    rfid INTEGER, /* identifier of the reference image used for the difference image */\n    magpsf_corr DOUBLE PRECISION, /* apparent magnitude (corrected difference magnitude) */\n    sigmapsf_corr DOUBLE PRECISION, /* error of the apparent magnitude assuming point like source */\n    sigmapsf_corr_ext DOUBLE PRECISION, /* error of the apparent magnitude assuming extended source */\n    corrected BOOLEAN NOT NULL, /* whether the object’s magnitude was corrected */\n    dubious BOOLEAN NOT NULL, /* whether the object is dubious or not */\n    parent_candid BIGINT, /* identifier of the candidate where this information was generated (this happens if the given detection does not pass the real bogus filter, but a later detection does */\n    has_stamp BOOLEAN NOT NULL, /* whether the candidate has an associated image stamp (same as before */\n    step_id_corr VARCHAR NOT NULL /* identifier of the correction step */\n);\nCREATE INDEX ix_ndetection_oid ON detection USING hash (oid);\n', 'CREATE TABLE magstat ( /* different statistics for the object divided by band or filter */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    fid INTEGER NOT NULL, /* band or filter identifier (1=g; 2=r; 3=i) */\n    stellar BOOLEAN NOT NULL, /* whether we believe the object is stellar */\n    corrected BOOLEAN NOT NULL, /* whether the object’s light curve has been corrected */\n    ndet INTEGER NOT NULL, /* the object number of detection in the given band */\n    ndubious INTEGER NOT NULL, /* the points in the light curve in the given band that we don’t trust  */\n    dmdt_first DOUBLE PRECISION, /* lower limit for the the rate of magnitude change at detection in the given band */\n    dm_first DOUBLE PRECISION, /* change in magnitude with respect to the last non detection at detection in the given band */\n    sigmadm_first DOUBLE PRECISION, /* error in the change of magnitude w.r.t. the last detection in the given band */\n    dt_first DOUBLE PRECISION, /* time between the last non detection and the first detection for the given band */\n    magmean DOUBLE PRECISION, /* mean difference magnitude for the given band */\n    magmedian DOUBLE PRECISION, /* median difference magnitude for the given band */\n    magmax DOUBLE PRECISION, /* maximum difference magnitude for the given band */\n    magmin DOUBLE PRECISION, /* minimum difference magnitude for the given band */\n    magsigma DOUBLE PRECISION, /* dispersion of the difference magnitude for the given band */\n    maglast DOUBLE PRECISION, /* last difference magnitude for the given band */\n    magfirst DOUBLE PRECISION, /* first difference magnitude for the given band */\n    magmean_corr DOUBLE PRECISION, /* mean apparent (corrected) magnitude for the given band */\n    magmedian_corr DOUBLE PRECISION, /* median apparent (corrected) magnitude for the given band */\n    magmax_corr DOUBLE PRECISION, /* maximum apparent (corrected) magnitude for the given band */\n    magmin_corr DOUBLE PRECISION, /* minimum apparent (corrected) magnitude for the given band */\n    magsigma_corr DOUBLE PRECISION, /* dispersion of the apparent (corrected) magnitude for the given band */\n    maglast_corr DOUBLE PRECISION, /* last apparent (corrected) magnitude for the given band */\n    magfirst_corr DOUBLE PRECISION, /* mean apparent (corrected) magnitude for the given band */\n    firstmjd DOUBLE PRECISION, /* time of first detection for the given band */\n    lastmjd DOUBLE PRECISION, /* time of last detection for the given band */\n    step_id_corr VARCHAR NOT NULL, /* correction step id */\n    saturation_rate DOUBLE PRECISION /* saturation level for the given band */\n);\nCREATE INDEX ix_magstats_dmdt_first ON magstat USING btree (dmdt_first);\nCREATE INDEX ix_magstats_firstmjd ON magstat USING btree (firstmjd);\nCREATE INDEX ix_magstats_lastmjd ON magstat USING btree (lastmjd);\nCREATE INDEX ix_magstats_magmean ON magstat USING btree (magmean);\nCREATE INDEX ix_magstats_magmin ON magstat USING btree (magmin);\nCREATE INDEX ix_magstats_magfirst ON magstat USING btree (magfirst);\nCREATE INDEX ix_magstats_ndet ON magstat USING btree (ndet);\nCREATE INDEX ix_magstats_maglast ON magstat USING btree (maglast);\nCREATE INDEX ix_magstats_oid ON magstat USING hash (oid);\n']",advanced,45.739752769470215,2025-06-11T16:29:41,"[Empty DataFrame
+Columns: [oid, probability, candid, fid, magstat_fid, dmdt_first]
+Index: []]",,10.921107530593872,2025-06-13T01:40:00,0.0,0.0,0.8571428571428571,1.0,0.0,0.0

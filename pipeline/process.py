@@ -9,19 +9,18 @@ import google.generativeai as genai
 import sqlalchemy
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
-from prompts.classification.Classification import diff_class_prompt
+from prompts.classification.Classification import diff_class_prompt_v7, \
+    final_instructions_diff_v2
 from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
-from prompts.decomposition.Decomposition import medium_decomp_prompt_vf, \
-    medium_decomp_gen_vf, medium_decomp_gen_vf_python, medium_query_task_vf, \
-    medium_query_cntx_vf, medium_query_instructions_1_vf, \
-    medium_query_instructions_2_vf, medium_decomp_task_vf
+from prompts.decomposition.Decomposition import *
 from prompts.decomposition.Decomposition import adv_decomp_prompt_vf, \
     adv_decomp_gen_vf, adv_decomp_gen_vf_python, adv_query_task_vf, \
     adv_query_cntx_vf, adv_query_instructions_1_vf, \
     adv_query_instructions_2_vf, adv_decomp_task_vf
 from final_prompts.final_prompts import *
+from prompts.schema_linking.DBSchema import schema_all_cntxV1, schema_all_cntxV2_indx, schema_all_cntxV2
 
 # Setting up astronomical context
 with open("final_prompts/astrocontext.txt", "r") as f:
@@ -48,6 +47,24 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
                 model=model,
                 temperature=0,
                 max_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            usage = {"input_tokens": response.usage.prompt_tokens,
+                     "output_tokens": response.usage.completion_tokens,
+                     "total_tokens": response.usage.total_tokens}
+            response = response.choices[0].message.content
+        except Exception as e:
+            print(f"The following exception occured: {e}")
+            raise Exception(e)
+        
+    elif "o1" in model:
+        try:
+            client = openai.OpenAI(api_key=OPENAI_KEY)
+            response = client.chat.completions.create(
+                model=model,
+                max_completion_tokens=max_tokens,
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -110,8 +127,8 @@ def format_response(specified_format: str, response: str) -> str:
 
     Args:
         specified_format (str): The type of formatting to use. It can be 
-        'singular' for a singular query string or 'var' for the 
-        decomposition in variables
+        'sql' for a singular query string or 'python' for the 
+        decomposition in Python variables
         response (str): The response from the LLM
         
     Returns:
@@ -120,11 +137,17 @@ def format_response(specified_format: str, response: str) -> str:
     if specified_format == "sql":
         formatted_response = response.split("```sql")[1].split("```")[0] \
         .replace("```", "").replace("```sql", "")
+        
     elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
+        formatted_response = formatted_response.replace('"""""', '"""')
+        
     else:
         raise Exception("No valid format specified")
+    
+    # Adding more formatting
+    formatted_response = formatted_response.replace(";", "").replace("\n", "")
     
     return formatted_response
 
@@ -135,7 +158,7 @@ def run_query(specified_format: str, formatted_response: str,
 
     Args:
         specified_format (str): The type of formatting to use. It can be 
-        'singular' for a singular query string or 'var' for the 
+        'sql' for a singular query string or 'python' for the 
         decomposition in variables
         formatted_response (str): The response ready to be used in the database
         engine (sqlalchemy.engine.base.Engine): The engine to access the 
@@ -145,45 +168,55 @@ def run_query(specified_format: str, formatted_response: str,
         results (pandas.DataFrame): Pandas DataFrame with the results of the 
         query
     """
+    results = None
+    error = ""
     if specified_format == "sql":
         try: 
             results = pd.read_sql_query(formatted_response, con=engine)
         except Exception as e:
-            raise Exception(f"Running SQL exception: {e}")
+            error = e
+            print(f"Running SQL exception in run_query: {e}", flush=True)
     elif specified_format == "python":
         try:
             exec(formatted_response, globals())
             results = pd.read_sql_query(full_query, con=engine)
         except Exception as e:
-           raise Exception(f"Running SQL exception: {e}")
+            error = e
+            print(f"Running SQL exception in run_query: {e}", flush=True)
     else:
-        raise Exception("No valid format specified")
+        error = "No valid format specified"
     
-    return results
+    return results, error
 
 
-def classify(query: str, model: str) -> tuple[str, dict]:
+def classify(query: str, table_schema: str, model: str) -> tuple[str, str, dict]:
     """Function to classify the difficulty of a NL query
 
     Args:
         query (str): NL query
+        table_schema (str): Tables needed for the query
         model (str): LLM to classify the query
         
     Returns:
         label (str): Label of the difficulty level of the query. It can be
         'simple', 'medium' or 'advanced'.
+        prompt (str): Prompt used to classify the query
         usage (dict): LLM API usage
     """
     # Make the difficulty classification prompt
+    diff_class_prompt = diff_class_prompt_v7.format(
+        table_schema = table_schema,
+        final_instructions_diff = final_instructions_diff_v2
+    )
     prompt = diff_class_prompt + \
     f"\nThe request to classify is the following: {query}"
     
     # Obtain the difficulty label
-    label, usage = api_call(model, 20, prompt)
+    label, usage = api_call(model, 1000, prompt)
     labels = ["simple", "medium", "advanced"]
     true_label = [l for l in labels if l in label]
     label = true_label[0]
-    return label, usage
+    return label, prompt, usage
 
 
 def schema_linking(query: str, model: str) -> tuple[str, dict]:
@@ -196,7 +229,7 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         
     Returns:
         tables (str): A string of a list of the tables needed to create the 
-        query
+        query with their respective information
         usage (dict): LLM API usage
     """
     # Make the schema linking prompt
@@ -204,9 +237,9 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         f"\nThe user request is the following: {query}"
         
     # Obtain the tables necessary for the SQL query
-    tables, usage = api_call(model, 100, prompt)
-    content = tables.split("[")[1].split("]")[0]
-    true_tables = f"[{content}]"
+    tables, usage = api_call(model, 1000, prompt)
+    content = tables.strip("[]").replace("'", "").split(", ")
+    true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
 
@@ -225,14 +258,13 @@ def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
     """
     # Make the schema linking prompt
     prompt = sch_linking.format(
-        ur = query,
-        astro_context = astro_context
+        ur = query
     )
         
     # Obtain the tables necessary for the SQL query
-    tables, usage = api_call(model, 100, prompt)
-    content = tables.split("[")[1].split("]")[0]
-    true_tables = f"[{content}]"
+    tables, usage = api_call(model, 1000, prompt)
+    content = tables.strip("[]").replace("'", "").split(", ")
+    true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
 
@@ -261,7 +293,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
                 request = ur_w_tables
         )
         # No usage needed for the simple query. There is no decomposition
-        usage = None
+        usage = {"input_tokens": 0, "output_tokens": 0}
         
     elif label == "medium":
         # Getting the decomposition plan
@@ -271,7 +303,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
                 user_request_with_tables = ur_w_tables,
                 medium_query_instructions_1 = medium_query_instructions_1_vf
             )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -298,7 +330,7 @@ def decomposition(label: str, ur_w_tables: str, model: str,
             user_request_with_tables = ur_w_tables,
             adv_query_instructions_1 = adv_query_instructions_1_vf
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -347,8 +379,8 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             tables = tables
         )
         # No usage needed for the simple query. There is no decomposition
-        usage = None
-        decomp_plan = None
+        usage = {"input_tokens": 0, "output_tokens": 0}
+        decomp_plan = ""
         
     elif label == "medium":
         # Getting the decomposition plan
@@ -357,7 +389,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             tables = tables,
             astro_context = astro_context
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -381,7 +413,7 @@ def decomposition_v2(label: str, ur: str, tables: str, model: str,
             tables = tables,
             astro_context = astro_context
         )
-        decomp_plan_true, usage = api_call(model, 1000, decomp_plan)
+        decomp_plan_true, usage = api_call(model, 5000, decomp_plan)
         # Creating the final prompt with the decomposition plan
         if format == "sql":
             # Through SQL queries
@@ -478,12 +510,14 @@ def direct_prompts(label: str, ur: str, tables: str) -> str:
     elif label == "medium":
         direct_prompt = query_direct_sql_medium.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
-    elif label == "medium":
+    elif label == "advanced":
         direct_prompt = query_direct_sql_advanced.format(
             ur = ur,
-            tables = tables
+            tables = tables,
+            astro_context = astro_context
         )
     else:
         raise Exception("No valid label difficulty")

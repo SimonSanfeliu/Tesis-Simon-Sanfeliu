@@ -1,18 +1,15 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
 from langchain.chains.question_answering import load_qa_chain
-from langchain_openai import OpenAIEmbeddings, OpenAI
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain_community.callbacks.manager import get_openai_callback
 
 from secret.config import OPENAI_KEY
 
 
-class OpenAIError(Exception):
-    pass
-
-
-def rag_step(size, overlap, context, ragInstruction, quantity):
+def rag_step(size: int, overlap: int, context: str, ragInstruction: str, 
+             quantity: int) -> tuple[str, dict]:
     """Makes the RAG step for the given process
     
     Args:
@@ -31,10 +28,10 @@ def rag_step(size, overlap, context, ragInstruction, quantity):
     """
     # Create an OpenAI model instance with LangChain (model and embeddings)
     try:
-        llm = OpenAI(api_key=OPENAI_KEY)
+        llm = ChatOpenAI(model="gpt-4o", api_key=OPENAI_KEY)
         embeddings = OpenAIEmbeddings(api_key=OPENAI_KEY)
     except Exception as e:
-        raise OpenAIError(f"OpenAI error: {e}")
+        print(f"OpenAI error: {e}")
 
     # Processing the files
     processed_contents = []
@@ -57,7 +54,7 @@ def rag_step(size, overlap, context, ragInstruction, quantity):
     try:
         qa_chain = load_qa_chain(llm, chain_type="stuff")
     except Exception as e:
-        raise OpenAIError(f"OpenAI error at QA chain: {e}")
+        print(f"OpenAI error at QA chain: {e}")
 
     # Retrieve the most relevant documents using the query/RAG instruction
     retrieved_docs = index.similarity_search(ragInstruction, k=quantity)

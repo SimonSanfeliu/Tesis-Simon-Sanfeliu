@@ -1,0 +1,998 @@
+req_id,request,table_info,external_knowledge,domain_knowledge,gold_query,difficulty,type,nested_type,rephrased_request,rephrased_request_gpt-3.5-turbo-0125_t0.4,rephrased_request_gpt-4o-2024-05-13_t0.2
+8,"Query all objects that were first classified as SN by the stamp classifier between august 17 and august 21, with a probability greater than 0.5 or at least have two detections.","['probability', 'object']","
+-- mjd date for august 17 = 60173.0
+-- mjd date for august 21 = 60177.0
+-- firstmjd represents the time of the first detection
+",,"
+SELECT
+    *
+FROM
+    object
+INNER JOIN
+    probability
+ON
+    object.oid = probability.oid
+WHERE
+    object.firstMJD > 60173.0
+    and object.firstMJD < 60177.0
+    AND probability.class_name='SN'
+    AND probability.classifier_name='stamp_classifier'
+    AND probability.ranking=1
+    AND (probability.probability>0.5
+    OR object.ndet>1)
+",simple,object,none,,,
+27,"Return the oids, meanra, meandec, ndet, firstmjd, deltajd, g_r_max, the classifier and class name, the ranking and the probability columns for each class of each object classified by the lc_classifier, with 100 or more detections that are most likely to be cepheid, with a probability larger than 0.76. ","['probability', 'object']","
+-- object.ndet represents the total number of detections for the object
+",,"
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet,
+    object.firstMJD, object.deltajd, object.g_r_max,
+    probability.classifier_name, probability.class_name,
+    probability.ranking, probability.probability
+FROM
+    object INNER JOIN probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name = 'lc_classifier'
+    AND object.ndet >= 100
+    AND object.oid IN
+(
+SELECT
+    oid
+FROM
+    probability
+WHERE
+    classifier_name = 'lc_classifier'
+    AND class_name IN ('CEP')
+    AND ranking = 1
+    AND probability > 0.76
+)
+",simple,object,simple,,,
+17,"Return the objects classified as AGN that show variability in the r band, but have no detections or show no variability in the g band. Order the features by their value in ascending order, and the final query by oid.","['probability', 'object', 'detection']","
+-- firstmjd represents the time of the first detection
+-- dmdt_first represents the initial rise estimate, the maximum slope between the first detection and any previous non-detection
+",,"
+SELECT
+  *
+FROM
+  (
+SELECT *
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.version, feature.fid
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name = 'AGN'
+    AND probability.ranking = 1
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'ExcessVar'
+  AND feature.fid = 1
+  AND feature.value < -0.001
+ORDER BY feature.value ASC
+) as sq1
+UNION
+SELECT *
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.version, feature.fid
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name = 'AGN'
+    AND probability.ranking = 1
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'ExcessVar'
+  AND feature.fid = 2
+  AND feature.value > -0.000001
+) as sq2
+ORDER BY oid
+) AS sq
+WHERE
+  sq.oid in (
+SELECT oid
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.version, feature.fid
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name = 'AGN'
+    AND probability.ranking = 1
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'ExcessVar'
+  AND feature.fid = 1
+  AND feature.value < -0.001
+ORDER BY feature.value ASC
+) as sq1
+INTERSECT
+SELECT oid
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.version, feature.fid
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name = 'AGN'
+    AND probability.ranking = 1
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'ExcessVar'
+  AND feature.fid = 2
+  AND feature.value > -0.000001
+) as sq2
+ORDER BY oid
+)
+ORDER BY oid
+",advanced,object,tree,,,
+37,"""Query the top 200 objects classified SNIa according to the light curve classifier. Return the results to be ordered by probability in descending order (DESC).""",['probability'],,,"
+SELECT
+    *
+FROM
+  probability
+WHERE
+    classifier_name = 'lc_classifier'
+    AND class_name IN ('SNIa')
+    AND ranking=1
+ORDER BY probability DESC
+LIMIT 200
+",simple,object,none,,,
+34,"Given this list of oids ['ZTF17aaadpsi' 'ZTF19aaduncs' 'ZTF18abnvehl' 'ZTF19abrqsxy' 'ZTF19aaduodl' 'ZTF19aadovdv' 'ZTF18aammkke' 'ZTF18abtriul' 'ZTF17aabwtky' 'ZTF18abwjpfy'], write a PostgresSQL script that returns the information of the features 'Amplitude' or 'Multiband_period' associated with the objects in the list.",['feature'],"
+-- feature.name can be 'Amplitude'
+-- feature.name can be 'Multiband_period'
+","
+-- Multiband_period: Period obtained using the multiband MHAOV periodogram
+-- Amplitude: Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes
+","
+SELECT
+    *
+FROM
+    feature
+WHERE
+    (name='Amplitude'
+    OR name='Multiband_period')
+    AND oid in ('ZTF17aaadpsi','ZTF19aaduncs','ZTF18abnvehl','ZTF19abrqsxy','ZTF19aaduodl','ZTF19aadovdv','ZTF18aammkke','ZTF18abtriul','ZTF17aabwtky','ZTF18abwjpfy')
+",simple,other,none,,,
+1,"Get all the objects classified as AGN with a probability larger than 0.6, with light curves covering at least one year that have at least 20 detections at least in one band, and select those that show variations larger than 1 magnitude in the g band and larger than 0.5 in the r band. The magnitudes need to be the corrected ones. Return their oid, the value, name, version and filter id from the features, mean coordinates, number of detections, maximum and minimum magnitudes, the variations in bands as the difference between the maximum and minimum magnitudes aliasing the column as 'delta_mag'. For the filter id columns, use the alias '[table_name]_fid' using the table name as the alias.","['object', 'probability', 'feature', 'magstat']","
+-- object.ndet represents the number of detections in the given band
+-- object.meanra represents the mean right ascension
+-- object.meandec represents the mean declination
+-- magstat.magmax represents the max magnitude for the given fid
+-- magstat.magmin represents the min magnitude for the given fid
+-- magstat.fid represents the band identifier
+-- magstat.corrected represents whether the corrected photometry should be used
+-- feature.name can be 'Amplitude'
+-- To select each band it is necessary to use fid (Filter ID) wich can be: (1=g; 2=r; 3=i). E.g. fid = 1
+-- To select each band it is necessary to do different subqueries
+-- To select each feature it is necessary to do different subqueries
+-- Delta_g and Delta_r need to be calculated from magmin and magmax in the magstat table
+","
+-- Amplitude: Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes
+","
+SELECT
+  sq.oid, sq.value, sq.name, sq.fid as feature_fid, sq.version, sq.ndet, sq.meanra, sq.meandec,
+  magstat.magmax, magstat.magmin,  magstat.magmax-magstat.magmin as delta_mag, magstat.fid as magstat_fid
+FROM
+  (
+SELECT *
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.fid, feature.version, obj_oids.meanra, obj_oids.meandec, obj_oids.ndet
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='AGN'
+    AND probability.probability > 0.6
+    AND object.deltajd > 365
+    AND object.ndet > 20
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'Amplitude'
+  AND feature.value > 1
+  AND feature.fid = 1
+) as sq1
+UNION
+SELECT *
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.fid, feature.version, obj_oids.meanra, obj_oids.meandec, obj_oids.ndet
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='AGN'
+    AND probability.probability > 0.6
+    AND object.deltajd > 365
+    AND object.ndet > 20
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'Amplitude'
+  AND feature.value > 0.5
+  AND feature.fid = 2
+) as sq2
+ORDER BY oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  sq.oid in (
+SELECT oid
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.fid, feature.version, obj_oids.meanra, obj_oids.meandec, obj_oids.ndet
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='AGN'
+    AND probability.probability > 0.6
+    AND object.deltajd > 365
+    AND object.ndet > 20
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'Amplitude'
+  AND feature.value > 1
+  AND feature.fid = 1
+) as sq1
+INTERSECT
+SELECT oid
+FROM (
+SELECT
+  feature.oid, feature.value, feature.name, feature.fid, feature.version, obj_oids.meanra, obj_oids.meandec, obj_oids.ndet
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name='AGN'
+    AND probability.probability > 0.6
+    AND object.deltajd > 365
+    AND object.ndet > 20
+) as obj_oids
+    INNER JOIN
+    feature ON feature.oid = obj_oids.oid
+WHERE
+  feature.name = 'Amplitude'
+  AND feature.value > 0.5
+  AND feature.fid = 2
+) as sq2
+ORDER BY oid
+)
+  AND magstat.ndet > 20
+  AND magstat.corrected = TRUE
+ORDER BY oid
+",advanced,object,tree,,,
+16," Get the object identifiers, probabilities in the stamp classifier and light curves (including only non-detections) for objects whose highest probability in the stamp classifier is obtained for class SN, had their first detection in the first 2 days of september, and qualify as fast risers. Also, return the oid, probability, filter ID and the image difference, and filter ID of magstat as 'magstat_fid', with the initial rise estimate. Order the results by the oid and limit the results to 100 rows due to time constraints.","['probability', 'object', 'non_detection']","
+-- mjd date for September 01 = 60188.0
+-- mjd date for September 02 = 60189.0
+-- firstmjd represents the time of the first detection
+-- dmdt_first represents the initial rise estimate, the maximum slope between the first detection and any previous non-detection
+-- dmdt_first values are negatives
+","
+-- A fast riser is defined as an object whose first detection is brighter by at least a rate of 0.25 magnitudes/day than the last non-detection obtained before the first detection (both first detection and last non-detection are in the same filter)
+","SELECT
+    sq.oid, sq.probability, sq.diffmaglim, sq.fid, sq.mjd,
+    magstat.fid as magstat_fid, magstat.dmdt_first
+FROM
+  (
+SELECT
+   non_detection.fid, non_detection.diffmaglim, non_detection.mjd, obj_oids.oid, obj_oids.probability
+FROM
+  (
+SELECT
+    object.oid, probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='stamp_classifier'
+    AND probability.class_name='SN'
+    AND probability.ranking=1
+    AND object.firstmjd > 60188.0
+    AND object.firstmjd < 60189.0
+) as obj_oids
+    INNER JOIN
+    non_detection ON non_detection.oid = obj_oids.oid
+) AS sq
+  INNER JOIN magstat
+  ON sq.oid = magstat.oid
+WHERE
+  magstat.dmdt_first < -0.25
+ORDER BY oid
+LIMIT 100",advanced,other,multi,,,
+19,"Write a script in PostgreSQL that return objects which appeared between march 1st and april 1st of 2021, which have at most one detection, and which are classified as asteroids by the stamp classifier with a probability greater than 0.7. The query must return the columns oid, meanra, meandec, ndet, firstMJD, class name and probability.","['probability', 'object']","
+-- mjd date for March 1st 2021 = 59274.0
+-- mjd date for April 1st 2021 = 59305.0
+-- object.firstmjd represents the first observation Modified Julian date at start of exposure
+-- object.ndet represents the total number of detections for the object
+-- Objects can share the same oid if they appear at the same position.
+","
+-- Asteroids move, so it is necessary to choose those than appear only once.
+","SELECT
+    object.oid, object.meanra, object.meandec, object.ndet, object.firstmjd,
+    probability.class_name, probability.probability
+FROM object
+INNER JOIN probability
+ON object.oid=probability.oid
+
+WHERE
+object.firstMJD > 59274.0
+AND object.firstMJD < 59305.0
+AND object.ndet=1
+AND probability.classifier_name='stamp_classifier'
+AND probability.ranking=1
+AND probability.class_name='asteroid'
+AND probability.probability>0.7",simple,object,none,,,
+14,"For the next list of oids: ['ZTF23aavzgjg' 'ZTF23aaynzyk' 'ZTF23aavqxos' 'ZTF23aaknyni'
+ 'ZTF23aavsdtc' 'ZTF18aandkua' 'ZTF23aaxfewt' 'ZTF23aavshwi'
+ 'ZTF22aawasao' 'ZTF23aaxgvnt'], return the unique object identifier, candidate identifier, filter identifier, modified julian date, magnitud, magnitud error, whether the object has stamps, deep learning real bogus score, the star galaxy score of the nearest object, and the distance to the nearest source in panstarrs for objects that have a deep learning real bogus score greater than 0.5 and that either have a star galaxy score less than 0.5 or a distance to the nearest panstarrs source smaller than 1 arcsec.","['detection', 'ps1_ztf']","
+-- detection.oid represents the unique identifier for this object
+-- detection.candid represents the unique identifier for the subtraction candidate
+-- detection.fid represents the band identifier or Filter ID (1=g; 2=r; 3=i)
+-- detection.drb represents the RealBogus quality score from Deep-Learning-based classifier; range is 0 to 1 where closer to 1 is more reliable
+-- detection.mjd represents the Observation Modified Julian date at start of exposure [days]
+-- detection.magpsf represents the magnitude from PSF-fit photometry [mag]
+-- detection.sigmapsf represents the 1-sigma uncertainty in magpsf [mag]
+-- detection.has_stamp represents whether the detection has an associated image stamp triplet (when parent_candid = null)
+-- ps1_ztf.sgscore1 represents the Star/Galaxy score of closest source from PS1 catalog 0 <= sgscore <= 1 where closer to 1 implies higher likelihood of being a star
+-- ps1_ztf.distpsnr1 represents the Distance of closest source from PS1 catalog; if exists within 30 arcsec [arcsec]
+",,"
+SELECT
+    det.oid, det.candid,
+    det.drb, det.fid,
+    det.mjd, det.magpsf, det.sigmapsf,
+    det.has_stamp,
+    ps1.sgscore1, ps1.distpsnr1
+FROM
+    (SELECT *
+    FROM detection
+    WHERE oid in ('ZTF23aavzgjg','ZTF23aaynzyk','ZTF23aavqxos','ZTF23aaknyni','ZTF23aavsdtc','ZTF18aandkua','ZTF23aaxfewt','ZTF23aavshwi','ZTF22aawasao','ZTF23aaxgvnt')
+    ) as det
+    INNER JOIN
+    (SELECT *
+    FROM ps1_ztf
+    WHERE oid in ('ZTF23aavzgjg','ZTF23aaynzyk','ZTF23aavqxos','ZTF23aaknyni','ZTF23aavsdtc','ZTF18aandkua','ZTF23aaxfewt','ZTF23aavshwi','ZTF22aawasao','ZTF23aaxgvnt')
+    ) as ps1
+    ON det.oid=ps1.oid
+WHERE
+     (ps1.sgscore1 < 0.5 OR ps1.distpsnr1 > 1)
+    AND det.drb > 0.5
+",medium,other,simple,,,
+30,"Return a Sql query to get the predicted class for each object according to the light curve classifier. The query should return the oid, the class name and the probability of the class for each object.",['probability'],,,"
+select oid, class_name, probability from probability where classifier_name = 'lc_classifier' and ranking = 1;
+",simple,object,none,,,
+22,Which objects were found between June 1st and July 1st of 2018 by the light curve classifier?,"['probability', 'object']","
+-- mjd date for June 1st 2018 = 58239.0
+-- mjd date for July 1st 2018 = 58270.0
+-- object.firstmjd represents the first observation Modified Julian date at start of exposure
+",,"
+SELECT
+    *
+FROM
+    object INNER JOIN (
+    SELECT
+        *
+    FROM
+        probability
+    WHERE
+        classifier_name='lc_classifier'
+        AND ranking=1
+    ) AS probability_oid
+    ON object.oid=probability_oid.oid
+WHERE
+    probability_oid.classifier_name='lc_classifier'
+    AND object.firstmjd BETWEEN 58239.0 AND 58270.0
+",simple,object,simple,,,
+12,"Give me all the SNe that first occurred between february 13 and september 10 and that are within the polygon defined by the following coordinates '((-20, -20), (-2, -20), (20, 1), (10, 10))'::polygon  . Return the oids, the mean ra and dec.","['object', 'probability']","
+-- mjd date for February 13 = 59988.0
+-- mjd date for September 10 = 60197.0
+-- object.firstmjd represents the first observation Modified Julian date at start of exposure
+-- object.meanra represents the mean right ascension (ra)
+-- object.meandec represents the mean declination (dec)
+-- you can use q3c_poly_query(object_ra, object_dec, (polygon)) to check if a object is inside the polygon
+","
+-- SNe refers to all types of SuperNova
+","
+SELECT o.oid, o.meanra, o.meandec
+
+FROM (
+SELECT
+    object.oid, object.meanra, object.meandec
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier'
+    AND probability.class_name IN ('SNIa', 'SNIbc', 'SNII', 'SLSN')
+    AND probability.ranking = 1
+    AND object.firstmjd > 59988.0
+    AND object.firstmjd < 60197.0
+) as o
+WHERE
+    q3c_poly_query(o.meanra, o.meandec, '((-20, -20), (-2, -20), (20, 1), (10, 10))'::polygon);
+",medium,spatial,simple,,,
+57,"Find all ZTF objects that lie within 30 arcsec of an object called id_1, that has coordinates (RA, Dec) = (354.67, 15.954) deg, or within 20 arcsec of  an object called id_2, having coordinates (RA, Dec) = (20.7993, 1.00331) deg. Return a table that includes the following columns. For the input objects: identifier, coordinates, and search radius used for each object in degrees; and for the output ZTF objects: ZTF identifier, number of detections, mean RA Dec coordinates, and first detection date. Sort these columns by the last detection date in descending order",['object'],"Note that the spatial query receives coordinates and search radii in deg units, but the request is done in arcsec
+-- you can use the SQL command ""WITH catalog (source_id, ra, dec) AS (VALUES ('source_name', ra, dec),...)"" to get the coordinates of different sources in space
+-- catalog.source_id represents the source identifier
+-- catalog.ra represents the right ascension (ra) of the source
+-- catalog.dec represents the declination (dec) of the source
+-- you can use q3c_join(ra_1, dec_1, ra_2, dec_2, radius) to check if a object is within a search radius of another object (in degrees)
+-- q3c_join() returna a boolean value
+",,"WITH catalog (id, obj_ra, obj_dec, r_deg) AS (
+VALUES
+('id_1', 354.67, 15.954, 0.00833333),
+('id_2', 20.7993, 1.00331, 0.00555556)
+)
+SELECT
+    c.id, c.obj_ra, c.obj_dec, r_deg, oid, ndet,
+    meanra, meandec, firstmjd
+FROM
+    catalog AS c, object AS o
+WHERE
+    q3c_join(c.obj_ra, c.obj_dec, o.meanra, o.meandec, c.r_deg)
+ORDER BY lastmjd DESC",simple,,,,"Retrieve the ZTF objects that are located near either the object with identifier id_1 at coordinates (354.67, 15.954) degrees within 30 arcseconds or the object with identifier id_2 at coordinates (20.7993, 1.00331) degrees within 20 arcseconds. Present a table containing the identifiers, coordinates, and search radii of the input objects, along with the ZTF identifiers, number of detections, mean RA Dec coordinates, and the date of the first detection for each ZTF object. Arrange the results based on the date of the last detection in descending order.","Retrieve all ZTF objects that are located within 30 arcseconds of an object identified as id_1 with coordinates (RA, Dec) = (354.67, 15.954) degrees, or within 20 arcseconds of an object identified as id_2 with coordinates (RA, Dec) = (20.7993, 1.00331) degrees. The output should include the identifier, coordinates, and search radius for each input object, as well as the ZTF identifier, number of detections, mean RA and Dec coordinates, and the date of the first detection for the ZTF objects. The results should be sorted by the date of the last detection in descending order."
+75,Get at most 100 rows from the 'ss_ztf' table that have a non-null nearest Solar System object known,['ss_ztf'],,,"SELECT
+    *
+FROM
+    ss_ztf
+WHERE
+    ssnamenr != 'null'
+LIMIT 100",simple,,,,Retrieve a maximum of 100 records from the 'ss_ztf' table where the name of the nearest known solar system object is not null.,Retrieve up to 100 entries from the 'ss_ztf' table where the name of the nearest known Solar System object is not null.
+43,"For objects with ZTF identifiers 'ZTF20acwrybw' and 'ZTF22abugigx', find all r-band epochs in the 'dataquality' table. Return the following columns: ZTF and candidate identifiers, x- and y-image positions, and peak-pixel S/N",['dataquality'],,,"SELECT
+    oid, candid, xpos, ypos, scorr
+FROM
+    dataquality
+WHERE
+    oid IN ('ZTF20acwrybw','ZTF22abugigx')
+    AND fid = 2",simple,,,,"Retrieve the x and y image positions along with the peak-pixel signal-to-noise ratio for all entries in the 'dataquality' table where the ZTF identifiers are 'ZTF20acwrybw' and 'ZTF22abugigx', and the filter ID is 2.","Retrieve the ZTF and candidate identifiers, x- and y-image positions, and peak-pixel S/N from the 'dataquality' table for objects with ZTF IDs 'ZTF20acwrybw' and 'ZTF22abugigx' in the r-band."
+89,Find at most 50 ZTF objects that have a probability larger than 0.7 of being supernovae in the stamp classifier. Return all columns from the 'dataquality' table for such objects,"['probability', 'dataquality']",,,"SELECT
+    *
+FROM
+    dataquality
+WHERE
+    oid in
+(
+SELECT
+    oid
+FROM
+    probability
+WHERE
+    classifier_name = 'stamp_classifier'
+    AND class_name = 'SN'
+    AND probability > 0.7
+LIMIT 50
+)",medium,,,,Retrieve all the data from the 'dataquality' table for a maximum of 50 ZTF objects that are classified as supernovae with a probability greater than 0.7 in the stamp classifier.,Retrieve all columns from the 'dataquality' table for up to 50 objects that have a probability greater than 0.7 of being classified as supernovae by the 'stamp_classifier'.
+72,"For the ZTF object 'ZTF20actnuls' and reference identifier '712120223', find all columns in the 'reference' table",['reference'],Note that one cannot search in the reference table by rfid only (need to include the oid),,"SELECT
+    *
+FROM
+    reference
+WHERE
+    oid = 'ZTF20actnuls'
+    AND rfid = '712120223'",simple,,,,Retrieve all the data from the 'reference' table where the object identifier is 'ZTF20actnuls' and the reference identifier is '712120223'.,Retrieve all columns from the 'reference' table for the object with the identifier 'ZTF20actnuls' and the reference ID '712120223'.
+103,"Find at most 200 ZTF objects that satisfy the following conditions: have a distance to the nearest PS1 source larger than 5 arcsec, and have a probability larger than 0.7 of being in a class other than supernova in the light curve classifier. Return all columns from the 'object', 'probability' and 'ps1_ztf' table for such objects, and order the results by the nearest PS1 source distance.","['object', 'probability', 'ps1_ztf']","Since no classifier version is specified, ZTF oids can be non-unique in the 'probability' table output",,"SELECT
+    *
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+    INNER JOIN
+    ps1_ztf
+    ON object.oid = ps1_ztf.oid
+WHERE
+    classifier_name = 'lc_classifier'
+    AND class_name NOT IN ('SNIa','SNII','SNIbc','SLSN')
+    AND probability > 0.7
+    AND distpsnr1 > 5
+ORDER BY distpsnr1
+LIMIT 200
+",advanced,,,,"Retrieve a maximum of 200 ZTF objects that meet the following criteria: the distance to the closest PS1 source is over 5 arcsec, and the probability of belonging to a class other than supernova in the light curve classifier is above 0.3. Provide all details from the 'object', 'probability', and 'ps1_ztf' tables for these objects.","Retrieve up to 200 objects from the ZTF dataset where the distance to the closest PS1 source exceeds 5 arcseconds, the classification probability is greater than 0.3, and the class is not a supernova according to the light curve classifier. Include all columns from the 'object', 'probability', and 'ps1_ztf' tables in the results."
+54,"For objects with ZTF identifiers 'ZTF23abtcveg' and 'ZTF23abudlls', find all epochs in the 'non_detection' table that have a 5-sigma magnitude limit fainter than 19.5. Return all columns from such table","['detection', 'non_detection']",Note that 'fainter' means 'larger' for magnitudes,,"SELECT
+    *
+FROM
+    non_detection
+WHERE
+    oid IN ('ZTF23abtcveg','ZTF23abudlls')
+    AND diffmaglim > 19.5",simple,,,,Retrieve all records from the 'non_detection' table where the ZTF identifiers are 'ZTF23abtcveg' and 'ZTF23abudlls' and the 5-sigma magnitude limit is greater than 19.5.,"Retrieve all columns from the 'non_detection' table for objects with identifiers 'ZTF23abtcveg' and 'ZTF23abudlls', where the limiting magnitude is greater than 19.5."
+99,"Find at most 10 ZTF objects that have a first detection date later than mjd=60310 days, as well as a probability of 1 of being an asteroid in the stamp classifier, ordered by the first detection date. Return all columns from the 'forced_photometry' table for such objects","['object', 'probability', 'forced_photometry']",,,"SELECT
+    *
+FROM
+    forced_photometry
+WHERE
+    oid in
+(
+SELECT
+    object.oid
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    firstmjd > 60310
+    AND classifier_name = 'stamp_classifier'
+    AND class_name = 'asteroid'
+    AND probability = 1
+ORDER BY firstmjd
+LIMIT 10
+)
+",advanced,,,,"Retrieve the complete information from the 'forced_photometry' table for a maximum of 10 ZTF objects where the first detection date is after 60310 days, and they have a certainty of being an asteroid of 1 in the stamp classifier.","Retrieve all columns from the 'forced_photometry' table for up to 10 objects that have their first detection date after mjd=60310 days, and have a 100% probability of being classified as an asteroid by the stamp classifier."
+40,"For all ALLWISE objects within a search radius of 1 arcsec from coordinates RA=23.6488 deg, Dec=30.7314 deg, get the following data: identifier in the ALLWISE catalog, RA Dec coordinates, and magnitudes (and their uncertainties) in filters WISE W1, WISE W2 and 2MASS J",['allwise'],"Note that the spatial query receives coordinates and search radii in deg units, but the request is done in arcsec
+-- you can use q3c_radial_query(ra_1, dec_1, ra_2, dec_2, radius) to check if a object is within a search radius of another object (in degrees)
+",,"SELECT
+    oid_catalog, ra, dec, w1mpro, w2mpro,
+    w1sigmpro, w2sigmpro, j_m_2mass, j_msig_2mass
+FROM
+    allwise
+WHERE
+    q3c_radial_query(ra, dec, 23.6488, 30.7314, 0.000277778)",simple,,,,"Retrieve the identifier in the ALLWISE catalog, along with the RA and Dec coordinates, as well as the magnitudes and uncertainties in WISE W1, WISE W2, and 2MASS J filters for ALLWISE objects located within a search radius of 1 arcsec from the coordinates RA=23.6488 deg and Dec=30.7314 deg.","Retrieve the catalog ID, right ascension, declination, WISE W1 and W2 magnitudes, their uncertainties, and 2MASS J magnitude and its uncertainty for all objects in the ALLWISE catalog that are within a 1 arcsecond radius of the coordinates RA=23.6488 degrees and Dec=30.7314 degrees."
+80,"For objects with ZTF identifiers 'ZTF22abcmmkz' and 'ZTF18abbufof', find all objects in the 'xmatch' table where the distance between ZTF object and catalog counterpart is less than 0.5 arcsec. Return all columns from such table",['xmatch'],,,"SELECT
+    *
+FROM
+    xmatch
+WHERE
+    oid IN ('ZTF22abcmmkz','ZTF18abbufof')
+    AND dist < 0.5",simple,,,,Retrieve all the records from the 'xmatch' table where the ZTF identifiers are 'ZTF22abcmmkz' and 'ZTF18abbufof' and the distance between the ZTF object and its catalog counterpart is under 0.5 arcsec.,"Retrieve all columns from the 'xmatch' table for entries where the object IDs are either 'ZTF22abcmmkz' or 'ZTF18abbufof', and the distance to the catalog counterpart is less than 0.5 arcseconds."
+45,"For objects with ZTF identifiers 'ZTF23abjikaf' and 'ZTF20achlced', find how many rows in the 'dataquality' table have a minimum reduced chi-square value of 5",['dataquality'],,,"SELECT
+    COUNT(chipsf)
+FROM
+    dataquality
+WHERE
+    oid IN ('ZTF23abjikaf','ZTF20achlced')
+    AND chipsf >= 5",simple,,,,Retrieve the count of occurrences where the 'chipsf' value is greater than or equal to 5 for entries associated with the ZTF identifiers 'ZTF23abjikaf' and 'ZTF20achlced' in the 'dataquality' table.,Determine the number of entries in the 'dataquality' table where the object identifiers are either 'ZTF23abjikaf' or 'ZTF20achlced' and the reduced chi-square value is at least 5.
+63,"For objects with ZTF identifiers 'ZTF21aaobkmg', 'ZTF21aaomuka', find all rows in the 'probability' table and light curve classifier that have ranking 1 or 2. Return all columns from such table, sort by ranking",['probability'],,,"SELECT
+    *
+FROM
+    probability
+WHERE
+    oid IN ('ZTF21aaobkmg','ZTF21aaomuka')
+    AND classifier_name = 'lc_classifier'
+    AND ranking <= 2
+ORDER BY ranking",simple,,,,Retrieve all the records from the 'probability' table for objects identified as 'ZTF21aaobkmg' or 'ZTF21aaomuka' and classified using the light curve classifier where the ranking is within the top two. Sort the results based on the ranking.,"Retrieve all columns from the 'probability' table for objects with ZTF identifiers 'ZTF21aaobkmg' and 'ZTF21aaomuka', where the classifier name is 'lc_classifier' and the ranking is 2 or lower. Sort the results by ranking."
+73,"For the ZTF object 'ZTF21acitntz', find the MPC name and MPC magnitude of its nearest known Solar System object. Return the ZTF object identifier, the MPC name and the MPC magnitude.",['ss_ztf'],,,"SELECT
+    oid, ssnamenr, ssmagnr
+FROM
+    ss_ztf
+WHERE
+    oid = 'ZTF21acitntz'
+",simple,,,,Retrieve the name and magnitude of the closest known solar system object to the ZTF object with the identifier 'ZTF21acitntz'.,Retrieve the name and magnitude of the nearest known Solar System object for the ZTF object identified as 'ZTF21acitntz'.
+92,"Find at most 500 ZTF objects ordered by their oids that have as a minimum 10 detections in the g band, and have no dubious corrections in that filter. Return the following columns: ZTF identifier, classifier version, class name, and probability. Only include probabilities with ranking 1 for the light curve classifier in the resulting table","['probability', 'magstat']",,,"SELECT
+    oid, classifier_version, class_name, probability
+FROM
+    probability
+WHERE
+    classifier_name = 'lc_classifier'
+    AND ranking = 1
+    AND oid in
+(
+SELECT
+    oid
+FROM
+    magstat
+WHERE
+    fid = 1
+    AND ndet >= 10
+    AND ndubious = 0
+ORDER BY oid
+LIMIT 500
+)
+",medium,,,,"Retrieve the ZTF identifier, classifier version, class name, and probability for the top-ranked probabilities by the light curve classifier for ZTF objects with a minimum of 10 detections in the g band and no dubious corrections. Limit the results to a maximum of 500 objects.","Retrieve up to 500 objects from the ZTF dataset that have at least 10 detections in the g band and no dubious points in that band. For these objects, provide the ZTF identifier, classifier version, class name, and probability, but only include entries where the probability ranking is 1 for the light curve classifier."
+102,"Find at most 50 ZTF objects that satisfy the following conditions: have a probability larger than 0.6 of being an AGN in the light curve classifier, and a WISE W1 magnitude between 12 and 13. Return all columns from the 'magstat' table for such objects","['probability', 'magstat', 'xmatch', 'allwise']","Since no classifier version is specified, ZTF oids can be non-unique in the 'probability' table output",,"SELECT
+    *
+FROM
+    magstat
+WHERE
+    oid IN
+(
+SELECT
+    probability.oid
+FROM
+    probability INNER JOIN
+    xmatch
+    ON probability.oid = xmatch.oid
+    INNER JOIN
+    allwise
+    ON xmatch.oid_catalog = allwise.oid_catalog
+WHERE
+    w1mpro > 12
+    AND w1mpro < 13
+    AND classifier_name = 'lc_classifier'
+    AND class_name = 'AGN'
+    AND probability > 0.6
+LIMIT 50
+)",advanced,,,,"Retrieve the complete information from the statistics table for a maximum of 50 objects from the ZTF dataset meeting the following criteria: having a likelihood exceeding 0.6 of being classified as an AGN by the light curve classifier, falling within a WISE W1 magnitude range of 12 to 13, and being associated with the 'lc_classifier' classifier.","Retrieve all columns from the 'magstat' table for up to 50 ZTF objects that meet these criteria: they have a probability greater than 0.6 of being classified as AGN by the light curve classifier, and their WISE W1 magnitude falls between 12 and 13."
+81,"For ZTF object(s) with identifier 'J163603.54-065228.7' in the ALLWISE catalog, get the following columns from the 'xmatch' table: object identifier in ZTF, and distance from its catalog counterpart",['xmatch'],,,"SELECT
+    oid, dist
+FROM
+    xmatch
+WHERE
+    oid_catalog = 'J163603.54-065228.7'",simple,,,,Retrieve the object identifier and distance from the catalog counterpart for objects in the 'xmatch' table where the catalog identifier is 'J163603.54-065228.7'.,Retrieve the object identifier and the distance from the catalog counterpart for ZTF objects with the identifier 'J163603.54-065228.7' from the 'xmatch' table.
+69,"For objects with ZTF identifiers 'ZTF21abstkhj', 'ZTF22aacqjeb' and 'ZTF21aamwpdf', find all rows in the 'ps1_ztf' table that have a star/galaxy score of the nearest source that is lower than 0.2",['ps1_ztf'],,,"SELECT
+    *
+FROM
+    ps1_ztf
+WHERE
+    oid IN ('ZTF21abstkhj','ZTF22aacqjeb','ZTF21aamwpdf')
+    AND sgscore1 < 0.2",simple,,,,"Retrieve all records from the table 'ps1_ztf' where the object identifier is either 'ZTF21abstkhj', 'ZTF22aacqjeb', or 'ZTF21aamwpdf' and the star/galaxy score of the closest source is less than 0.2.","Retrieve all records from the 'ps1_ztf' table for the objects with identifiers 'ZTF21abstkhj', 'ZTF22aacqjeb', and 'ZTF21aamwpdf', where the star/galaxy score of the closest source is less than 0.2."
+61,"Find at most 30 rows in the 'magstat' table that have a minimum number of detections of 10, median difference magnitude fainter than 19, and last difference magnitude brighter than 17. Order the results by the object identifier.",['magstat'],Note that 'fainter' means 'larger' for magnitudes,,"SELECT
+    *
+FROM
+    magstat
+WHERE
+    ndet >= 10
+    AND magmedian > 19
+    AND maglast < 17
+ORDER BY oid
+LIMIT 30
+",simple,,,,"Retrieve up to 30 entries from the 'magstat' table where the number of detections is equal to or greater than 10, the median difference magnitude exceeds 19, and the last difference magnitude is below 17.","Retrieve up to 30 entries from the 'magstat' table where the number of detections is at least 10, the median difference magnitude exceeds 19, and the last difference magnitude is less than 17."
+104,"Find at most 30 ZTF objects that have a probability larger than 0.9 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4'. Return the following columns: identifier of the ZTF and candidate, distance from the nearest Solar System object, MPC archive magnitude and name. Include also the following columns related to each candidate in the output table: filter identifier, FWHM from SExtractor, number of PS1 calibrators used, and exposure time","['probability', 'dataquality', 'ss_ztf']",Note the join between tables must be in oid and candid,,"SELECT
+    sq1.oid,
+    ss_ztf.candid, ss_ztf.ssdistnr, ss_ztf.ssmagnr,
+    ss_ztf.ssnamenr, dataquality.fid,
+    dataquality.fwhm, dataquality.nmatches,
+    dataquality.exptime
+FROM
+(
+SELECT
+    *
+FROM
+    probability
+WHERE
+    classifier_name = 'stamp_classifier'
+    AND class_name = 'asteroid'
+    AND probability > 0.9
+    AND classifier_version = 'stamp_classifier_1.0.4'
+LIMIT 30
+) as sq1
+INNER JOIN
+ss_ztf
+ON sq1.oid = ss_ztf.oid
+INNER JOIN
+dataquality
+ON ss_ztf.oid = dataquality.oid
+AND ss_ztf.candid = dataquality.candid",advanced,,,,"Retrieve a maximum of 30 ZTF objects identified as asteroids with a probability exceeding 0.9 in the stamp classifier version 'stamp_classifier_1.0.4'. Display the ZTF identifier, candidate identifier, distance to the nearest Solar System object, magnitude from the MPC archive, and name. Additionally, include the filter identifier, FWHM from SExtractor, number of PS1 calibrators used, and exposure time for each candidate in the result set.","Retrieve up to 30 objects from the ZTF dataset that have a probability greater than 0.9 of being classified as an asteroid according to the 'stamp_classifier' version 'stamp_classifier_1.0.4'. For each object, provide the ZTF identifier, candidate identifier, distance to the nearest known Solar System object, magnitude of the nearest known Solar System object, and its name. Additionally, include the filter identifier, FWHM from SExtractor, the number of PS1 calibrators used, and the exposure time for each candidate."
+71,"For objects with ZTF identifiers 'ZTF20aczxeud', 'ZTF21aappfdu' and 'ZTF22aacqjeb', find all rows in the 'reference' table that have information in the g band. Return the following columns sort by ZTF identifier: identifier of the reference, ZTF and candidate identifier; and magnitude (and its uncertainty) of the nearest reference object",['reference'],,,"SELECT
+    rfid, oid, candid, magnr, sigmagnr
+FROM
+    reference
+WHERE
+    oid IN ('ZTF20aczxeud','ZTF21aappfdu','ZTF22aacqjeb')
+    AND fid = 1
+ORDER BY oid",simple,,,,"Retrieve the reference identifier, ZTF identifier, candidate identifier, magnitude, and magnitude uncertainty for objects associated with ZTF identifiers 'ZTF20aczxeud', 'ZTF21aappfdu', and 'ZTF22aacqjeb' in the 'reference' table that pertain to the g band. Sort the results by the ZTF identifier.","Retrieve the rows from the 'reference' table for objects with the ZTF identifiers 'ZTF20aczxeud', 'ZTF21aappfdu', and 'ZTF22aacqjeb' that have data in the g band. The results should include the reference identifier, ZTF identifier, candidate identifier, magnitude, and its uncertainty, and should be sorted by the ZTF identifier."
+42,"Get all epochs in the 'dataquality' table for the ZTF object 'ZTF21aapnixl'. Return the following columns, sorting them by reduced chi-square: object, candidate and filter identifier, reduced chi-square, FWHM from SExtractor, star/galaxy score from SExtractor, number of bad pixels, ZP magnitude and its uncertainty, and exposure time",['dataquality'],,,"SELECT
+    oid, candid, fid, chipsf, fwhm, classtar,
+    nbad, magzpsci, magzpsciunc, exptime
+FROM
+    dataquality
+WHERE
+    oid = 'ZTF21aapnixl'
+ORDER BY chipsf
+",simple,,,,"Retrieve the candidate ID, filter identifier, number of bad pixels, FWHM, star/galaxy score, ZP magnitude, ZP magnitude uncertainty, and exposure time for all entries related to the ZTF object 'ZTF21aapnixl' in the 'dataquality' table. Sort the results based on the chipsf value.","Retrieve all records from the 'dataquality' table for the object identified as 'ZTF21aapnixl'. The results should include the following fields: candidate ID, filter ID, reduced chi-square, FWHM, star classification score, count of bad pixels, zero-point magnitude and its uncertainty, and exposure time. Ensure the results are ordered by the reduced chi-square value."
+107,"Find at most 10 ZTF objects that satisfy the following conditions: have more than 500 detections, a probability larger than 0.5 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4', and a distance from the nearest Solar System object below 2 arcsec. Return the following columns: ZTF identifier, number of detections, first and last detection date, probability, candidate identifier, distance between ZTF object and MPC object, MPC name, detection date and filter identifier. Order the results by the first detection date.","['object', 'probability', 'detection', 'ss_ztf']",,,"SELECT
+    object.oid, ndet, firstmjd, lastmjd,
+    probability, ss_ztf.candid, ssdistnr,
+    ssnamenr, mjd, fid
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+    INNER JOIN
+    ss_ztf
+    ON object.oid = ss_ztf.oid
+    INNER JOIN
+    detection
+    ON ss_ztf.oid = detection.oid
+    AND ss_ztf.candid = detection.candid
+WHERE
+    ndet > 500
+    AND classifier_name = 'stamp_classifier'
+    AND class_name = 'asteroid'
+    AND probability > 0.5
+    AND classifier_version = 'stamp_classifier_1.0.4'
+    AND ssdistnr < 2
+ORDER BY firstmjd
+LIMIT 10
+",advanced,,,,"Retrieve a maximum of 10 ZTF objects meeting the criteria of having over 15 detections, a probability exceeding 0.5 for being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4', and a distance less than 2 arcsec from the nearest Solar System object. Provide the following details: ZTF identifier, number of detections, dates of first and last detection, probability, candidate identifier, distance from the nearest Solar System object, name of the Solar System object, detection date, and filter identifier.","Retrieve up to 10 ZTF objects that meet these criteria: they have over 15 detections, a probability greater than 0.5 of being classified as an asteroid by the 'stamp_classifier' version 'stamp_classifier_1.0.4', and are within 2 arcseconds of the nearest known Solar System object. Provide the following details: object identifier, number of detections, dates of first and last detection, classification probability, candidate identifier, distance to the nearest Solar System object, name of the nearest Solar System object, detection date, and filter identifier."
+83,Get all columns in the 'allwise' table for the ZTF object 'ZTF21aazqwxv',"['xmatch', 'allwise']",Requires using the 'xmatch' table to obtain the oid-oid_catalog relation,,"SELECT
+    *
+FROM
+    allwise
+WHERE
+    oid_catalog in
+(
+SELECT
+    oid_catalog
+FROM
+    xmatch
+WHERE
+    oid = 'ZTF21aazqwxv'
+)",medium,,,,Retrieve all the information from the 'allwise' table corresponding to the object with the ZTF identifier 'ZTF21aazqwxv'.,Retrieve every column from the 'allwise' table for the object identified as 'ZTF21aazqwxv' in the 'xmatch' table.
+84,"For the ZTF object 'ZTF19aascdol' get the following information about its ALLWISE match(es): identifier in ZTF and in the catalog, distance between counterparts, and magnitudes in filters WISE W1 to W4","['xmatch', 'allwise']","Requires using the 'xmatch' table to obtain the oid-oid_catalog relation. Note that filters W1 to W4 means returning W1, W2, W3 and W4",,"SELECT
+    oid, xmatch.oid_catalog, dist,
+    w1mpro, w2mpro, w3mpro, w4mpro
+FROM
+    xmatch INNER JOIN
+    allwise
+    ON xmatch.oid_catalog = allwise.oid_catalog
+WHERE
+    xmatch.oid = 'ZTF19aascdol'",medium,,,,"Retrieve the ZTF object 'ZTF19aascdol' and gather details regarding its matching entry in the ALLWISE catalog, including the ZTF and catalog identifiers, the distance between the objects, and the magnitudes in WISE filters W1 to W4.","Retrieve the ZTF identifier, catalog identifier, distance between counterparts, and magnitudes in WISE filters W1 to W4 for the object 'ZTF19aascdol' from its ALLWISE match."
+96,"For Solar System identifiers '2003FP134' and '2009UK56', get all detections for all ZTF objects that lie within 2 arcsec from any of them. Return the following columns, sort by MPC name and detection date: all columns from the 'ss_ztf' table; and detection date, filter identifier, isdiffpos flag, RA dec coordinates, and difference magnitude (and its uncertainty)","['detection', 'ss_ztf']",Note the join between tables must be in oid and candid,,"SELECT
+    ss_ztf.*, detection.mjd, detection.fid,
+    detection.isdiffpos, detection.ra, detection.dec,
+    detection.magpsf, detection.sigmapsf
+FROM
+    ss_ztf INNER JOIN
+    detection
+    ON ss_ztf.oid = detection.oid
+    AND ss_ztf.candid = detection.candid
+WHERE
+    ssnamenr IN ('2003FP134','2009UK56')
+    AND ssdistnr < 2
+ORDER BY ssnamenr, mjd",medium,,,,"Retrieve all detections for ZTF objects that are within a 2 arcsecond distance from either '2003FP134' or '2009UK56' Solar System identifiers. Include details such as detection date, filter identifier, positive/negative difference flag, RA and dec coordinates, and magnitude information with uncertainties. Organize the results by the name of the Solar System object and the detection date. Include all columns from the 'ss_ztf' table along with the specified detection details.","Retrieve all detections for ZTF objects that are within 2 arcseconds of the Solar System objects '2003FP134' and '2009UK56'. Include all columns from the 'ss_ztf' table, along with the detection date, filter ID, isdiffpos flag, right ascension, declination, point spread function magnitude, and its error from the 'detection' table. Sort the results by the Solar System object name and the detection date."
+67,"For objects with ZTF identifiers 'ZTF18acxlskz', 'ZTF22aanppbi' and 'ZTF22abunrft', find all rows in the 'gaia_ztf' table where the nearest Gaia source lies within 1.5 arcsec of the ZTF object detection",['gaia_ztf'],,,"SELECT
+    *
+FROM
+    gaia_ztf
+WHERE
+    oid IN ('ZTF18acxlskz','ZTF22aanppbi','ZTF22abunrft')
+    AND neargaia < 1.5",simple,,,,"Retrieve all the records from the 'gaia_ztf' table where the Gaia source closest to the ZTF object detection is less than 1.5 arcsec away for objects identified as 'ZTF18acxlskz', 'ZTF22aanppbi', and 'ZTF22abunrft'.","Retrieve all records from the 'gaia_ztf' table for objects with the identifiers 'ZTF18acxlskz', 'ZTF22aanppbi', and 'ZTF22abunrft', where the distance to the nearest Gaia source is less than 1.5 arcseconds."
+55,Get all the information available in the 'object' table for the ZTF object 'ZTF20aatxryt',['object'],,,"SELECT
+    *
+FROM
+    object
+WHERE
+    oid = 'ZTF20aatxryt'",simple,,,,Retrieve all the data related to the object with the identifier 'ZTF20aatxryt' from the 'object' table.,Retrieve every detail from the 'object' table for the object identified by 'ZTF20aatxryt'.
+47,"For objects with ZTF identifiers 'ZTF23aaawbsc' and 'ZTF21abxlmuw', find all detections that have a real/bogus score greater than 0.7. Return the following columns, sort by ZTF identifier and detection date: ZTF, candidate and filter identifiers, detection date, isdiffpos flag, detection RA Dec coordinates, difference magnitude and its uncertainty, and real/bogus score",['detection'],,,"SELECT
+    oid, candid, fid, mjd, isdiffpos, ra, dec, magpsf, sigmapsf, rb
+FROM
+    detection
+WHERE
+    oid IN ('ZTF23aaawbsc','ZTF21abxlmuw')
+    AND rb > 0.7
+ORDER BY oid, mjd",simple,,,,"Retrieve the object identifier, candidate identifier, filter identifier, detection date, positive difference flag, right ascension, declination, point spread function magnitude, magnitude error, and real bogus score for detections associated with objects identified as 'ZTF23aaawbsc' and 'ZTF21abxlmuw' with a real/bogus score exceeding 0.7. Sort the results by object identifier and detection date.","Retrieve the detections for objects with identifiers 'ZTF23aaawbsc' and 'ZTF21abxlmuw' where the real/bogus score exceeds 0.7. The results should include the object identifier, candidate identifier, filter identifier, detection date, isdiffpos flag, right ascension, declination, point spread function magnitude and its error, and real/bogus score. Sort the output by object identifier and detection date."
+79,"For the ZTF object 'ZTF20achscch', get the following columns from the 'xmatch' table: catalog name, object identifier in the catalog, and distance from the catalog counterpart",['xmatch'],,,"SELECT
+    catid, oid_catalog, dist
+FROM
+    xmatch
+WHERE
+    oid = 'ZTF20achscch'",simple,,,,"Retrieve the catalog ID, object identifier in the catalog, and distance from the catalog counterpart for the ZTF object with the identifier 'ZTF20achscch' from the 'xmatch' table.","Retrieve the catalog identifier, the catalog object identifier, and the distance from the catalog counterpart for the object with the identifier 'ZTF20achscch' from the 'xmatch' table."
+94,Get all columns from the 'object' and 'reference' tables for ZTF objects that had a change in the reference. Give at most 50 rows in the resulting table,"['object', 'reference']",,,"SELECT
+    *
+FROM
+    object INNER JOIN
+    reference
+    ON object.oid = reference.oid
+WHERE
+    reference_change
+LIMIT 50",medium,,,,Retrieve the complete information from both the 'object' and 'reference' tables for ZTF objects that experienced alterations in the reference. Display a maximum of 50 entries in the output.,Retrieve all columns from both the 'object' and 'reference' tables for ZTF objects where there was a change in the reference image. Limit the output to 50 rows.
+90,"Find at most 100 ZTF objects that have a multiband period lower than 5 days in the 'lc_classifier_1.2.1-P' feature version. Return all columns from the 'probability' table for such objects, including only data for the light curve classifier, with rankings either 1 or 2","['probability', 'feature']",,,"SELECT
+    *
+FROM
+    probability
+WHERE
+    classifier_name = 'lc_classifier'
+    AND ranking <= 2
+    AND oid in
+(
+SELECT
+    oid
+FROM
+    feature
+WHERE
+    name = 'Multiband_period'
+    AND version = 'lc_classifier_1.2.1-P'
+    AND value < 5
+LIMIT 100
+)",medium,,,,"Retrieve all information from the 'probability' table for ZTF objects where the classifier is 'lc_classifier', the ranking is 1 or 2, and the objects have a multiband period less than 5 days in the 'lc_classifier_1.2.1-P' feature version, limited to a maximum of 100 objects.","Retrieve up to 100 ZTF objects whose multiband period is less than 5 days in the 'lc_classifier_1.2.1-P' feature version. For these objects, return all columns from the 'probability' table, but only include entries for the light curve classifier with rankings of 1 or 2."
+51,"Find all epochs in the 'forced_photometry' table of the ZTF object 'ZTF24aaiutyh'. Return the following columns sort by date: object identifier, date, filter identifier, difference magnitude and its uncertainty, corrected magnitude and its uncertainty, and isdiffpos flag",['forced_photometry'],"Note that the corrected magnitude has both e_mag_corr and e_mag_corr_ext as uncertainties in the database, which have definitions similar to sigmapsf_corr and sigmapsf_corr_ext from the 'detection' table",,"SELECT
+    oid, mjd, fid, mag, e_mag, mag_corr, e_mag_corr_ext, isdiffpos
+FROM
+    forced_photometry
+WHERE
+    oid = 'ZTF24aaiutyh'
+ORDER BY mjd",simple,,,,"Retrieve the modified Julian date, filter identifier, magnitude, magnitude error, corrected magnitude, extended corrected magnitude error, and the flag indicating positive or negative difference for all entries related to the ZTF object 'ZTF24aaiutyh' from the 'forced_photometry' table. Organize the results by the modified Julian date.","Retrieve the modified Julian date, filter ID, difference magnitude, its error, corrected magnitude, its extended error, and the isdiffpos flag for the object with the identifier 'ZTF24aaiutyh' from the 'forced_photometry' table. Sort the results by the modified Julian date."
+59,"Get the following columns from the 'magstat' table for the ZTF object 'ZTF18acsvogv': ZTF identifer, filter identifier, number of detections, and mean difference magnitude",['magstat'],,,"
+SELECT
+    oid, fid, ndet, magmean
+FROM
+    magstat
+WHERE
+    oid = 'ZTF18acsvogv'
+",simple,,,,"Retrieve the band or filter identifier, the count of detections, and the average difference magnitude for the ZTF object with the identifier 'ZTF18acsvogv' from the 'magstat' table.","Retrieve the filter identifier, number of detections, and mean difference magnitude from the 'magstat' table for the object with the identifier 'ZTF18acsvogv'."
+100,"Find all detections, non-detections and forced photometry points for the ZTF object 'ZTF24aamtvxb'. Return all epochs in the same output table, including the following columns: ZTF identifier, epoch date, filter identifier, isdiffpos flag, detection difference magnitude and its uncertainty, 5-sigma magnitude limit, forced difference magnitude and its uncertainty, and a column named 'table' (that contains the name of the table of origin for each epoch)","['detection', 'non_detection', 'forced_photometry']",I had to use 'cast' for magnitudes in the 'forced_photometry' table because they have a different type than magnitudes in the 'detection' and 'non_detection' tables,,"
+SELECT
+    oid, mjd, fid, isdiffpos,
+    magpsf, sigmapsf, NULL as diffmaglim,
+    CAST(NULL AS bigint) as mag,
+    CAST(NULL AS bigint) as e_mag,
+    'detection' as table
+FROM
+    detection
+WHERE
+    oid = 'ZTF24aamtvxb'
+UNION ALL
+SELECT
+    oid, mjd, fid, NULL as isdiffpos,
+    NULL as magpsf, NULL as sigmapsf, diffmaglim,
+    CAST(NULL AS bigint) as mag,
+    CAST(NULL AS bigint) as e_mag,
+    'non_detection' as table
+FROM
+    non_detection
+WHERE
+    oid = 'ZTF24aamtvxb'
+UNION ALL
+SELECT
+    oid, mjd, fid, isdiffpos,
+    NULL as magpsf, NULL as sigmapsf,
+    NULL as diffmaglim,
+    mag, e_mag,
+    'forced_photometry' as table
+FROM
+    forced_photometry
+WHERE
+    oid = 'ZTF24aamtvxb'
+",advanced,,,,"Retrieve the epoch dates, filter identifiers, isdiffpos flags, detection difference magnitudes, uncertainties, 5-sigma magnitude limits, forced difference magnitudes, and uncertainties for the ZTF object 'ZTF24aamtvxb' from all detections, non-detections, and forced photometry data. Include a column indicating the table source for each epoch in the output.","Retrieve all detection, non-detection, and forced photometry records for the object identified as 'ZTF24aamtvxb'. Combine the results into a single output table, including columns for the modified Julian date, filter ID, isdiffpos flag, detection magnitude and its error, 5-sigma magnitude limit, forced photometry magnitude and its error, and a column labeled 'table' indicating the source table for each record."
+106,"Find at most 30 ZTF objects that satisfy the following conditions: have more than 10 detections, a probability larger than 0.7 of being a bogus in the stamp classifier version 'stamp_classifier_1.0.4', and  a probability larger than 0.9 of being a transient in the light curve classifier top level. Return the following columns: ZTF identifier, number of detections, first detection date, probability in the stamp classifier (name this column 'prob_stamp_bogus'), and probability in the light curve classifier top level (name this column 'prob_lc_transient'). Order the results by the ZTF identifier of the objects classified as bogus in the stamp classifier.","['object', 'probability']","Since no classifier version is specified for 'lc_classifier_top', ZTF oids can be non-unique in the 'probability' table output",,"
+SELECT
+    sq1.oid, sq1.ndet, sq1.firstmjd,
+    sq1.probability as prob_stamp_bogus,
+    sq2.probability as prob_lc_transient
+FROM
+(
+SELECT
+    object.oid, object.ndet, object.firstmjd,
+    probability.class_name,
+    probability.probability
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    ndet > 10
+    AND classifier_name = 'stamp_classifier'
+    AND class_name = 'bogus'
+    AND probability > 0.7
+    AND classifier_version = 'stamp_classifier_1.0.4'
+) AS sq1
+INNER JOIN
+(
+SELECT
+    *
+FROM
+    probability
+WHERE
+    classifier_name = 'lc_classifier_top'
+    AND class_name = 'Transient'
+    AND probability > 0.9
+) AS sq2
+ON sq1.oid = sq2.oid
+ORDER BY sq1.oid
+LIMIT 30
+",advanced,,,,"Retrieve the ZTF identifiers, number of detections, and first detection dates for ZTF objects meeting the criteria of having over 10 detections, a probability exceeding 0.7 of being classified as bogus by the stamp classifier version 'stamp_classifier_1.0.4', and a probability higher than 0.9 of being classified as a transient by the light curve classifier top level. Include the probabilities as 'prob_stamp_bogus' and 'prob_lc_transient' respectively. Limit the results to a maximum of 30 objects.","Retrieve up to 30 ZTF objects that meet these criteria: they have more than 10 detections, a probability greater than 0.7 of being classified as bogus by the stamp classifier version 'stamp_classifier_1.0.4', and a probability greater than 0.9 of being classified as a transient by the top-level light curve classifier. The output should include the ZTF identifier, the number of detections, the date of the first detection, the probability from the stamp classifier (labeled as 'prob_stamp_bogus'), and the probability from the light curve classifier (labeled as 'prob_lc_transient')."
+56,"For objects with ZTF identifiers 'ZTF20abywydb', 'ZTF20abzpxxu' and 'ZTF20acduffd', get those ZTF objects where the corrected light curve was not computed. Return the following columns from the 'object' table, sort by first detection date: ZTF identifier, number of detections, mean RA Dec coordinates, dates of first and last detections, difference between mean g- and r-band difference magnitudes, and difference between mean g- and r-band corrected magnitudes",['object'],0,,"SELECT
+    oid, ndet, meanra, meandec,
+    firstmjd, lastmjd,
+    g_r_mean, g_r_mean_corr
+FROM
+    object
+WHERE
+    oid IN ('ZTF20abywydb','ZTF20abzpxxu','ZTF20acduffd')
+    AND not corrected
+ORDER BY firstmjd",simple,,,0.0,"Retrieve the ZTF objects identified as 'ZTF20abywydb', 'ZTF20abzpxxu', and 'ZTF20acduffd' that have not undergone correction in the light curve. Show the ZTF identifier, number of detections, mean right ascension and declination coordinates, dates of the first and last detections, mean difference in g- and r-band magnitudes, and mean difference in g- and r-band corrected magnitudes from the 'object' table. Arrange the results based on the date of the first detection.","Retrieve the ZTF objects with identifiers 'ZTF20abywydb', 'ZTF20abzpxxu', and 'ZTF20acduffd' from the 'object' table where the light curve has not been corrected. Include the following details: object identifier, number of detections, mean right ascension and declination, dates of first and last detections, mean g-r color difference, and mean corrected g-r color difference. Sort the results by the date of the first detection."
+48,"Get all features for the ZTF object 'ZTF18abqyaix'. Return the following columns, sort by ZTF identifier, filter identifier and feature version: ZTF identifier, feature name and value, filter identifier, and feature version",['feature'],0,,"SELECT
+    oid, name, value, fid, version
+FROM
+    feature
+WHERE
+    oid = 'ZTF18abqyaix'
+ORDER BY name, fid, version
+",simple,,,0.0,"Retrieve the feature name, value, filter identifier, and feature version for the ZTF object 'ZTF18abqyaix'. Organize the results by feature name, filter identifier, and feature version.","Retrieve all features associated with the object identified as 'ZTF18abqyaix'. Include the feature name, feature value, filter identifier, and feature version in the results. Sort the output by feature name, filter identifier, and feature version."
+58,"Get at most 20 ZTF objects that satisfy the following conditions: a minimum number of detections of 30, a difference between minimum g- and r-band corrected magnitudes larger than 3.5, and difference between last and first detection times larger than 20 days. Return all columns from the 'object' table",['object'],0,,"SELECT
+    *
+FROM
+    object
+WHERE
+    ndet >= 30
+    AND g_r_max_corr > 3.5
+    AND deltajd > 10
+LIMIT 20",simple,,,0.0,"Retrieve a maximum of 20 ZTF objects that meet the following criteria: having at least 30 detections, a g-r color difference at maximum correction greater than 3.5, and a time gap between the last and first detections exceeding 10 days. Show all details from the 'object' table.","Retrieve up to 20 objects from the 'object' table where the number of detections is at least 30, the corrected g-r color at maximum exceeds 3.5, and the time span between the first and last detection is greater than 10 days. Include all columns in the result."
+78,"For the light curve classifier, return the following columns from the 'taxonomy' table: name and version of the classifier, and classes included in it",['taxonomy'],0,,"SELECT
+    *
+FROM
+    taxonomy
+WHERE
+    classifier_name = 'lc_classifier'",simple,,,0.0,Retrieve all information from the 'taxonomy' table where the classifier name is 'lc_classifier'.,Retrieve all columns from the 'taxonomy' table for the classifier named 'lc_classifier'.
+39,"Get the columns that contains: object identifier, candidate identifier, filter id as 'f_id', co-ordinates, magnitude, magnitude errors. Then, filter out sources with the highest probability class for objects as CV/Nova by the stochastic light curve classifier, with a number of detections of at most 50 from discovery date to last detection and collect the corrected difference magnitude in the r-band filter. Also, among them, determine their PSF corrected magnitude in the r-filter, then get maximum rise from minimum in each detection. Give the first 1000 rows of the result, order by object identifier.","['probability', 'object', 'detection']",,,"SELECT
+  sq.oid, sq.meanra, sq.meandec,
+  detection.candid, detection.fid as f_id,detection.magpsf, detection.sigmapsf_corr, detection.sigmapsf_corr_ext
+FROM
+  (
+SELECT
+    object.oid, object.meanra, object.meandec, object.ndet
+FROM
+    object INNER JOIN
+    probability
+    ON object.oid = probability.oid
+WHERE
+    probability.classifier_name='lc_classifier_stochastic'
+    AND probability.class_name='CV/Nova'
+    AND probability.ranking = 1
+) AS sq
+  INNER JOIN detection
+  ON sq.oid = detection.oid
+WHERE
+  sq.ndet < 50
+  AND detection.fid = 2
+ORDER BY oid
+LIMIT 1000
+",medium,other,simple,,,

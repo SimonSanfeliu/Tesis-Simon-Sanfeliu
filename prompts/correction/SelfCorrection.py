@@ -48,8 +48,6 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
 
-{astro_context}
-
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```step_number [STEP QUERY HERE] ```
 # Finally, join all the steps in a final query, with the following format: 
@@ -88,13 +86,11 @@ The user values the personality of a knowledgeable SQL expert, so ensuring accur
 - Use the exact class names as they are in the database, marked with single quotes, for example, 'SNIa'.
 # If you need to use 2 or 3 tables, try using a sub-query over 'probability' or 'object' if it is necessary (priority in this order).
 
-{astro_context}
-
 # Generate a query for each step, resolving and analysing it, with the following format:
 ```python sub_queries = [VARIABLE SUB-QUERY HERE] ```
 # Finally, join all the steps in a final query like so: 
 ```python full_query = [FINAL QUERY HERE] ```
-DON'T include anything else inside and after your FINAL answer.
+DON'T include anything else inside and after your FINAL answer. Remember to always add the f in the string of the final query to add up all the sub-queries
 '''
 
 # Final Instructions, emphasizing the importance to correct the query and the format to answer
