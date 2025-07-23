@@ -6,7 +6,7 @@ from prompts.base.prompts import *
 # Prompt dictionary guideline and used by Jorge
 prompts = {
     "Schema Linking": {
-        "base_prompt": tables_linking_prompt_V2,
+        "base_prompt": tables_linking_prompt_V2 + q3c_info,
         "context1": schema_all_cntxV1,
         "context2": schema_all_cntxV2_indx,
         "context3": schema_all_cntxV2,
@@ -18,7 +18,7 @@ prompts = {
     "Decomposition": {
         "simple": {
             "query_task": simple_query_task_v2,
-            "query_context": simple_query_cntx,
+            "query_context": simple_query_cntx + q3c_info,
             "external_knowledge": "placeholder",
             "domain_knowledge": "placeholder",
             "query_instructions": simple_query_instructions_v2
@@ -28,7 +28,7 @@ prompts = {
                 "base_prompt": medium_decomp_prompt,
                 "decomp_task": medium_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2,
                 "decomp_task_python": medium_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2_python,
-                "query_context": medium_query_cntx,
+                "query_context": medium_query_cntx + q3c_info,
                 "query_instructions": medium_query_instructions_1_v2
             },
             "decomp_gen": {
@@ -49,7 +49,7 @@ prompts = {
                 "base_prompt": adv_decomp_prompt,
                 "decomp_task": adv_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2,
                 "decomp_task_python": adv_decomp_task_v3 + gpt4turbo1106_decomposed_prompt_2_python,
-                "query_context": adv_query_cntx,
+                "query_context": adv_query_cntx + q3c_info,
                 "query_instructions": adv_query_instructions_1_v3
             },
             "decomp_gen": {
@@ -69,7 +69,7 @@ prompts = {
     "Direct": {
         "base_prompt": {
             "general_task": general_taskv18,
-            "general_context": general_contextv15,
+            "general_context": general_contextv15 + q3c_info,
             "final_instructions": final_instructions_v19
         },
         "request_prompt": {
@@ -80,5 +80,5 @@ prompts = {
 }
 
 # Write the dictionary to a JSON file
-with open("final_prompts/prompts_v3.json", "w", encoding="utf-8") as f:
+with open("final_prompts/prompts_v4.json", "w", encoding="utf-8") as f:
     json.dump(prompts, f, ensure_ascii=False, indent=4)

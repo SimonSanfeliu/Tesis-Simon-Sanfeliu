@@ -296,6 +296,30 @@ final_prompt = '''
   # Request: {req}
 '''
 
+q3c_info = '''
+If a query involves selecting astronomical objects based on their celestial coordinates, the Q3C extension for PostgreSQL provides a suite of specialized functions optimized for this purpose. 
+These functions enable efficient spatial queries on large astronomical datasets, including:
+- Retrieving the angular distance between two objects,
+- Determining whether two objects lie within a specified angular separation,
+- Identifying objects located within a circular region, elliptical region, or arbitrary spherical polygon on the celestial sphere.
+
+The following functions are available in the Q3C extension:
+- q3c_dist(ra1, dec1, ra2, dec2) -- returns the distance in degrees between two points (ra1,dec1) and (ra2,dec2)
+- q3c_join(ra1, dec1, ra2, dec2, radius)  -- returns true if (ra1, dec1) is within radius spherical distance of (ra2, dec2).
+- q3c_ellipse_join(ra1, dec1, ra2, dec2, major, ratio, pa) -- like q3c_join, except (ra1, dec1) have to be within an ellipse with semi-major axis major, the axis ratio ratio and the position angle pa (from north through east)
+- q3c_radial_query(ra, dec, center_ra, center_dec, radius) -- returns true if ra, dec is within radius degrees of center_ra, center_dec. This is the main function for cone searches.
+- q3c_ellipse_query(ra, dec, center_ra, center_dec, maj_ax, axis_ratio, PA ) -- returns true if ra, dec is within the ellipse from center_ra, center_dec. The ellipse is specified by semi-major axis, axis ratio and positional angle.
+- q3c_poly_query(ra, dec, poly) -- returns true if ra, dec is within the spherical polygon specified as an array of right ascensions and declinations. Alternatively poly can be an PostgreSQL polygon type.
+
+It can be useful to define a set of astronomical sources with associated coordinates directly in a SQL query, you can use a WITH clause such as:
+    WITH catalog (source_id, ra, dec) AS (
+        VALUES ('source_name', ra_value, dec_value),
+        ...)
+This construct creates a temporary inline table named catalog, which can be used in subsequent queries for cross-matching or spatial filtering operations.
+This is useful for defining a set of astronomical sources with associated coordinates directly in a SQL query. Then, you can use the Q3C functions to perform spatial queries on this temporary table (e.g. 'FROM catalog c').
+Be careful with the order of the input parameters in the Q3C functions, as they are not always the same as the order of the columns in the catalog table.
+'''
+
 
 
 ## Prompt Functions
