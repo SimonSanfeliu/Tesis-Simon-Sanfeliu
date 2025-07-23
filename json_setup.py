@@ -6,7 +6,7 @@ from prompts.base.prompts import *
 # Prompt dictionary guideline and used by Jorge
 prompts = {
     "Schema Linking": {
-        "base_prompt": tables_linking_prompt_V2 + q3c_info,
+        "base_prompt": tables_linking_prompt_V2,
         "context1": schema_all_cntxV1,
         "context2": schema_all_cntxV2_indx,
         "context3": schema_all_cntxV2,
