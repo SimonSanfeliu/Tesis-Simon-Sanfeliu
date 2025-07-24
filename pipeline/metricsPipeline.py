@@ -181,6 +181,9 @@ class metricsPipeline():
         # Reading the CSV with the predicted SQL queries
         sql_preds = pd.read_csv(sql_preds_path)
         
+        # Filtering the predictions with the DataFrame
+        sql_preds = sql_preds[sql_preds["query_id"].isin(df["req_id"])]
+        
         # Getting the number of unique queries
         n_unique = len(sql_preds["query_id"].unique())
         
