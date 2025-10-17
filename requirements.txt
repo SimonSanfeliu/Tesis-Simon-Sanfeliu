@@ -5,7 +5,7 @@ annotated-types==0.7.0
 ansible==11.0.0
 ansible-core==2.18.0
 ansible-vault==2.1.0
-ansible-vault-win==1.0.0
+ansible-vault-win==1.0.0; sys_platform == "win32"          # ⟵ only on Windows
 anthropic==0.33.0
 anyio==4.4.0
 asttokens==2.4.1
@@ -90,7 +90,7 @@ prompt_toolkit==3.0.47
 proto-plus==1.24.0
 protobuf==4.25.4
 psutil==6.0.0
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 pure_eval==0.2.3
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
@@ -101,7 +101,7 @@ Pygments==2.18.0
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
-pywin32==306
+pywin32==306; sys_platform == "win32"                       # ⟵ only on Windows
 PyYAML==6.0.2
 pyzmq==26.1.0
 regex==2024.7.24
