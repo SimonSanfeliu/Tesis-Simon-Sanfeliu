@@ -15,6 +15,62 @@ from logger_setup import setup_logger
 
 logger = setup_logger(name="metrics", log_file="logs/metrics.txt")
 
+from collections import Counter
+
+def _choose_id_column(df):
+    """Pick a stable row-identifier column if present; else None."""
+    candidates = ["oid", "oid_catalog", "objectidps1", "classifier_name", "count"]
+    for c in candidates:
+        if c in df.columns:
+            return c
+    # try case-insensitive fallbacks commonly seen
+    lower = {c.lower(): c for c in df.columns}
+    for alt in ["ztf_identifier", "ztf identifier", "ztf_oid", "object", "ztf"]:
+        if alt in lower:
+            return lower[alt]
+    return None
+
+def compute_row_metrics(query_pred, query_gold):
+    """
+    Returns (r_row, p_row, N_perfect_row) with correct counting (no >1).
+    Uses multiset intersection if duplicates appear.
+    """
+    # Empty / None handling
+    if query_pred is None or query_gold is None:
+        return 0.0, 0.0, 0
+
+    # Drop duplicate columns
+    query_pred = query_pred.loc[:, ~query_pred.columns.duplicated()]
+    query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
+
+    # Identify an ID column
+    id_col = _choose_id_column(query_pred)
+    if id_col is None or id_col not in query_gold.columns:
+        # If we cannot match by ID, be conservative
+        return 0.0, 0.0, 0
+
+    # Extract ordered lists
+    pred_ids = query_pred.sort_values(by=id_col, axis=0).reset_index(drop=True)[id_col].tolist()
+    gold_ids = query_gold.sort_values(by=id_col, axis=0).reset_index(drop=True)[id_col].tolist()
+
+    # Perfect match (same order and content)
+    if pred_ids == gold_ids:
+        return 1.0, 1.0, 1
+
+    # Multiset-based true positives (handles duplicates safely)
+    c_pred = Counter(pred_ids)
+    c_gold = Counter(gold_ids)
+    tp = sum(min(c_pred[k], c_gold[k]) for k in c_pred.keys() & c_gold.keys())
+
+    n_pred = len(pred_ids)
+    n_gold = len(gold_ids)
+
+    # Precision and recall bounded in [0,1]
+    r_row = 0.0 if n_gold == 0 else tp / n_gold   # "recall" vs gold
+    p_row = 0.0 if n_pred == 0 else tp / n_pred   # "precision" vs pred
+    N_perfect_row = 1 if r_row == 1.0 and p_row == 1.0 else 0
+    return float(r_row), float(p_row), int(N_perfect_row)
+
 # TODO: Recreate the dynamic prompts for queryPipeline for the Self Correction prompts
 
 class metricsPipeline():
@@ -518,89 +574,7 @@ class metricsPipeline():
                                     
                             ## Metrics for rows
                             
-                            # Compare the oids of the predicted and expected SQL queries
-                            true_pred_oid = 0
-                            false_pred_oid = 0
-                            true_gold_oid = 0
-                            false_gold_oid = 0
-                            try:
-                                # Get predicted oid list
-                                if 'oid' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid",axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'oid_catalog' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid_catalog",axis=0).reset_index(drop=True)['oid_catalog'].values.tolist()
-                                elif 'objectidps1' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="objectidps1",axis=0).reset_index(drop=True)['objectidps1'].values.tolist()
-                                elif 'classifier_name' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="classifier_name",axis=0).reset_index(drop=True)['classifier_name'].values.tolist()
-                                elif 'count' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="count",axis=0).reset_index(drop=True)['count'].values.tolist()
-                                
-                                # check oids for tipical columns names hallucinations
-                                elif 'ztf_identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf_oid' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_oid': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'object' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'object': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                    
-                                # Check if the predicted oids are equal to the expected oids list in the same order
-                                are_equal = (oids_gold == oids_pred)
-                            
-                                # If the list of oids are equal, then the number of true and false oids is the same
-                                if are_equal:
-                                    true_pred_oid = len(oids_pred)
-                                    true_gold_oid = len(oids_gold)
-                                    false_pred_oid = 0
-                                    false_gold_oid = 0
-                                # If the list of oids are not equal, then the number of true and false oids is calculated
-                                # based on the number of oids that match between the predicted and expected oids
-                                else:
-                                    # Check the number of pred oids that match the set of gold oids
-                                    s = set(oids_gold)
-                                    for oids in oids_pred:
-                                        if oids in s: true_pred_oid += 1
-                                        else: false_pred_oid += 1
-                                    # Check the number of gold oids that match the set of pred oids
-                                    s = set(oids_pred)
-                                    for oids in oids_gold:
-                                        if oids in s: true_gold_oid += 1
-                                        else: false_gold_oid += 1
-                            # If the column name is not exactly 'oid' then the oids are not compared
-                            # The number of true and false oids is calculated based on the number of rows in the predicted and expected SQL queries
-                            except Exception:
-                                if query_pred.shape[0] == query_gold.shape[0]:
-                                    true_pred_oid = query_pred.shape[0]
-                                    true_gold_oid = query_gold.shape[0]
-                                    false_pred_oid = 0
-                                    false_gold_oid = 0
-
-                                else:
-                                    true_pred_oid = query_pred.shape[0]
-                                    true_gold_oid = query_gold.shape[0]
-                                    false_pred_oid = query_pred.shape[0]
-                                    false_gold_oid = query_gold.shape[0]
-                                    
-                            # Calculating r and p
-                            r_row = 0 if n_rows_gold == 0 else true_pred_oid / n_rows_gold
-                            p_row = 0 if n_rows_pred == 0 else true_gold_oid / n_rows_pred
-                                
-                            # Calculating N_perfect
-                            N_perfect_row = 1 if r_row == 1 and p_row == 1 else 0
+                            r_row, p_row, N_perfect_row = compute_row_metrics(query_pred, query_gold)
 
                         # Predicted query is not valid due to an error in the query execution
                         else:
@@ -647,6 +621,9 @@ class metricsPipeline():
             try:
                 row_count = 0
                 for _, row in self.new_df.iterrows():
+                    
+                    ### TODO: Fix the runs in this branch
+                    
                     # Working only with the predicted queries for this request
                     sql_preds_use = sql_preds[sql_preds["query_id"] == row["query_id"]].reset_index()
                     req_id = sql_preds_use['query_id'][0]
@@ -884,89 +861,7 @@ class metricsPipeline():
                                     
                             ## Metrics for rows
                             
-                            # Compare the oids of the predicted and expected SQL queries
-                            true_pred_oid = 0
-                            false_pred_oid = 0
-                            true_gold_oid = 0
-                            false_gold_oid = 0
-                            try:
-                                # Get predicted oid list
-                                if 'oid' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid",axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'oid_catalog' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid_catalog",axis=0).reset_index(drop=True)['oid_catalog'].values.tolist()
-                                elif 'objectidps1' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="objectidps1",axis=0).reset_index(drop=True)['objectidps1'].values.tolist()
-                                elif 'classifier_name' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="classifier_name",axis=0).reset_index(drop=True)['classifier_name'].values.tolist()
-                                elif 'count' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="count",axis=0).reset_index(drop=True)['count'].values.tolist()
-                                
-                                # check oids for tipical columns names hallucinations
-                                elif 'ztf_identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf_oid' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_oid': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'object' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'object': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                    
-                                # Check if the predicted oids are equal to the expected oids list in the same order
-                                are_equal = (oids_gold == oids_pred)
-                            
-                                # If the list of oids are equal, then the number of true and false oids is the same
-                                if are_equal:
-                                    true_pred_oid = len(oids_pred)
-                                    true_gold_oid = len(oids_gold)
-                                    false_pred_oid = 0
-                                    false_gold_oid = 0
-                                # If the list of oids are not equal, then the number of true and false oids is calculated
-                                # based on the number of oids that match between the predicted and expected oids
-                                else:
-                                    # Check the number of pred oids that match the set of gold oids
-                                    s = set(oids_gold)
-                                    for oids in oids_pred:
-                                        if oids in s: true_pred_oid += 1
-                                        else: false_pred_oid += 1
-                                    # Check the number of gold oids that match the set of pred oids
-                                    s = set(oids_pred)
-                                    for oids in oids_gold:
-                                        if oids in s: true_gold_oid += 1
-                                        else: false_gold_oid += 1
-                            # If the column name is not exactly 'oid' then the oids are not compared
-                            # The number of true and false oids is calculated based on the number of rows in the predicted and expected SQL queries
-                            except Exception:
-                                if query_pred.shape[0] == query_gold.shape[0]:
-                                    true_pred_oid = query_pred.shape[0]
-                                    true_gold_oid = query_gold.shape[0]
-                                    false_pred_oid = 0
-                                    false_gold_oid = 0
-
-                                else:
-                                    true_pred_oid = query_pred.shape[0]
-                                    true_gold_oid = query_gold.shape[0]
-                                    false_pred_oid = query_pred.shape[0]
-                                    false_gold_oid = query_gold.shape[0]
-                                    
-                            # Calculating r and p
-                            r_row = 0 if n_rows_gold == 0 else true_pred_oid / n_rows_gold
-                            p_row = 0 if n_rows_pred == 0 else true_gold_oid / n_rows_pred
-                                
-                            # Calculating N_perfect
-                            N_perfect_row = 1 if r_row == 1 and p_row == 1 else 0
+                            r_row, p_row, N_perfect_row = compute_row_metrics(query_pred, query_gold)
                         
                         # Predicted query is not valid due to an error in the query execution
                         else:
