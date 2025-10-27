@@ -97,11 +97,13 @@ class queryPipeline():
             
         else:
             # Make the schema linking prompt
-            prompt = self.prompts["Schema Linking"]["base_prompt"] + \
-                f"\nThe user request is the following: {query}"
+            # prompt = self.prompts["Schema Linking"]["base_prompt"] + \
+            #     f"\nThe user request is the following: {query}"
+            prompt = self.prompts["Schema Linking"]["base_prompt"]
                 
             # Obtain the tables necessary for the SQL query
-            tables, usage = api_call(self.llm, 1000, prompt)
+            # tables, usage = api_call(self.llm, 1000, prompt)
+            tables, usage = api_call(self.llm, 1000, query, system=prompt)
             content = tables.strip("[]").replace("'", "").split(", ")
 
         self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
@@ -133,7 +135,8 @@ class queryPipeline():
         f"\nThe request to classify is the following: {query}"
         
         # Obtain the difficulty label
-        label, usage = api_call(self.llm, 1000, prompt)
+        # label, usage = api_call(self.llm, 1000, prompt)
+        label, usage = api_call(self.llm, 1000, query, system=diff_class_prompt)
         labels = ["simple", "medium", "advanced"]
         true_label = [l for l in labels if l in label]
         self.label = true_label[0]
@@ -157,6 +160,11 @@ class queryPipeline():
         # Defining query_w_tables
         query_w_tables = query + "\n" + self.tab_schema_decomp
         
+        extra_knowledge = "# Important Information for the query\n" if self.prompts["Decomposition"]["simple"]["external_knowledge"] or self.prompts["Decomposition"]["simple"]["domain_knowledge"] else ""
+        extra_knowledge += "External Knowledge: "+ str(self.prompts["Decomposition"]["simple"]["external_knowledge"]) if self.prompts["Decomposition"]["simple"]["external_knowledge"] else ""
+        extra_knowledge += "\nDomain Knowledge: "+ str(self.prompts["Decomposition"]["simple"]["domain_knowledge"]) if self.prompts["Decomposition"]["simple"]["domain_knowledge"] else ""
+        self.user_prompt = extra_knowledge + f"\n # User Request: ''{query}''\n"
+        
         if self.label == "simple":
             # Simple queries don't need decomposition
             prompt = prompt_inference(self.prompts["Decomposition"]["simple"]["query_task"], 
@@ -166,6 +174,17 @@ class queryPipeline():
                                       self.prompts["Decomposition"]["simple"]["domain_knowledge"], 
                                       self.prompts["Decomposition"]["simple"]["query_instructions"])
             prompt += f"\nThe user request is the following: {query}"
+
+            self.sys_prompt = f'''
+            {self.prompts["Decomposition"]["simple"]["query_task"]}
+            
+            # Context:
+            {self.prompts["Decomposition"]["simple"]["query_context"]}
+            
+            # The Database has the following tables that can be used to generate the SQL query:{self.tab_schema_decomp}
+            
+            {self.prompts["Decomposition"]["simple"]["query_instructions"]}
+            '''
             # No usage needed for the simple query. There is no decomposition
             usage = {"input_tokens": 0, "output_tokens": 0}
             
@@ -177,7 +196,19 @@ class queryPipeline():
                 user_request_with_tables = query_w_tables,
                 medium_query_instructions_1 = self.prompts["Decomposition"]["medium"]["decomp_plan"]["query_instructions"]
             )
-            decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            new_decomp_plan = f'''
+{self.prompts["Decomposition"]["medium"]["decomp_plan"]["decomp_task"]}
+# General context about the database:
+{self.prompts["Decomposition"]["medium"]["decomp_plan"]["query_context"]}
+
+# The Database has the following tables that can be used to generate the SQL query:
+{self.tab_schema_decomp}
+# Important details about the database required for the query:
+{self.prompts["Decomposition"]["medium"]["decomp_plan"]["query_instructions"]}
+'''
+            # decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            decomp_plan_true, usage = api_call(self.llm, 5000, self.user_prompt, 
+                                              system=new_decomp_plan)
             # Creating the final prompt with the decomposition plan
             if self.lang_type == "sql":
                 # Through SQL queries
@@ -187,6 +218,18 @@ class queryPipeline():
                     medium_query_instructions_2 = self.prompts["Decomposition"]["medium"]["decomp_gen"]["sql"]["query_instructions"],
                     decomp_plan = decomp_plan_true
                 )
+                self.sys_prompt = f'''
+{self.prompts["Decomposition"]["medium"]["decomp_gen"]["sql"]["query_task"]}
+
+# The Database has the following tables that can be used to generate the SQL query:
+{self.tab_schema_decomp}
+
+{self.prompts["Decomposition"]["medium"]["decomp_gen"]["sql"]["query_instructions"]}
+# Use the next decomposed planification to write the query:
+{decomp_plan_true}
+# If there is SQL code, use it only as reference, changing the conditions you consider necessary.
+# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+'''
             else:
                 # Through Python variables
                 prompt = self.prompts["Decomposition"]["medium"]["decomp_gen"]["python"]["base_prompt"].format(
@@ -204,7 +247,20 @@ class queryPipeline():
                 user_request_with_tables = query_w_tables,
                 adv_query_instructions_1 = self.prompts["Decomposition"]["advanced"]["decomp_plan"]["query_instructions"]
             )
-            decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            new_decomp_plan = f'''
+{self.prompts["Decomposition"]["advanced"]["decomp_plan"]["decomp_task"]}
+# General context about the database:
+{self.prompts["Decomposition"]["advanced"]["decomp_plan"]["query_context"]}
+
+# The Database has the following tables that can be used to generate the SQL query:
+{self.tab_schema_decomp}
+# Important details about the database required for the query:
+{self.prompts["Decomposition"]["advanced"]["decomp_plan"]["query_instructions"]}
+'''
+            # decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            decomp_plan_true, usage = api_call(self.llm, 5000, self.user_prompt, 
+                                              system=new_decomp_plan)
+            print(f"Decomposition Plan: {decomp_plan_true}")
             # Creating the final prompt with the decomposition plan
             if self.lang_type == "sql":
                 # Through SQL queries
@@ -214,6 +270,18 @@ class queryPipeline():
                     adv_query_instructions_2 = self.prompts["Decomposition"]["advanced"]["decomp_gen"]["sql"]["query_instructions"],
                     decomp_plan = decomp_plan_true
                 )
+                self.sys_prompt = f'''
+{self.prompts["Decomposition"]["advanced"]["decomp_gen"]["sql"]["query_task"]}
+
+# The Database has the following tables that can be used to generate the SQL query:
+{self.tab_schema_decomp}
+
+{self.prompts["Decomposition"]["advanced"]["decomp_gen"]["sql"]["query_instructions"]}
+# Use the next decomposed planification to write the query:
+{decomp_plan_true}
+# If there is SQL code, use it only as reference, changing the conditions you consider necessary.
+# You can join some of the steps if you consider it better for the query. For example, if 2 or more use the same table and are not requested to be different sub-queries, then you can join them.
+'''
             else:
                 # Through Python variables
                 prompt = self.prompts["Decomposition"]["advanced"]["decomp_gen"]["python"]["base_prompt"].format(
@@ -246,20 +314,45 @@ class queryPipeline():
         # The same direct approach is used for every label
         
         # Base prompt for the direct approach
-        base = base_prompt(self.prompts["Direct"]["base_prompt"]["general_task"], 
-                           self.prompts["Direct"]["base_prompt"]["general_context"], 
-                           self.prompts["Direct"]["base_prompt"]["final_instructions"]
-        )
+        # base = base_prompt(self.prompts["Direct"]["base_prompt"]["general_task"], 
+        #                    self.prompts["Direct"]["base_prompt"]["general_context"], 
+        #                    self.prompts["Direct"]["base_prompt"]["final_instructions"]
+        # )
+        base = f'''
+        {self.prompts["Direct"]["base_prompt"]["general_task"]}
+
+        # Context:
+        {self.prompts["Direct"]["base_prompt"]["general_context"]}
+
+        # The Database has the following tables that can be used to generate the SQL query:
+        {self.tab_schema_direct}
+
+        {self.prompts["Direct"]["base_prompt"]["final_instructions"]}
+        '''
         # Request prompt for the specific query
-        req = prompt_request(self.tab_schema_direct, 
-                             self.prompts["Direct"]["request_prompt"]["external_knowledge"], 
-                             self.prompts["Direct"]["request_prompt"]["domain_knowledge"], 
-                             query)
+        # req = prompt_request(self.tab_schema_direct, 
+        #                      self.prompts["Direct"]["request_prompt"]["external_knowledge"], 
+        #                      self.prompts["Direct"]["request_prompt"]["domain_knowledge"], 
+        #                      query)
+        # Prepare extra knowledge
+        extra_knowledge = "# Important Information for the query\n" if self.prompts["Direct"]["request_prompt"]["external_knowledge"] or self.prompts["Direct"]["request_prompt"]["domain_knowledge"] else ""
+        extra_knowledge += "External Knowledge: "+ str(self.prompts["Direct"]["request_prompt"]["external_knowledge"]) if self.prompts["Direct"]["request_prompt"]["external_knowledge"] else ""
+        extra_knowledge += "\nDomain Knowledge: "+ str(self.prompts["Direct"]["request_prompt"]["domain_knowledge"]) if self.prompts["Direct"]["request_prompt"]["domain_knowledge"] else ""
+        req = extra_knowledge + f"\n # User Request: ''{query}''"
         # Final prompt
         prompt = base + "\n" + req
         
         # Saving the prompt
         self.final_prompt = prompt
+        
+        self.sys_prompt = base
+        # ext_knowledge = self.prompts["Direct"]["request_prompt"]["external_knowledge"]
+        # dom_knowledge = self.prompts["Direct"]["request_prompt"]["domain_knowledge"]
+        # extra_knowledge = "# Important Information for the query\n" if ext_knowledge or dom_knowledge else ""
+        # extra_knowledge += "External Knowledge: "+ str(ext_knowledge) if ext_knowledge else ""
+        # extra_knowledge += "\nDomain Knowledge: "+ str(dom_knowledge) if dom_knowledge else ""
+        # self.user_prompt = extra_knowledge + f"\n # User Request: ''{query}''"
+        self.user_prompt = req
     
     def query_generation(self):
         """Function to generate the SQL query based on the saved prompts
@@ -271,7 +364,9 @@ class queryPipeline():
             gen_query (str): Generated SQL query 
         """        
         # Obtaining the SQL query
-        response, usage = api_call(self.llm, self.max_tokens, self.final_prompt)
+        # response, usage = api_call(self.llm, self.max_tokens, self.final_prompt)
+        response, usage = api_call(self.llm, self.max_tokens, self.user_prompt, 
+                                  system=self.sys_prompt)
         
         # Catching borderline cases
         if self.lang_type == "python" and self.label == "simple":
@@ -358,7 +453,6 @@ class queryPipeline():
                        
         # Schema Linking
         self.schema_linking(query, use_rag)
-
         # Classification
         self.classify(query)
         label = self.label

@@ -9,9 +9,9 @@ import google.generativeai as genai
 import sqlalchemy
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
-from prompts.classification.Classification import diff_class_prompt_v7, \
-    final_instructions_diff_v2
-from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2
+from prompts.classification.Classification import diff_class_prompt_v7, diff_class_prompt_v8, \
+    final_instructions_diff_v2, final_instructions_diff_v4
+from prompts.schema_linking.SchemaLinking import tables_linking_prompt_V2, tables_linking_prompt_V3
 from prompts.decomposition.Decomposition import final_prompt_simple_vf, \
     simple_query_task_vf, simple_query_cntx_vf, simple_query_instructions_vf
 from prompts.decomposition.Decomposition import *
@@ -27,7 +27,7 @@ with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
 
 
-def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
+def api_call(model: str, max_tokens: int, prompt: str, system: str = None) -> tuple[str, dict]:
     """Create the API calls for the LLM to use.
 
     Args:
@@ -43,14 +43,25 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
     if "gpt" in model:
         try:
             client = openai.OpenAI(api_key=OPENAI_KEY)
-            response = client.chat.completions.create(
-                model=model,
-                temperature=0,
-                max_tokens=max_tokens,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            if system:
+                response = client.chat.completions.create(
+                    model=model,
+                    temperature=0,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+            else:
+                response = client.chat.completions.create(
+                    model=model,
+                    temperature=0,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
             usage = {"input_tokens": response.usage.prompt_tokens,
                      "output_tokens": response.usage.completion_tokens,
                      "total_tokens": response.usage.total_tokens}
@@ -135,9 +146,12 @@ def format_response(specified_format: str, response: str) -> str:
         formatted_response (str): The response ready to be used in the database
     """
     if specified_format == "sql":
-        formatted_response = response.split("```sql")[1].split("```")[0] \
-        .replace("```", "").replace("```sql", "")
-        
+        if "```sql" in response:
+            formatted_response = response.split("```sql")[1].split("```")[0] \
+            .replace("```", "").replace("```sql", "")
+        else:
+            formatted_response = response
+
     elif specified_format == "python":
         formatted_response = response.split("```python")[1].split("```")[0] \
         .replace("```", "").replace("```python", "")
