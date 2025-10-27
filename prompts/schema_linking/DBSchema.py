@@ -1017,69 +1017,116 @@ tab_forced_photometry_columns='''TABLE forced_photometry, columns=[pid, oid, mjd
 
 
 
-###
-# Schema for the database in a dictionary format 
-###
-
-# Dictionary of tables to describe the schema and group them by different categories and versions of the information they contain
-## Important Tables
-schema_base = {'object':context_objectTable, 'probability': context_probTable , 'feature': context_featureTable, 'detection': context_DetTable, 'non_detection':context_nonDetTable, 'magstat': context_magstatTable}
-## All Tables
-schema_all = {'object':context_objectTable, 'probability': context_probTable , 'feature': context_featureTable, 'detection': context_DetTable, 'non_detection':context_nonDetTable, 'magstat': context_magstatTable, 'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable, 'xmatch': context_xmatchTable, 'allwise': context_allwiseTable, 'dataquality': context_dataqualityTable, 'gaia_ztf': context_gaia_ztfTable, 'ss_ztf': context_ss_ztfTable, 'ps1_ztf': context_ps1_ztfTable, 'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
-## All Tables w/ description
-# version 1 main tables and ztfs w/ description of the columns
-schema_all_cntxV1 = {'object':context_objectTable_desc, 'probability': context_probTable_desc , 'feature': context_featureTable_desc,
-              'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
-              'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable,
-              'xmatch': context_xmatchTable, 'allwise': context_allwiseTable, 'dataquality': context_dataqualityTable,
-              'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
-              'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
-# version 2 all tables w/ description of the columns
-schema_all_cntxV2 = {'object':context_objectTable_desc_v2, 'probability': context_probTable_desc_v2 , 'feature': context_featureTable_desc,
-              'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
-              'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
-              'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc, 'dataquality': context_dataqualityTable_desc,
-              'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
-              'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
-# Schema w/ Indexes, without description of the columns
-schema_all_indx = {'object':context_objectTable + context_objectTable_index, 'probability': context_probTable + context_probTable_index , 'feature': context_featureTable + context_featureTable_index,
-                'detection': context_DetTable + context_DetTable_index, 'non_detection': context_nonDetTable + context_nonDetTable_index, 'magstat': context_magstatTable + context_magstatTable_index,
-                'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable,
-                'xmatch': context_xmatchTable, 'allwise': context_allwiseTable + context_allwiseTable_index, 'dataquality': context_dataqualityTable,
-                'gaia_ztf': context_gaia_ztfTable , 'ss_ztf': context_ss_ztfTable + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable,
-                'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
-# version 1 all tables w/ description of the columns w/ indexes
-schema_all_cntxV1_indx = {'object':context_objectTable_desc + context_objectTable_index, 'probability': context_probTable_desc + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index,
-                'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
-                'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
-                'xmatch': context_xmatchTable_desc, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
-                'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
-                'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
-schema_all_cntxV2_indx = {'object':context_objectTable_desc_v2 + context_objectTable_index, 'probability': context_probTable_desc_v2 + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index,
-                'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
-                'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
-                'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
-                'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
-                'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
-# Schema w/ Indexes and Foreign Keys
-
-
-## Schema with only the columns
-schema_columns = {'object':tab_object_columns, 'probability': tab_probability_columns ,
-                  'feature': tab_feature_columns, 'detection': tab_detection_columns, 'non_detection':tab_non_detection_columns,
-                  'magstat': tab_magstat_columns, 'step': tab_step_columns, 'taxonomy': tab_taxonomy_columns,
-                  'feature_version': tab_feature_version_columns, 'xmatch': tab_xmatch_columns, 'allwise': tab_allwise_columns,
-                  'dataquality': tab_dataquality_columns, 'gaia_ztf': tab_gaia_ztf_columns, 'ss_ztf': tab_ss_ztf_columns,
-                  'ps1_ztf': tab_ps1_ztf_columns, 'reference': tab_reference_columns, 'pipeline': tab_pipeline_columns, 
-                  'information_schema.tables': tab_information_schema_columns, 'forced_photometry': tab_forced_photometry_columns}
-
-
 
 
 
 # Features Description
 ## All features in the database in one string
+# context_features='''
+# Amplitude: Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes
+# AndersonDarling: Test of whether a sample of data comes from a population with a specific distribution (in this case a normal distribution)
+# Autocor_length: Lag value where the auto-correlation function becomes smaller than Eta_e
+# Beyond1Std: Percentage of points with photometric mag that lie beyond 1 sigma from the mean
+# Con: Number of three consecutive data points brighter/fainter than 2 sigma of the light curve
+# delta_mag_fid: Difference between maximum and minimum observed magnitude in a given band
+# delta_mjd_fid: Total timespan of the light curve in a given band
+# delta_period: Absolute value of the difference between the Multiband_period and the MHAOV period obtained using a single band
+# dmag_first_det_fid: Difference between the last non-detection diffmaglim in band "x" before the first detection in any band and the first detected magnitude in band "x"'
+# dmag_non_det_fid: Difference between the median non-detection diffmaglim in the "x" band before the first detection and the minimum detected magnitude (peak) in the "x" band
+# Eta_e: Ratio of the mean of the squares of successive mag differences to the variance of the light curve
+# ExcessVar: Measure of the intrinsic variability amplitude [(Std - average photometric error)/Mean]
+# first_mag: magnitude of the first alert in a given band
+# g-r_max: g-r color obtained using the brightest lc_diff (difference light curve) magnitude in each band
+# g-r_max_corr: g-r color obtained using the brightest lc_corr (corrected light curve or total magnitude light curve) magnitude in each band
+# g-r_mean: g-r color obtained using the mean lc_diff magnitude of each band
+# g-r_mean_corr: g-r color obtained using the mean lc_corr magnitude of each band
+# g-W2: color computed using the mean lc_corr g band magnitude (or the mean g band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
+# g-W3: color computed using the mean lc_corr g band magnitude (or the mean g band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
+# gal_b: Galactic latitude
+# gal_l: Galactic longitude
+# GP_DRW_sigma: Amplitude of the variability at short timescales (t << tau), from DRW modeling
+# GP_DRW_tau: Relaxation time (tau) from DRW modeling
+# Gskew: Median-based measure of the skew
+# Harmonics_mag_1: Amplitude of the 1st component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_2: Amplitude of the 2nd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_3: Amplitude of the 3rd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_4: Amplitude of the 4th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_5: Amplitude of the 5th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_6: Amplitude of the 6th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mag_7: Amplitude of the 7th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_mse: Mean squarre error of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_2: Phase of the 2nd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_3: Phase of the 3rd component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_4: Phase of the 4th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_5: Phase of the 5th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_6: Phase of the 6tth component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# Harmonics_phase_7: Phase of the 7th component of the harmonics series (obtained by fitting a harmonic series up to the seventh harmonic)
+# IAR_phi: Level of autocorrelation using a  discrete-time representation of a DRW model
+# last_diffmaglim_before_fid: Last non-detection diffmaglim in the ''x'' band before the first detection in any band
+# last_mjd_before_fid: Last non-detection Modified Julian Date (MJD) in the ''x'' band before the first detection in any band.
+# LinearTrend: Slope of a linear fit to the light curve
+# max_diffmaglim_after_fid: Maximum non-detection diffmaglim in the ''x'' band after the first detection in any band
+# max_diffmaglim_before_fid: Maximum non-detection diffmaglim in the ''x'' band before the first detection in any band
+# MaxSlope: Maximum absolute magnitude slope between two consecutive observations
+# Mean: Mean lc_corr magnitude (or mean lc_diff if the source cannot be corrected)
+# Meanvariance: Ratio of the standard deviation to the mean magnitude
+# median_diffmaglim_after_fid: Median non-detection diffmaglim in the ''x'' band after the first detection in any band
+# median_diffmaglim_before_fid: Median non-detection diffmaglim in the ''x'' band before the first detection in any band
+# MedianAbsDev: Median discrepancy of the data from the median data
+# MedianBRP: Fraction of photometric points within amplitude/10 of the median mag
+# MHPS_high: Variance associated with a 10 day timescale obtained from a MHPS analysis
+# MHPS_low: Variance associated with a 100 day timescale obtained from a MHPS analysis
+# MHPS_non_zero: Number of points in the light curve used for the MHPS analysis
+# MHPS_PN_flag: Flag that reports whether the Poisson Noise is higher than the MHPS_high variance
+# MHPS_ratio: Ratio between the MHPS_low and MHPS_high variances for a given band
+# min_mag: minimun magnitude of the alert light curve in a given band
+# Multiband_period: Period obtained using the multiband MHAOV periodogram
+# n_det: number of detections in the alert light curve of a given band
+# n_neg: number of negative detections in the alert light curve (isdiffpos=-1)
+# n_non_det_after_fid: Number of non-detections in the ''x'' band after the first detection in any band
+# n_non_det_before_fid: Number of non-detections in the ''x'' band before the first detection in any band
+# n_pos: number of positive detections in the alert light curve (isdiffpos=+1)
+# PairSlopeTrend: Fraction of increasing first differences minus fraction of decreasing first differences over the last 30 time-sorted mag measures
+# PercentAmplitude: Largest percentage difference between either max or min mag and median mag
+# Period_band: Single band period computed using a Multi Harmonic Analysis of Variance (MHAOV) periodogram
+# positive_fraction: Fraction of detections in the difference-images of a given band which are brighter than the template image
+# Power_rate_1/2: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/2
+# Power_rate_1/3: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/3
+# Power_rate_1/4: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for P/4
+# Power_rate_2: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 2*P
+# Power_rate_3: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 3*P
+# Power_rate_4: Ratio between the power of the multiband periodogram obtained for the best period candidate (P) and for 4*P
+# PPE: Multiband Periodogram Pseudo Entropy
+# Psi_CS: Range of a cumulative sum applied to the phase-folded light curve
+# Psi_eta: Eta_e index calculated from the folded light curve
+# Pvar: Probability that the source is intrinsically variable
+# Q31: Difference between the 3rd and the 1st quartile of the light curve
+# r-W2: Color computed using the mean lc_corr r band magnitude (or the mean r band lc_diff if the source cannot be corrected) and the W2 band of AllWISE
+# r-W3: Color computed using the mean lc_corr r band magnitude (or the mean r band lc_diff if the source cannot be corrected) and the W3 band of AllWISE
+# rb: Median rb (real-bogus) parameter from the ZTF alerts
+# Rcs: Range of a cumulative sum
+# SF_ML_amplitude: Rms magnitude difference of the structure function, computed over a 1 yr timescale
+# SF_ML_gamma: Logarithmic gradient of the mean change in magnitude (computed from the structure function)
+# sgscore1: Morphological star/galaxy score of the closest source from PanSTARRS1 (values closer to 1 imply a higher likelihood of the source being a star)
+# Skew: Skewness measure
+# SmallKurtosis: Small sample kurtosis of the magnitudes
+# SPM_A: Supernova parametric model  A
+# SPM_beta: Supernova parametric model beta
+# SPM_chi: Supernova parametric model reduced chi2 of the light curve fit
+# SPM_gamma: Supernova parametric model gamma
+# SPM_t0: Supernova parametric model t0
+# SPM_tau_fall: Supernova parametric model fall time
+# SPM_tau_rise: Supernova parametric model rise time
+# Std: Standard deviation of the light curve
+# StetsonK: Robust kurtosis measure
+# W1-W2: color computed using the W1 and W2 bands of AllWISE
+# W2-W3: color computed using the W2 and W3 bands of AllWISE
+# '''
+
+## All features in the database in one string
 context_features='''
+# Feature Descriptions with their names in the database
+
 Amplitude: Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes
 AndersonDarling: Test of whether a sample of data comes from a population with a specific distribution (in this case a normal distribution)
 Autocor_length: Lag value where the auto-correlation function becomes smaller than Eta_e
@@ -1179,6 +1226,7 @@ StetsonK: Robust kurtosis measure
 W1-W2: color computed using the W1 and W2 bands of AllWISE
 W2-W3: color computed using the W2 and W3 bands of AllWISE
 '''
+
 
 ## features description
 Amplitude= '''Half of the difference between the median of the maximum 5% and of the minimum 5% magnitudes'''
@@ -1348,3 +1396,89 @@ TABLE "pipeline": Informatin about ALeRCE's pipeline version, steps and dates
 TABLE "information_schema.tables": information about the database tables and columns
 TABLE "forced_photometry": contains the forced photometry measurements for each object, including the object position, magnitude, and associated errors, and the photometry of the reference image.
 '''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###
+# Schema for the database in a dictionary format 
+###
+
+# Dictionary of tables to describe the schema and group them by different categories and versions of the information they contain
+## Important Tables
+schema_base = {'object':context_objectTable, 'probability': context_probTable , 'feature': context_featureTable, 'detection': context_DetTable, 'non_detection':context_nonDetTable, 'magstat': context_magstatTable}
+## All Tables
+schema_all = {'object':context_objectTable, 'probability': context_probTable , 'feature': context_featureTable, 'detection': context_DetTable, 'non_detection':context_nonDetTable, 'magstat': context_magstatTable, 'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable, 'xmatch': context_xmatchTable, 'allwise': context_allwiseTable, 'dataquality': context_dataqualityTable, 'gaia_ztf': context_gaia_ztfTable, 'ss_ztf': context_ss_ztfTable, 'ps1_ztf': context_ps1_ztfTable, 'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
+## All Tables w/ description
+# version 1 main tables and ztfs w/ description of the columns
+schema_all_cntxV1 = {'object':context_objectTable_desc, 'probability': context_probTable_desc , 'feature': context_featureTable_desc,
+              'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
+              'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable,
+              'xmatch': context_xmatchTable, 'allwise': context_allwiseTable, 'dataquality': context_dataqualityTable,
+              'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
+              'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
+# version 2 all tables w/ description of the columns
+# schema_all_cntxV2 = {'object':context_objectTable_desc_v2, 'probability': context_probTable_desc_v2 , 'feature': context_featureTable_desc,
+#               'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
+#               'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+#               'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc, 'dataquality': context_dataqualityTable_desc,
+#               'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
+#               'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+# Schema w/ Indexes, without description of the columns
+schema_all_indx = {'object':context_objectTable + context_objectTable_index, 'probability': context_probTable + context_probTable_index , 'feature': context_featureTable + context_featureTable_index,
+                'detection': context_DetTable + context_DetTable_index, 'non_detection': context_nonDetTable + context_nonDetTable_index, 'magstat': context_magstatTable + context_magstatTable_index,
+                'step': context_stepTable, 'taxonomy': context_taxonomyTable, 'feature_version': context_featureversionTable,
+                'xmatch': context_xmatchTable, 'allwise': context_allwiseTable + context_allwiseTable_index, 'dataquality': context_dataqualityTable,
+                'gaia_ztf': context_gaia_ztfTable , 'ss_ztf': context_ss_ztfTable + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable,
+                'reference': context_refTable, 'pipeline': context_pipelineTable, 'forced_photometry': context_forced_photometryTable}
+# # version 1 all tables w/ description of the columns w/ indexes
+schema_all_cntxV1_indx = {'object':context_objectTable_desc + context_objectTable_index, 'probability': context_probTable_desc + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index,
+                'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
+                'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+                'xmatch': context_xmatchTable_desc, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
+                'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
+                'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+# schema_all_cntxV2_indx = {'object':context_objectTable_desc_v2 + context_objectTable_index, 'probability': context_probTable_desc_v2 + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index,
+#                 'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
+#                 'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+#                 'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
+#                 'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
+#                 'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+# Schema w/ Indexes and Foreign Keys
+schema_all_cntxV2 = {'object':context_objectTable_desc_v2, 'probability': context_probTable_desc_v2 , 'feature': context_featureTable_desc + context_features,
+              'detection': context_DetTable_desc, 'non_detection': context_nonDetTable_desc, 'magstat': context_magstatTable_desc,
+              'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+              'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc, 'dataquality': context_dataqualityTable_desc,
+              'gaia_ztf': context_gaia_ztfTable_desc, 'ss_ztf': context_ss_ztfTable_desc, 'ps1_ztf': context_ps1_ztfTable_desc,
+              'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+schema_all_cntxV2_indx = {'object':context_objectTable_desc_v2 + context_objectTable_index, 'probability': context_probTable_desc_v2 + context_probTable_index , 'feature': context_featureTable_desc + context_featureTable_index + context_features,
+                          'detection': context_DetTable_desc + context_DetTable_index, 'non_detection': context_nonDetTable_desc + context_nonDetTable_index, 'magstat': context_magstatTable_desc + context_magstatTable_index,
+                          'step': context_stepTable_desc, 'taxonomy': context_taxonomyTable_desc, 'feature_version': context_featureversionTable_desc,
+                          'xmatch': context_xmatchTable_desc_v2, 'allwise': context_allwiseTable_desc + context_allwiseTable_index, 'dataquality': context_dataqualityTable_desc,
+                          'gaia_ztf': context_gaia_ztfTable_desc , 'ss_ztf': context_ss_ztfTable_desc + content_ss_ztfTable_index, 'ps1_ztf': context_ps1_ztfTable_desc,
+                          'reference': context_refTable_desc, 'pipeline': context_pipelineTable_desc, 'forced_photometry': context_forced_photometryTable_desc}
+# Schema w/ Indexes and Foreign Keys
+
+
+
+## Schema with only the columns
+schema_columns = {'object':tab_object_columns, 'probability': tab_probability_columns ,
+                  'feature': tab_feature_columns, 'detection': tab_detection_columns, 'non_detection':tab_non_detection_columns,
+                  'magstat': tab_magstat_columns, 'step': tab_step_columns, 'taxonomy': tab_taxonomy_columns,
+                  'feature_version': tab_feature_version_columns, 'xmatch': tab_xmatch_columns, 'allwise': tab_allwise_columns,
+                  'dataquality': tab_dataquality_columns, 'gaia_ztf': tab_gaia_ztf_columns, 'ss_ztf': tab_ss_ztf_columns,
+                  'ps1_ztf': tab_ps1_ztf_columns, 'reference': tab_reference_columns, 'pipeline': tab_pipeline_columns, 
+                  'information_schema.tables': tab_information_schema_columns, 'forced_photometry': tab_forced_photometry_columns}
+

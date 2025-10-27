@@ -6,14 +6,16 @@ from prompts.base.prompts import *
 # Prompt dictionary guideline and used by Jorge
 prompts = {
     "Schema Linking": {
-        "base_prompt": tables_linking_prompt_V2,
-        "context1": schema_all_cntxV1,
+        "base_prompt": tables_linking_prompt_V3,
+        "context1": schema_all_cntxV2,
         "context2": schema_all_cntxV2_indx,
-        "context3": schema_all_cntxV2,
+        "context3": schema_all_cntxV2_indx,
     },
     "Classify": {
-        "base_prompt": diff_class_prompt_v7,
-        "final_instructions": final_instructions_diff_v2
+        # "base_prompt": diff_class_prompt_v7,
+        "base_prompt": diff_class_prompt_v8,
+        # "final_instructions": final_instructions_diff_v2
+        "final_instructions": final_instructions_diff_v4
     },
     "Decomposition": {
         "simple": {
@@ -80,5 +82,8 @@ prompts = {
 }
 
 # Write the dictionary to a JSON file
-with open("final_prompts/prompts_v4.json", "w", encoding="utf-8") as f:
+# with open("final_prompts/prompts_v4.json", "w", encoding="utf-8") as f:
+#     json.dump(prompts, f, ensure_ascii=False, indent=4)
+
+with open("final_prompts/prompts_v6.json", "w", encoding="utf-8") as f:
     json.dump(prompts, f, ensure_ascii=False, indent=4)

@@ -20,21 +20,21 @@ Be thorough in understanding and addressing the user's request, taking into acco
 ## General Context of the database schema
 simple_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
+- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [Periodic, Stochastic, Transient], denoted as ‘lc_classifier_top.’
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
-- Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_top'= ('Transient', 'Stochastic', 'Periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the text2sql task, to emphasize the most important details
@@ -73,21 +73,21 @@ With the labels mark explicitly in which step you should use a sub-query, and ot
 # medium query context, including details about the database schema
 medium_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
+- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [Periodic, Stochastic, Transient], denoted as ‘lc_classifier_top.’
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
-- Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_top'= ('Transient', 'Stochastic', 'Periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the medium decomposition task, to emphasize the most important details for the decomposition
@@ -224,21 +224,21 @@ The request is a very difficult and advanced query, so you will need to use JOIN
 # Advanced query context, including details about the database schema
 adv_query_cntx='''
 ## ALeRCE Pipeline Details
-- Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
-- Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
-- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic,' 'lc_classifier_transient,' and 'lc_classifier_stochastic,' respectively.
+- Stamp Classifier (denoted as ‘stamp_classifier’): All alerts related to new objects undergo stamp-based classification.
+- Light Curve Classifier (denoted as ‘lc_classifier’): A balanced hierarchical random forest classifier employing four models and 15 classes.
+- The first hierarchical classifier has three classes: [Periodic, Stochastic, Transient], denoted as ‘lc_classifier_top.’
+- Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as ‘lc_classifier_periodic,’ ‘lc_classifier_transient,’ and ‘lc_classifier_stochastic,’ respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
   - Stochastic: [Active Galactic Nuclei ('AGN'), Quasi Stellar Object ('QSO'), 'Blazar', Cataclysmic Variable/Novae ('CV/Nova'), and Young Stellar Object ('YSO')].
-  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('Ceph'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
+  - Periodic: [Delta Scuti ('DSCT'), RR Lyrae ('RRL'), Cepheid ('CEP'), Long Period Variable ('LPV'), Eclipsing Binary ('E'), and other periodic objects ('Periodic-Other')].
 ## Spatial Object Types by Classifier
 - classifier_name=('lc_classifier', 'lc_classifier_top', 'lc_classifier_transient', 'lc_classifier_stochastic', 'lc_classifier_periodic', 'stamp_classifier')
-- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
-- Classes in 'lc_classifier_top'= ('transient', 'stochastic', 'periodic')
+- Classes in 'lc_classifier'= ('SNIa', 'SNIbc', 'SNII', 'SLSN', 'QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO', 'LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
+- Classes in 'lc_classifier_top'= ('Transient', 'Stochastic', 'Periodic')
 - Classes in 'lc_classifier_transient'= ('SNIa', 'SNIbc', 'SNII', 'SLSN')
 - Classes in 'lc_classifier_stochastic'= ('QSO', 'AGN', 'Blazar', 'CV/Nova', 'YSO')
-- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'Ceph', 'Periodic-Other')
+- Classes in 'lc_classifier_periodic'= ('LPV', 'E', 'DSCT', 'RRL', 'CEP', 'Periodic-Other')
 - Classes in 'stamp_classifier'= ('SN', 'AGN', 'VS', 'asteroid', 'bogus')
 '''
 # Final instructions for the advanced decomposition task, to emphasize the most important details for the decomposition
@@ -346,6 +346,36 @@ Take in consideration the advices, conditions and names from "General Context" a
 '''
 
 gpt4turbo1106_decomposed_prompt_2 = '''Creating a decomposition plan to generate a PostgreSQL query for retrieving information from the ALeRCE astronomy broker database involves several steps. ALeRCE (Automatic Learning for the Rapid Classification of Events) is a system designed to classify large amounts of astronomical data, typically from surveys like the Zwicky Transient Facility (ZTF). To create a detailed and understandable plan, follow these steps:
+
+1. **Understand the Database Schema:**
+   - Obtain the database schema, which includes tables, columns, data types, relationships, and constraints.
+   - Identify the relevant tables and columns that contain the information you need.
+
+2. **Define the Information Needed:**
+   - Clearly specify what information you want to retrieve. For example, you might be interested in transient events, their classifications, light curves, or cross-matches with other catalogs.
+   - Determine the level of detail required (e.g., specific time ranges, magnitude limits, or particular sky regions).
+
+3. **Formulate the Query Requirements:**
+   - Decide on the selection criteria (e.g., date, magnitude, classification confidence).
+   - Determine if you need to join multiple tables and how they are related.
+   - Consider if you need to aggregate data (e.g., average magnitudes, count of events).
+
+4. **Design the Query:**
+   - Start with the main table that contains the bulk of the information you need.
+   - Use `JOIN` clauses to combine related tables based on common keys.
+   - Apply `WHERE` clauses to filter the data according to your criteria.
+   - Use `GROUP BY` and aggregate functions if necessary.
+   - Decide on the sorting order of the results using `ORDER BY`.
+
+5. **Document the Query:**
+   - Write comments within the SQL code to explain the purpose of different parts of the query.
+   - Create external documentation that describes the query's purpose, the information it retrieves, and any assumptions or limitations.
+
+Remember that the actual query will depend on the specific schema and requirements of the ALeRCE database. Always test your queries to ensure they perform as expected and return accurate results. 
+'''
+
+
+gpt4turbo1106_decomposed_prompt_v0 = '''Creating a decomposition plan to generate a PostgreSQL query for retrieving information from the ALeRCE astronomy broker database involves several steps. ALeRCE (Automatic Learning for the Rapid Classification of Events) is a system designed to classify large amounts of astronomical data, typically from surveys like the Zwicky Transient Facility (ZTF). To create a detailed and understandable plan, follow these steps:
 
 1. **Understand the Database Schema:**
    - Obtain the database schema, which includes tables, columns, data types, relationships, and constraints.
@@ -932,5 +962,5 @@ simple_query_instructions_v2 = '''
 # Answer ONLY with the SQL query, do not include any additional or explanatory text. If you want to add something, add COMMENTS IN PostgreSQL format so that the user can understand.
 # Answer ONLY with a SQL query, with the following format: 
   ```sql SQL_QUERY_HERE ```
-DON'T include anything else in your answer.
 '''
+# DON'T include anything else in your answer.
