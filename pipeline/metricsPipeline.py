@@ -195,7 +195,8 @@ class metricsPipeline():
                         'p_col', 'N_perfect_row', 'N_perfect_col']
         
         # Generate an empty DataFrame with the corresponding columns and rows if it doesn't exist already
-        if self.new_df is None and not os.path.exists(bkp_path):
+        # if self.new_df is None and not os.path.exists(bkp_path):
+        if self.new_df is None:
             num_rows = len(sql_preds) + n_unique
             self.new_df = pd.DataFrame(
                 [[None]*len(column_names) for _ in range(num_rows)], 
@@ -301,7 +302,7 @@ class metricsPipeline():
                         self.safe_to_csv(restarted, bkp_path)
                         
                         # Obtain the gold values for metric calculation
-                        oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
+                        oids_names = ["oid", "oid_catalog", "objectidps1", "count", "classifier_name"]
                         check = [name for name in query_gold.columns.tolist() if name in oids_names]
                         oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
@@ -345,7 +346,7 @@ class metricsPipeline():
                         query_gold = query_gold.loc[:, ~query_gold.columns.duplicated()]
                         
                         # Obtain the gold values for metric calculation
-                        oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
+                        oids_names = ["oid", "oid_catalog", "objectidps1", "count", "classifier_name"]
                         check = [name for name in query_gold.columns.tolist() if name in oids_names]
                         oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                         n_rows_gold = len(oids_gold)
@@ -489,6 +490,60 @@ class metricsPipeline():
                             n_cols_pred = query_pred.shape[1]
                             
                             ## Metrics for columns
+
+                            # Define potential identifier columns and their aliases
+                            identifier_columns = {
+                                'oid': ['oid', 'ztf_identifier', 'ztf identifier', 'ztf_oid', 'object', 'ztf', 
+                                        'ztf_id', 'ztf object identifier', 'unique_object_identifier', 
+                                        'object_identifier', 'ztf_object_id'],
+                                'oid_catalog': ['oid_catalog', 'catalog_id', 'catalog_identifier', 'catalog_oid'],
+                                'objectidps1': ['objectidps1', 'ps1_id', 'ps1_identifier', 'panstarrs_id'],
+                                'classifier_name': ['classifier_name', 'classifier', 'model_name'],
+                                'count': ['count', 'n_count', 'num_count', 'total_count']
+                            }
+                            
+                            # Find identifier column in each dataframe
+                            gold_id_col = None
+                            pred_id_col = None
+                            
+                            # First try to find exact match for primary identifier columns
+                            for id_type, aliases in identifier_columns.items():
+                                if id_type in query_gold.columns:
+                                    gold_id_col = id_type
+                                if id_type in query_pred.columns:
+                                    pred_id_col = id_type
+                            # If no exact match, look for aliases if alias handling is enabled
+                            # if alias_handling:
+                            if True:
+                                if gold_id_col is None:
+                                    for id_type, aliases in identifier_columns.items():
+                                        for alias in aliases:
+                                            if alias in query_gold.columns:
+                                                gold_id_col = alias
+                                                break
+                                        if gold_id_col:
+                                            break
+                                
+                                if pred_id_col is None:
+                                    for id_type, aliases in identifier_columns.items():
+                                        for alias in aliases:
+                                            if alias in query_pred.columns:
+                                                pred_id_col = alias
+                                                break
+                                        if pred_id_col:
+                                            break
+                            # If still no identifier column, try to find any column that might contain 'oid' in its name
+                            if gold_id_col is None:
+                                for col in query_gold.columns:
+                                    if 'oid' in col.lower() or 'id' in col.lower():
+                                        gold_id_col = col
+                                        break
+                            
+                            if pred_id_col is None:
+                                for col in query_pred.columns:
+                                    if 'oid' in col.lower() or 'id' in col.lower():
+                                        pred_id_col = col
+                                        break
                             
                             # Compare the columns of the predicted and expected SQL queries
                             cols_pred = query_pred.columns.values.tolist()
@@ -524,39 +579,9 @@ class metricsPipeline():
                             true_gold_oid = 0
                             false_gold_oid = 0
                             try:
-                                # Get predicted oid list
-                                if 'oid' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid",axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'oid_catalog' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid_catalog",axis=0).reset_index(drop=True)['oid_catalog'].values.tolist()
-                                elif 'objectidps1' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="objectidps1",axis=0).reset_index(drop=True)['objectidps1'].values.tolist()
-                                elif 'classifier_name' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="classifier_name",axis=0).reset_index(drop=True)['classifier_name'].values.tolist()
-                                elif 'count' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="count",axis=0).reset_index(drop=True)['count'].values.tolist()
-                                
-                                # check oids for tipical columns names hallucinations
-                                elif 'ztf_identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf_oid' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_oid': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'object' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'object': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
+                                oids_pred = query_pred[pred_id_col].values.tolist()
+                                oids_gold = query_gold[gold_id_col].values.tolist()
+
                                     
                                 # Check if the predicted oids are equal to the expected oids list in the same order
                                 are_equal = (oids_gold == oids_pred)
@@ -596,8 +621,8 @@ class metricsPipeline():
                                     false_gold_oid = query_gold.shape[0]
                                     
                             # Calculating r and p
-                            r_row = 0 if n_rows_gold == 0 else true_pred_oid / n_rows_gold
-                            p_row = 0 if n_rows_pred == 0 else true_gold_oid / n_rows_pred
+                            r_row = 0 if n_rows_gold == 0 else true_gold_oid / n_rows_gold
+                            p_row = 0 if n_rows_pred == 0 else true_pred_oid / n_rows_pred
                                 
                             # Calculating N_perfect
                             N_perfect_row = 1 if r_row == 1 and p_row == 1 else 0
@@ -714,7 +739,7 @@ class metricsPipeline():
                     self.safe_to_csv(self.new_df, bkp_path)
                     
                     # Obtain the gold values for metric calculation
-                    oids_names = ["oid", "oid_catalog", "count", "classifier_name"]
+                    oids_names = ["oid", "oid_catalog", "objectidps1", "count", "classifier_name"]
                     check = [name for name in query_gold.columns.tolist() if name in oids_names]
                     oids_gold = query_gold.sort_values(by=check[0],axis=0).reset_index(drop=True)[check[0]].values.tolist()
                     n_rows_gold = len(oids_gold)
@@ -856,6 +881,60 @@ class metricsPipeline():
                             
                             ## Metrics for columns
                             
+                            # Define potential identifier columns and their aliases
+                            identifier_columns = {
+                                'oid': ['oid', 'ztf_identifier', 'ztf identifier', 'ztf_oid', 'object', 'ztf', 
+                                        'ztf_id', 'ztf object identifier', 'unique_object_identifier', 
+                                        'object_identifier', 'ztf_object_id'],
+                                'oid_catalog': ['oid_catalog', 'catalog_id', 'catalog_identifier', 'catalog_oid'],
+                                'objectidps1': ['objectidps1', 'ps1_id', 'ps1_identifier', 'panstarrs_id'],
+                                'classifier_name': ['classifier_name', 'classifier', 'model_name'],
+                                'count': ['count', 'n_count', 'num_count', 'total_count']
+                            }
+                            
+                            # Find identifier column in each dataframe
+                            gold_id_col = None
+                            pred_id_col = None
+                            
+                            # First try to find exact match for primary identifier columns
+                            for id_type, aliases in identifier_columns.items():
+                                if id_type in query_gold.columns:
+                                    gold_id_col = id_type
+                                if id_type in query_pred.columns:
+                                    pred_id_col = id_type
+                            # If no exact match, look for aliases if alias handling is enabled
+                            # if alias_handling:
+                            if True:
+                                if gold_id_col is None:
+                                    for id_type, aliases in identifier_columns.items():
+                                        for alias in aliases:
+                                            if alias in query_gold.columns:
+                                                gold_id_col = alias
+                                                break
+                                        if gold_id_col:
+                                            break
+                                
+                                if pred_id_col is None:
+                                    for id_type, aliases in identifier_columns.items():
+                                        for alias in aliases:
+                                            if alias in query_pred.columns:
+                                                pred_id_col = alias
+                                                break
+                                        if pred_id_col:
+                                            break
+                            # If still no identifier column, try to find any column that might contain 'oid' in its name
+                            if gold_id_col is None:
+                                for col in query_gold.columns:
+                                    if 'oid' in col.lower() or 'id' in col.lower():
+                                        gold_id_col = col
+                                        break
+                            
+                            if pred_id_col is None:
+                                for col in query_pred.columns:
+                                    if 'oid' in col.lower() or 'id' in col.lower():
+                                        pred_id_col = col
+                                        break
+                            
                             # Compare the columns of the predicted and expected SQL queries
                             cols_pred = query_pred.columns.values.tolist()
                             cols_gold = query_gold.columns.values.tolist()
@@ -890,40 +969,8 @@ class metricsPipeline():
                             true_gold_oid = 0
                             false_gold_oid = 0
                             try:
-                                # Get predicted oid list
-                                if 'oid' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid",axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'oid_catalog' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="oid_catalog",axis=0).reset_index(drop=True)['oid_catalog'].values.tolist()
-                                elif 'objectidps1' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="objectidps1",axis=0).reset_index(drop=True)['objectidps1'].values.tolist()
-                                elif 'classifier_name' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="classifier_name",axis=0).reset_index(drop=True)['classifier_name'].values.tolist()
-                                elif 'count' in query_pred.columns:
-                                    oids_pred = query_pred.sort_values(by="count",axis=0).reset_index(drop=True)['count'].values.tolist()
-                                
-                                # check oids for tipical columns names hallucinations
-                                elif 'ztf_identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf identifier' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf identifier': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf_oid' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf_oid': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'object' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'object': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                elif 'ztf' in [col.lower() for col in query_pred.columns.tolist()]:
-                                    # change the column name to 'oid'
-                                    query_pred.rename(columns={'ztf': 'oid'}, inplace=True)
-                                    oids_pred = query_pred.sort_values(by='oid',axis=0).reset_index(drop=True)['oid'].values.tolist()
-                                    
+                                oids_pred = query_pred[pred_id_col].values.tolist()
+                                oids_gold = query_gold[gold_id_col].values.tolist()                  
                                 # Check if the predicted oids are equal to the expected oids list in the same order
                                 are_equal = (oids_gold == oids_pred)
                             
@@ -962,9 +1009,8 @@ class metricsPipeline():
                                     false_gold_oid = query_gold.shape[0]
                                     
                             # Calculating r and p
-                            r_row = 0 if n_rows_gold == 0 else true_pred_oid / n_rows_gold
-                            p_row = 0 if n_rows_pred == 0 else true_gold_oid / n_rows_pred
-                                
+                            r_row = 0 if n_rows_gold == 0 else true_gold_oid / n_rows_gold
+                            p_row = 0 if n_rows_pred == 0 else true_pred_oid / n_rows_pred
                             # Calculating N_perfect
                             N_perfect_row = 1 if r_row == 1 and p_row == 1 else 0
                         
