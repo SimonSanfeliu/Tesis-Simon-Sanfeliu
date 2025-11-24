@@ -14,6 +14,7 @@ from prompts.correction.SelfCorrection import prompt_self_correction_v2, \
     general_context_selfcorr_v1, general_context_selfcorr_v1_python
 
 # Setup params for query engine
+print(requests.get(SQL_URL))
 params = requests.get(SQL_URL).json()['params']
 
 

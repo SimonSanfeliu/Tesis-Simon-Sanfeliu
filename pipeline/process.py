@@ -40,7 +40,34 @@ def api_call(model: str, max_tokens: int, prompt: str, system: str = None) -> tu
         response (str): The response from the API
         usage (dict): LLM API usage
     """
-    if "gpt" in model:
+    if "o1" in model or "gpt-5" in model:
+        try:
+            client = openai.OpenAI(api_key=OPENAI_KEY)
+            if system:
+                response = client.chat.completions.create(
+                    model=model,
+                    max_completion_tokens=max_tokens,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": prompt}
+                    ],
+                )
+            else:
+                response = client.chat.completions.create(
+                    model=model,
+                    max_completion_tokens=max_tokens,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+            usage = {"input_tokens": response.usage.prompt_tokens,
+                     "output_tokens": response.usage.completion_tokens,
+                     "total_tokens": response.usage.total_tokens}
+            response = response.choices[0].message.content
+        except Exception as e:
+            print(f"The following exception occured: {e}")
+            raise Exception(e)
+    elif "gpt" in model:
         try:
             client = openai.OpenAI(api_key=OPENAI_KEY)
             if system:
@@ -69,36 +96,29 @@ def api_call(model: str, max_tokens: int, prompt: str, system: str = None) -> tu
         except Exception as e:
             print(f"The following exception occured: {e}")
             raise Exception(e)
-        
-    elif "o1" in model:
-        try:
-            client = openai.OpenAI(api_key=OPENAI_KEY)
-            response = client.chat.completions.create(
-                model=model,
-                max_completion_tokens=max_tokens,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            usage = {"input_tokens": response.usage.prompt_tokens,
-                     "output_tokens": response.usage.completion_tokens,
-                     "total_tokens": response.usage.total_tokens}
-            response = response.choices[0].message.content
-        except Exception as e:
-            print(f"The following exception occured: {e}")
-            raise Exception(e)
-        
+            
     elif "claude" in model:
         try:
             client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-            response = client.messages.create(
-                model=model,
-                temperature=0,
-                max_tokens=max_tokens,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            if system:
+                response = client.messages.create(
+                    model=model,
+                    temperature=0,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+            else:
+                response = client.messages.create(
+                    model=model,
+                    temperature=0,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
             usage = response.usage.to_dict()
             usage["total_tokens"] = usage["input_tokens"] + \
                                     usage["output_tokens"]

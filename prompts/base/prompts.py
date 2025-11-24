@@ -136,7 +136,7 @@ Given the following text, please thoroughly analyze and provide a detailed expla
 ## ALeRCE Pipeline Details
 - Stamp Classifier (denoted as 'stamp_classifier'): All alerts related to new objects undergo stamp-based classification.
 - Light Curve Classifier (denoted as 'lc_classifier'): A balanced hierarchical random forest classifier employing four models and 15 classes.
-- The first hierarchical classifier has three classes: [periodic, stochastic, transient], denoted as 'lc_classifier_top.'
+- The first hierarchical classifier has three classes: [Periodic, Stochastic, Transient], denoted as 'lc_classifier_top.'
 - Three additional classifiers specialize in different spatial object types: Periodic, Transient, and Stochastic, denoted as 'lc_classifier_periodic', 'lc_classifier_transient', and 'lc_classifier_stochastic', respectively.
 - The 15 classes are separated for each object type:
   - Transient: [SNe Ia ('SNIa'), SNe Ib/c ('SNIbc'), SNe II ('SNII'), and Super Luminous SNe ('SLSN')].
