@@ -2,6 +2,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import json
 import pandas as pd
 import openai
 import anthropic
@@ -120,6 +121,103 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
         raise Exception("No valid model")
     
     return response, usage
+
+
+def unify_decomposition_steps(steps: list[str]) -> str:
+    """Join structured decomposition steps into the plain-text format used by
+    the downstream prompts.
+
+    Args:
+        steps (list[str]): Ordered decomposition steps
+
+    Returns:
+        str: Numbered decomposition plan as a single string
+    """
+    clean_steps = [step.strip() for step in steps if step and step.strip()]
+    return "\n\n".join(
+        f"{idx}. {step}" for idx, step in enumerate(clean_steps, start=1)
+    )
+
+
+def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
+    """Create a structured-output API call for the decomposition stage.
+
+    The response is normalized back into the numbered plain-text format already
+    expected by the query-generation prompts.
+
+    Args:
+        model (str): Name of the model (LLM)
+        max_tokens (int): Maximum output tokens
+        prompt (str): Prompt for the decomposition step
+
+    Returns:
+        tuple[str, dict]: Unified numbered decomposition plan and API usage
+    """
+    if "gpt" not in model:
+        return api_call(model, max_tokens, prompt)
+
+    schema_prompt = prompt + """
+
+# Return the decomposition as structured data.
+# The JSON root must contain a "steps" array.
+# Each item in "steps" must be an object with a single key "step".
+# The "step" value must contain one complete decomposition step, including any
+# relevant labels such as [sub-query], [join], [condition], etc.
+# Do not return SQL code.
+"""
+
+    try:
+        client = openai.OpenAI(api_key=OPENAI_KEY)
+        response = client.chat.completions.create(
+            model=model,
+            temperature=0,
+            max_tokens=max_tokens,
+            messages=[
+                {"role": "user", "content": schema_prompt}
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "decomposition_plan",
+                    "strict": True,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "steps": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "step": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": ["step"],
+                                    "additionalProperties": False
+                                }
+                            }
+                        },
+                        "required": ["steps"],
+                        "additionalProperties": False
+                    }
+                }
+            }
+        )
+        usage = {
+            "input_tokens": response.usage.prompt_tokens,
+            "output_tokens": response.usage.completion_tokens,
+            "total_tokens": response.usage.total_tokens
+        }
+        content = response.choices[0].message.content
+        parsed = json.loads(content)
+        decomp_plan = unify_decomposition_steps(
+            [item["step"] for item in parsed["steps"]]
+        )
+        return decomp_plan, usage
+    except Exception as e:
+        print(f"The following exception occured in decomposition_api_call: {e}")
+        raise Exception(e)
 
 
 def format_response(specified_format: str, response: str) -> str:

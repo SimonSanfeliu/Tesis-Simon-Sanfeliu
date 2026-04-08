@@ -698,7 +698,7 @@ class metricsPipeline():
                     n_cols_gold = query_gold.shape[1]
                     
                     # For self correction
-                    request = df[df["req_id"] == req_id]["request"][0]
+                    request = df[df["req_id"] == req_id]["request"].iloc[0]
                     
                     # Number of times a query is predicted (number of experiments)
                     for exp in range(total_exps):

@@ -177,7 +177,11 @@ class queryPipeline():
                 user_request_with_tables = query_w_tables,
                 medium_query_instructions_1 = self.prompts["Decomposition"]["medium"]["decomp_plan"]["query_instructions"]
             )
-            decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            decomp_plan_true, usage = decomposition_api_call(
+                self.llm,
+                5000,
+                decomp_plan
+            )
             # Creating the final prompt with the decomposition plan
             if self.lang_type == "sql":
                 # Through SQL queries
@@ -204,7 +208,11 @@ class queryPipeline():
                 user_request_with_tables = query_w_tables,
                 adv_query_instructions_1 = self.prompts["Decomposition"]["advanced"]["decomp_plan"]["query_instructions"]
             )
-            decomp_plan_true, usage = api_call(self.llm, 5000, decomp_plan)
+            decomp_plan_true, usage = decomposition_api_call(
+                self.llm,
+                5000,
+                decomp_plan
+            )
             # Creating the final prompt with the decomposition plan
             if self.lang_type == "sql":
                 # Through SQL queries
