@@ -1,0 +1,227 @@
+,Unnamed: 0,code_tag,llm_used,prompt_version,query_id,query_run,sql_query,tab_schema,label,query_gen_time,query_gen_date
+0,0,0.22.0,claude-opus-4-6,v4,107,1,"
+SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr,
+    o.firstmjd AS detection_date,
+    NULL AS fid /* filter identifier is not available in the provided schema */
+FROM object o
+INNER JOIN probability p
+    ON o.oid = p.oid
+    AND p.classifier_name = 'stamp_classifier'
+    AND p.classifier_version = 'stamp_classifier_1.0.4'
+    AND p.class_name = 'asteroid'
+    AND p.probability > 0.5
+INNER JOIN ss_ztf ss
+    ON o.oid = ss.oid
+    AND ss.ssdistnr < 2
+WHERE o.ndet > 500
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,30.68159508705139,2026-05-06T08:40:59
+1,1,0.22.0,claude-opus-4-6,v4,107,2,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    s.candid,
+    s.ssdistnr,
+    s.ssnamenr
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+INNER JOIN ss_ztf s ON o.oid = s.oid
+WHERE o.ndet > 500
+  AND p.class_name = 'asteroid'
+  AND p.classifier_name = 'stamp_classifier'
+  AND p.classifier_version = 'stamp_classifier_1.0.4'
+  AND p.probability > 0.5
+  AND s.ssdistnr < 2
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,28.95589566230774,2026-05-06T09:12:47
+2,2,0.22.0,claude-opus-4-6,v4,107,3,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr,
+    o.firstmjd AS detection_date,
+    NULL AS fid /* filter identifier is not available in the provided schema */
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+INNER JOIN ss_ztf ss ON o.oid = ss.oid
+WHERE o.ndet > 500
+  AND p.classifier_name = 'stamp_classifier'
+  AND p.classifier_version = 'stamp_classifier_1.0.4'
+  AND p.class_name = 'asteroid'
+  AND p.probability > 0.5
+  AND ss.ssdistnr < 2
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,33.31692147254944,2026-05-06T09:13:20
+3,3,0.22.0,claude-opus-4-6,v4,107,4,"SELECT
+    o.oid,                /* ZTF identifier */
+    o.ndet,               /* number of detections */
+    o.firstmjd,           /* first detection date */
+    o.lastmjd,            /* last detection date */
+    p.probability,        /* probability of being an asteroid */
+    ss.candid,            /* candidate identifier */
+    ss.ssdistnr,          /* distance between ZTF object and MPC object (arcsec) */
+    ss.ssnamenr           /* MPC name */
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+INNER JOIN ss_ztf ss ON o.oid = ss.oid
+WHERE o.ndet > 500
+  AND p.class_name = 'asteroid'
+  AND p.classifier_name = 'stamp_classifier'
+  AND p.classifier_version = 'stamp_classifier_1.0.4'
+  AND p.probability > 0.5
+  AND ss.ssdistnr < 2
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,31.696579694747925,2026-05-06T09:13:52
+4,4,0.22.0,claude-opus-4-6,v4,107,5,"SELECT
+    o.oid,                /* ZTF identifier */
+    o.ndet,               /* number of detections */
+    o.firstmjd,           /* first detection date */
+    o.lastmjd,            /* last detection date */
+    p.probability,        /* probability of being an asteroid */
+    ss.candid,            /* candidate identifier */
+    ss.ssdistnr,          /* distance between ZTF object and MPC object (arcsec) */
+    ss.ssnamenr           /* MPC name */
+FROM object o
+INNER JOIN probability p
+    ON o.oid = p.oid
+    AND p.classifier_name = 'stamp_classifier'
+    AND p.classifier_version = 'stamp_classifier_1.0.4'
+    AND p.class_name = 'asteroid'
+    AND p.probability > 0.5
+INNER JOIN ss_ztf ss
+    ON o.oid = ss.oid
+    AND ss.ssdistnr < 2
+WHERE o.ndet > 500
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,29.441980838775635,2026-05-06T09:14:21
+5,5,0.22.0,claude-opus-4-6,v4,107,6,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr,
+    ss.ssmagnr
+FROM object o
+INNER JOIN probability p
+    ON o.oid = p.oid
+    AND p.classifier_name = 'stamp_classifier'
+    AND p.classifier_version = 'stamp_classifier_1.0.4'
+    AND p.class_name = 'asteroid'
+    AND p.probability > 0.5
+INNER JOIN ss_ztf ss
+    ON o.oid = ss.oid
+    AND ss.ssdistnr < 2
+WHERE o.ndet > 500
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,34.52022361755371,2026-05-06T09:14:56
+6,6,0.22.0,claude-opus-4-6,v4,107,7,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+INNER JOIN ss_ztf ss ON o.oid = ss.oid
+WHERE o.ndet > 500
+  AND p.classifier_name = 'stamp_classifier'
+  AND p.classifier_version = 'stamp_classifier_1.0.4'
+  AND p.class_name = 'asteroid'
+  AND p.probability > 0.5
+  AND ss.ssdistnr < 2
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,30.658715963363647,2026-05-06T09:15:26
+7,7,0.22.0,claude-opus-4-6,v4,107,8,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr
+FROM object o
+INNER JOIN probability p
+    ON o.oid = p.oid
+    AND p.class_name = 'asteroid'
+    AND p.classifier_name = 'stamp_classifier'
+    AND p.classifier_version = 'stamp_classifier_1.0.4'
+    AND p.probability > 0.5
+INNER JOIN ss_ztf ss
+    ON o.oid = ss.oid
+    AND ss.ssdistnr < 2
+WHERE o.ndet > 500
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,30.0249183177948,2026-05-06T09:15:56
+8,8,0.22.0,claude-opus-4-6,v4,107,9,"SELECT
+    o.oid,                /* ZTF identifier */
+    o.ndet,               /* number of detections */
+    o.firstmjd,           /* first detection date */
+    o.lastmjd,            /* last detection date */
+    p.probability,        /* probability of being an asteroid */
+    ss.candid,            /* candidate identifier */
+    ss.ssdistnr,          /* distance between ZTF object and MPC object (arcsec) */
+    ss.ssnamenr           /* MPC name */
+FROM object o
+INNER JOIN probability p
+    ON o.oid = p.oid
+    AND p.classifier_name = 'stamp_classifier'
+    AND p.classifier_version = 'stamp_classifier_1.0.4'
+    AND p.class_name = 'asteroid'
+    AND p.probability > 0.5
+INNER JOIN ss_ztf ss
+    ON o.oid = ss.oid
+    AND ss.ssdistnr < 2
+WHERE o.ndet > 500
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,33.355727195739746,2026-05-06T09:16:30
+9,9,0.22.0,claude-opus-4-6,v4,107,10,"SELECT
+    o.oid,
+    o.ndet,
+    o.firstmjd,
+    o.lastmjd,
+    p.probability,
+    ss.candid,
+    ss.ssdistnr,
+    ss.ssnamenr
+FROM object o
+INNER JOIN probability p ON o.oid = p.oid
+INNER JOIN ss_ztf ss ON o.oid = ss.oid
+WHERE o.ndet > 500
+  AND p.class_name = 'asteroid'
+  AND p.classifier_name = 'stamp_classifier'
+  AND p.classifier_version = 'stamp_classifier_1.0.4'
+  AND p.probability > 0.5
+  AND ss.ssdistnr < 2
+ORDER BY o.firstmjd ASC
+LIMIT 10
+","['\nCREATE TABLE object ( /* this is the most important table. It contains the main statistics of an object, independent of time and band */\n    oid VARCHAR PRIMARY KEY,  /* object identifier, from the ZTF */\n    deltajd DOUBLE PRECISION, /* time difference between last and first detection */\n    firstmjd DOUBLE PRECISION, /* time of first detection */\n    lastmjd DOUBLE PRECISION, /* time of last detection */\n    ndethist INTEGER,  /* number of posible detections above 3 sigma */\n    ncovhist INTEGER,  /* number of visits */\n    mjdstarthist DOUBLE PRECISION,  /* time of first observation even if not detected, Earliest Julian date of epoch corresponding to ndethist [days]*/\n    mjdendhist DOUBLE PRECISION, /* time of last observation even if not detected, Latest Julian date of epoch corresponding to ndethist [days] */\n    corrected BOOLEAN, /* whether the object was corrected */\n    stellar BOOLEAN, /* whether the object is likely psf shaped */\n    ndet INTEGER, /* total number of detections for the object */\n    g_r_max DOUBLE PRECISION, /* g-r difference color at maximum */\n    g_r_max_corr DOUBLE PRECISION, /* g-r color at maximum*/\n    g_r_mean DOUBLE PRECISION, /* mean g-r difference color */\n    g_r_mean_corr DOUBLE PRECISION, /* mean g-r color */\n    meanra DOUBLE PRECISION,  /* mean right ascension */\n    meandec DOUBLE PRECISION,  /* mean declination */\n    sigmara DOUBLE PRECISION, /* right ascension dispersion */\n    sigmadec DOUBLE PRECISION, /* declination dispersion */\n    step_id_corr VARCHAR, /* correction step pipeline version */\n    diffpos BOOLEAN, /* whether the first detection was positive or negative */\n    reference_change BOOLEAN /* whether the reference image changes */\n);\nCREATE INDEX ix_object_ndet ON object USING btree (ndet);\nCREATE INDEX ix_object_firstmjd ON object USING btree (firstmjd);\nCREATE INDEX ix_object_g_r_max ON object USING btree (g_r_max);\nCREATE INDEX ix_object_g_r_mean_corr ON object USING btree (g_r_mean_corr);\nCREATE INDEX ix_object_meanra ON object USING btree (meanra);\nCREATE INDEX ix_object_meandec ON object USING btree (meandec);\n', 'CREATE TABLE probability ( /* this table contains the machine learning derived classification probabilities and rankings */\n    oid VARCHAR REFERENCES object(oid), /* unique object identifier */\n    class_name VARCHAR, /* name of the class */\n    classifier_name VARCHAR, /* name of the classifier */\n    classifier_version VARCHAR, /* version of the classiifer */\n    probability DOUBLE PRECISION NOT NULL, /* probability of the class given a classifier and version */\n    ranking INTEGER NOT NULL, /* class probability ranking (1 is the most likely class) */\n    PRIMARY KEY (oid, class_name, classifier_name, classifier_version)\n);\nCREATE INDEX ix_probabilities_oid ON probability USING hash (oid);\nCREATE INDEX ix_probabilities_probability ON probability USING btree (probability);\nCREATE INDEX ix_probabilities_ranking ON probability USING btree (ranking);\nCREATE INDEX ix_classification_rank1 ON probability USING btree (ranking) WHERE (ranking = 1);\n', ""CREATE TABLE ss_ztf ( /* this table contains information about the closest known solar system object */\n    oid VARCHAR REFERENCES object(oid),\n    candid BIGINT NOT NULL, /* unique candidate identifier */\n    ssdistnr DOUBLE PRECISION, /* distance to nearest known solar system object */\n    ssmagnr DOUBLE PRECISION, /* magnitude of nearest known solar system object */\n    ssnamenr VARCHAR /* name to nearest known solar system object. If the object is not a known solar system object, this field is 'null' (VARCHAR) */\n    PRIMARY KEY (oid)\n);\nCREATE INDEX ix_ss_ztf_candid ON ss_ztf USING btree (candid);\nCREATE INDEX ix_ss_ztf_ssnamenr ON ss_ztf USING btree (ssnamenr);\n""]",advanced,31.281940937042236,2026-05-06T09:17:01
