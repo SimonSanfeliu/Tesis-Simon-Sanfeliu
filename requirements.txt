@@ -7,7 +7,6 @@ ansible-core==2.18.0
 ansible-vault==2.1.0
 ansible-vault-win==1.0.0; sys_platform == "win32"          # ⟵ only on Windows
 anthropic==0.33.0
-anyio==4.4.0
 asttokens==2.4.1
 async-timeout==4.0.3
 attrs==24.2.0
@@ -36,12 +35,10 @@ Flask==3.0.3
 fonttools==4.56.0
 frozenlist==1.4.1
 fsspec==2024.6.1
-google-ai-generativelanguage==0.6.6
 google-api-core==2.19.1
 google-api-python-client==2.141.0
-google-auth==2.34.0
 google-auth-httplib2==0.2.0
-google-generativeai==0.7.2
+google-genai==1.62.0
 googleapis-common-protos==1.63.2
 greenlet==3.0.3
 grpcio==1.65.5
@@ -49,7 +46,6 @@ grpcio-status==1.62.3
 h11==0.14.0
 httpcore==1.0.5
 httplib2==0.22.0
-httpx==0.27.0
 huggingface-hub==0.24.5
 idna==3.7
 ipykernel==6.29.5
@@ -95,7 +91,7 @@ pure_eval==0.2.3
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pycparser==2.22
-pydantic==2.8.2
+pydantic
 pydantic_core==2.20.1
 Pygments==2.18.0
 pyparsing==3.1.2

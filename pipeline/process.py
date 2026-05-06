@@ -6,8 +6,10 @@ import json
 import pandas as pd
 import openai
 import anthropic
-import google.generativeai as genai
+import re
+import requests
 import sqlalchemy
+#from google import genai
 
 from secret.config import OPENAI_KEY, ANTHROPIC_KEY, GOOGLE_KEY
 from prompts.classification.Classification import diff_class_prompt_v7, \
@@ -28,6 +30,119 @@ with open("final_prompts/astrocontext.txt", "r") as f:
     astro_context = f.read()
 
 
+MODEL_PRICES = {
+    "gpt-4o": {
+        "input": 2.50,
+        "output": 10
+    },
+    "gpt-4o-mini": {
+        "input": 0.15,
+        "output": 0.6
+    },
+    "gpt-5.2-codex": {
+        "input": 1.50,
+        "output": 6
+    },
+    "o1-preview": {
+        "input": 15,
+        "output": 60
+    },
+    "o1-mini": {
+        "input": 3,
+        "output": 12
+    },
+    "claude-3-5-sonnet": {
+        "input": 3,
+        "output": 15
+    },
+    "claude-4.6-opus": {
+        "input": 15,
+        "output": 75
+    },
+    "gemini-2.5-pro": {
+        "input": 1.25,
+        "output": 10
+    }
+}
+
+
+def get_model_provider(model: str) -> str:
+    """Resolve the provider family from a model name."""
+    model = model.lower().strip()
+
+    if model.startswith("gpt-") or "codex" in model or model.startswith("o1"):
+        return "openai"
+    if model.startswith("claude-"):
+        return "anthropic"
+    if model.startswith("gemini-"):
+        return "google"
+
+    raise Exception(f"No valid model: {model}")
+
+
+def get_price_key(model: str) -> str:
+    """Map a model name to the configured pricing key."""
+    model = model.lower().strip()
+    matches = [key for key in MODEL_PRICES.keys() if key in model]
+    if not matches:
+        raise Exception(f"No pricing configured for model: {model}")
+    return max(matches, key=len)
+
+
+def _extract_responses_api_text(payload: dict) -> str:
+    """Extract plain text from a raw Responses API payload."""
+    output_items = payload.get("output", [])
+    text_chunks = []
+
+    for item in output_items:
+        for content in item.get("content", []):
+            if content.get("type") == "output_text":
+                text_chunks.append(content.get("text", ""))
+
+    if text_chunks:
+        return "".join(text_chunks).strip()
+
+    if payload.get("output_text"):
+        return str(payload["output_text"]).strip()
+
+    raise ValueError("Responses API payload did not contain output text.")
+
+
+def _responses_api_call(model: str, max_tokens: int, prompt: str,
+                        text_format: dict | None = None) -> tuple[str, dict]:
+    """Call OpenAI Responses API directly.
+
+    This keeps support for models such as gpt-5.2-codex even when the local
+    OpenAI SDK is older and does not expose client.responses yet.
+    """
+    payload = {
+        "model": model,
+        "input": prompt,
+        "max_output_tokens": max_tokens
+    }
+    if text_format is not None:
+        payload["text"] = {"format": text_format}
+
+    response = requests.post(
+        "https://api.openai.com/v1/responses",
+        headers={
+            "Authorization": f"Bearer {OPENAI_KEY}",
+            "Content-Type": "application/json"
+        },
+        json=payload,
+        timeout=180
+    )
+    response.raise_for_status()
+    payload = response.json()
+    usage_payload = payload.get("usage", {})
+    usage = {
+        "input_tokens": usage_payload.get("input_tokens", 0),
+        "output_tokens": usage_payload.get("output_tokens", 0),
+        "total_tokens": usage_payload.get("total_tokens", 0)
+    }
+    return _extract_responses_api_text(payload), usage
+
+
 def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
     """Create the API calls for the LLM to use.
 
@@ -41,17 +156,29 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
         response (str): The response from the API
         usage (dict): LLM API usage
     """
-    if "gpt" in model:
+    provider = get_model_provider(model)
+    model_lower = model.lower().strip()
+
+    if provider == "openai":
         try:
+            if model_lower == "gpt-5.2-codex":
+                return _responses_api_call(model, max_tokens, prompt)
+
             client = openai.OpenAI(api_key=OPENAI_KEY)
-            response = client.chat.completions.create(
-                model=model,
-                temperature=0,
-                max_tokens=max_tokens,
-                messages=[
+            request_kwargs = {
+                "model": model,
+                "messages": [
                     {"role": "user", "content": prompt}
                 ]
-            )
+            }
+
+            if model_lower.startswith("o1") or model_lower.startswith("gpt-5") or "codex" in model_lower:
+                request_kwargs["max_completion_tokens"] = max_tokens
+            else:
+                request_kwargs["temperature"] = 0
+                request_kwargs["max_tokens"] = max_tokens
+
+            response = client.chat.completions.create(**request_kwargs)
             usage = {"input_tokens": response.usage.prompt_tokens,
                      "output_tokens": response.usage.completion_tokens,
                      "total_tokens": response.usage.total_tokens}
@@ -59,26 +186,8 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
         except Exception as e:
             print(f"The following exception occured: {e}")
             raise Exception(e)
-        
-    elif "o1" in model:
-        try:
-            client = openai.OpenAI(api_key=OPENAI_KEY)
-            response = client.chat.completions.create(
-                model=model,
-                max_completion_tokens=max_tokens,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            usage = {"input_tokens": response.usage.prompt_tokens,
-                     "output_tokens": response.usage.completion_tokens,
-                     "total_tokens": response.usage.total_tokens}
-            response = response.choices[0].message.content
-        except Exception as e:
-            print(f"The following exception occured: {e}")
-            raise Exception(e)
-        
-    elif "claude" in model:
+
+    elif provider == "anthropic":
         try:
             client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
             response = client.messages.create(
@@ -97,19 +206,17 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
             print(f"The following exception occured: {e}")
             raise Exception(e)
     
-    elif "gemini" in model:
+    elif provider == "google":
         try:
-            genai.configure(api_key=GOOGLE_KEY)
-            generation_config = {
-            "temperature": 0,
-            "max_output_tokens": max_tokens
-            }
-            model2use = genai.GenerativeModel(
-            model_name=model,
-            generation_config=generation_config
+            client = genai.Client(api_key=GOOGLE_KEY)
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={
+                    "temperature": 0,
+                    "max_output_tokens": max_tokens
+                }
             )
-            chat_session = model2use.start_chat(history=[])
-            response = chat_session.send_message(prompt)
             usage = {"input_tokens": response.usage_metadata.prompt_token_count,
                      "output_tokens": response.usage_metadata.candidates_token_count,
                      "total_tokens": response.usage_metadata.total_token_count}
@@ -117,10 +224,79 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
         except Exception as e:
             print(f"The following exception occured: {e}")
             raise Exception(e)
-    else:
-        raise Exception("No valid model")
     
     return response, usage
+
+
+def parse_schema_linking_tables(raw_response: str, valid_table_names) -> list[str]:
+    """Extract valid schema table names from a model response.
+
+    The older pipeline expects a literal Python-like list such as
+    ``['object', 'probability']``. Newer models sometimes prepend free-form
+    reasoning or explanations, so we recover the table names defensively.
+    """
+    if raw_response is None:
+        raise ValueError("Schema linking returned an empty response.")
+
+    valid_names = {str(name).strip(): str(name).strip() for name in valid_table_names}
+    lowered_lookup = {name.lower(): name for name in valid_names}
+    raw_text = str(raw_response).strip()
+
+    def _clean_token(token: str) -> str:
+        return token.strip().strip("'\"`").strip()
+
+    ordered_matches = []
+    seen = set()
+
+    bracket_match = re.search(r"\[(.*?)\]", raw_text, flags=re.DOTALL)
+    if bracket_match:
+        candidates = [_clean_token(part) for part in bracket_match.group(1).split(",")]
+        for candidate in candidates:
+            resolved = lowered_lookup.get(candidate.lower())
+            if resolved and resolved not in seen:
+                ordered_matches.append(resolved)
+                seen.add(resolved)
+
+    if ordered_matches:
+        return ordered_matches
+
+    text_lower = raw_text.lower()
+    indexed_matches = []
+    for lowered_name, original_name in lowered_lookup.items():
+        pattern = rf"(?<![\w]){re.escape(lowered_name)}(?![\w])"
+        match = re.search(pattern, text_lower)
+        if match:
+            indexed_matches.append((match.start(), original_name))
+
+    indexed_matches.sort(key=lambda item: item[0])
+    for _, original_name in indexed_matches:
+        if original_name not in seen:
+            ordered_matches.append(original_name)
+            seen.add(original_name)
+
+    if ordered_matches:
+        return ordered_matches
+
+    preview = raw_text[:250].replace("\n", "\\n")
+    raise ValueError(
+        "Schema linking response did not contain recognizable table names. "
+        f"Raw response preview: {preview}"
+    )
+
+
+def parse_classification_label(raw_response: str) -> str:
+    """Extract one difficulty label from a free-form classifier response."""
+    if raw_response is None:
+        raise ValueError("Classification returned an empty response.")
+
+    matches = list(re.finditer(r"\b(simple|medium|advanced)\b", str(raw_response).lower()))
+    if not matches:
+        preview = str(raw_response).strip()[:250].replace("\n", "\\n")
+        raise ValueError(
+            "Classification response did not contain a valid difficulty label. "
+            f"Raw response preview: {preview}"
+        )
+    return matches[0].group(1)
 
 
 def unify_decomposition_steps(steps: list[str]) -> str:
@@ -165,8 +341,49 @@ def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[st
 # relevant labels such as [sub-query], [join], [condition], etc.
 # Do not return SQL code.
 """
+    schema_definition = {
+        "name": "decomposition_plan",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "steps": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "step": {
+                                "type": "string"
+                            }
+                        },
+                        "required": ["step"],
+                        "additionalProperties": False
+                    }
+                }
+            },
+            "required": ["steps"],
+            "additionalProperties": False
+        }
+    }
 
     try:
+        if model.lower().strip() == "gpt-5.2-codex":
+            content, usage = _responses_api_call(
+                model,
+                max_tokens,
+                schema_prompt,
+                text_format={
+                    "type": "json_schema",
+                    **schema_definition
+                }
+            )
+            parsed = json.loads(content)
+            decomp_plan = unify_decomposition_steps(
+                [item["step"] for item in parsed["steps"]]
+            )
+            return decomp_plan, usage
+
         client = openai.OpenAI(api_key=OPENAI_KEY)
         response = client.chat.completions.create(
             model=model,
@@ -177,31 +394,7 @@ def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[st
             ],
             response_format={
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "decomposition_plan",
-                    "strict": True,
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "steps": {
-                                "type": "array",
-                                "minItems": 1,
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "step": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": ["step"],
-                                    "additionalProperties": False
-                                }
-                            }
-                        },
-                        "required": ["steps"],
-                        "additionalProperties": False
-                    }
-                }
+                "json_schema": schema_definition
             }
         )
         usage = {
@@ -232,15 +425,29 @@ def format_response(specified_format: str, response: str) -> str:
     Returns:
         formatted_response (str): The response ready to be used in the database
     """
+    response = str(response).strip()
+
     if specified_format == "sql":
-        formatted_response = response.split("```sql")[1].split("```")[0] \
-        .replace("```", "").replace("```sql", "")
-        
+        sql_match = re.search(r"```sql\s*(.*?)```", response, flags=re.DOTALL | re.IGNORECASE)
+        generic_match = re.search(r"```\s*(.*?)```", response, flags=re.DOTALL)
+        if sql_match:
+            formatted_response = sql_match.group(1)
+        elif generic_match:
+            formatted_response = generic_match.group(1)
+        else:
+            formatted_response = response.removeprefix("sql").strip()
+
     elif specified_format == "python":
-        formatted_response = response.split("```python")[1].split("```")[0] \
-        .replace("```", "").replace("```python", "")
+        py_match = re.search(r"```python\s*(.*?)```", response, flags=re.DOTALL | re.IGNORECASE)
+        generic_match = re.search(r"```\s*(.*?)```", response, flags=re.DOTALL)
+        if py_match:
+            formatted_response = py_match.group(1)
+        elif generic_match:
+            formatted_response = generic_match.group(1)
+        else:
+            formatted_response = response.removeprefix("python").strip()
         formatted_response = formatted_response.replace('"""""', '"""')
-        
+
     else:
         raise Exception("No valid format specified")
     
@@ -310,10 +517,8 @@ def classify(query: str, table_schema: str, model: str) -> tuple[str, str, dict]
     f"\nThe request to classify is the following: {query}"
     
     # Obtain the difficulty label
-    label, usage = api_call(model, 1000, prompt)
-    labels = ["simple", "medium", "advanced"]
-    true_label = [l for l in labels if l in label]
-    label = true_label[0]
+    raw_label, usage = api_call(model, 1000, prompt)
+    label = parse_classification_label(raw_label)
     return label, prompt, usage
 
 
@@ -336,7 +541,7 @@ def schema_linking(query: str, model: str) -> tuple[str, dict]:
         
     # Obtain the tables necessary for the SQL query
     tables, usage = api_call(model, 1000, prompt)
-    content = tables.strip("[]").replace("'", "").split(", ")
+    content = parse_schema_linking_tables(tables, schema_all_cntxV1.keys())
     true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
@@ -361,7 +566,7 @@ def schema_linking_v2(query: str, model: str) -> tuple[str, dict]:
         
     # Obtain the tables necessary for the SQL query
     tables, usage = api_call(model, 1000, prompt)
-    content = tables.strip("[]").replace("'", "").split(", ")
+    content = parse_schema_linking_tables(tables, schema_all_cntxV1.keys())
     true_tables = f"{[schema_all_cntxV1[c] for c in content]}"
     return true_tables, usage
 
@@ -546,36 +751,12 @@ def pricing(usage: dict, model: str) -> dict:
     """
     # Prices dictionary (hard-coded)
     # The prices are in US dollars and for every 1M tokens
-    prices = {
-        "gpt-4o": {
-            "input": 2.50,
-            "output": 10
-        },
-        "gpt-4o-mini": {
-            "input": 0.15,
-            "output": 0.6
-        },
-        "o1-preview": {
-            "input": 15,
-            "output": 60
-        },
-        "o1-mini": {
-            "input": 3,
-            "output": 12
-        },
-        "claude-3-5-sonnet": {
-            "input": 3,
-            "output": 15
-        }
-    }
-    
-    # Checking the corresponding model
-    m = [key for key in prices.keys() if key in model][0]
+    m = get_price_key(model)
     
     for key in usage.keys():
         # Obtaining the respective costs
-        input_cost = prices[m]["input"] * usage[key]["input_tokens"] / 1e6
-        output_cost = prices[m]["output"] * usage[key]["output_tokens"] / 1e6
+        input_cost = MODEL_PRICES[m]["input"] * usage[key]["input_tokens"] / 1e6
+        output_cost = MODEL_PRICES[m]["output"] * usage[key]["output_tokens"] / 1e6
         total_cost = input_cost + output_cost
                 
         # Augmenting the usage dictionary

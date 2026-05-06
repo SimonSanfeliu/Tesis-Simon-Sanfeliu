@@ -93,7 +93,10 @@ class queryPipeline():
             # Initiating RAG
             rag_info, usage = rag_step(size, overlap, context, ragInstruction, 
                                             quantity)
-            content = rag_info.strip("[]").replace("'", "").split(", ")
+            content = parse_schema_linking_tables(
+                rag_info,
+                self.prompts["Schema Linking"]["context1"].keys()
+            )
             
         else:
             # Make the schema linking prompt
@@ -102,7 +105,10 @@ class queryPipeline():
                 
             # Obtain the tables necessary for the SQL query
             tables, usage = api_call(self.llm, 1000, prompt)
-            content = tables.strip("[]").replace("'", "").split(", ")
+            content = parse_schema_linking_tables(
+                tables,
+                self.prompts["Schema Linking"]["context1"].keys()
+            )
 
         self.tab_schema_class = f"{[self.prompts['Schema Linking']['context1'][c] for c in content]}"
         self.tab_schema_decomp = f"{[self.prompts['Schema Linking']['context2'][c] for c in content]}"  # Jorge's decomposition
@@ -134,9 +140,7 @@ class queryPipeline():
         
         # Obtain the difficulty label
         label, usage = api_call(self.llm, 1000, prompt)
-        labels = ["simple", "medium", "advanced"]
-        true_label = [l for l in labels if l in label]
-        self.label = true_label[0]
+        self.label = parse_classification_label(label)
         
         # Saving the usage
         self.usage["Classify"] = usage
@@ -305,38 +309,13 @@ class queryPipeline():
         Returns:
             None
         """
-        # Prices dictionary (hard-coded)
-        # The prices are in US dollars and for every 1M tokens
-        prices = {
-            "gpt-4o": {
-                "input": 2.50,
-                "output": 10
-            },
-            "gpt-4o-mini": {
-                "input": 0.15,
-                "output": 0.6
-            },
-            "o1-preview": {
-                "input": 15,
-                "output": 60
-            },
-            "o1-mini": {
-                "input": 3,
-                "output": 12
-            },
-            "claude-3-5-sonnet": {
-                "input": 3,
-                "output": 15
-            }
-        }
-        
         # Checking the corresponding model
-        m = [key for key in prices.keys() if key in self.llm][0]
+        m = get_price_key(self.llm)
         
         for key in self.usage.keys():
             # Obtaining the respective costs
-            input_cost = prices[m]["input"] * self.usage[key]["input_tokens"] / 1e6
-            output_cost = prices[m]["output"] * self.usage[key]["output_tokens"] / 1e6
+            input_cost = MODEL_PRICES[m]["input"] * self.usage[key]["input_tokens"] / 1e6
+            output_cost = MODEL_PRICES[m]["output"] * self.usage[key]["output_tokens"] / 1e6
             total_cost = input_cost + output_cost
                     
             # Augmenting the usage dictionary
