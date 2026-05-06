@@ -5797,3 +5797,88 @@
 2026-04-08 12:33:41,396 - INFO - Running pipeline
 2026-04-08 12:33:51,882 - INFO - Saving backup
 2026-04-08 12:33:51,893 - INFO - Saving all
+2026-05-06 08:35:39,565 - INFO - Running process
+2026-05-06 08:35:39,571 - INFO - Running pipeline
+2026-05-06 08:35:44,520 - ERROR - An error has occurred: 'Looking at the user request'
+2026-05-06 08:35:44,522 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 08:35:59,772 - INFO - Running process
+2026-05-06 08:35:59,776 - INFO - Running pipeline
+2026-05-06 08:36:27,869 - INFO - Saving backup
+2026-05-06 08:36:27,883 - INFO - Running pipeline
+2026-05-06 08:36:33,074 - ERROR - An error has occurred: 'Looking at the user request'
+2026-05-06 08:36:33,074 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 08:40:29,020 - INFO - Running process
+2026-05-06 08:40:29,022 - INFO - Running pipeline
+2026-05-06 08:40:59,705 - INFO - Saving backup
+2026-05-06 08:40:59,714 - INFO - Running pipeline
+2026-05-06 08:41:04,245 - ERROR - An error has occurred: 'Looking at the user request'
+2026-05-06 08:41:04,246 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 08:43:14,644 - INFO - Restarting
+2026-05-06 08:43:14,749 - INFO - Query ID: 107, Run ID: 2
+2026-05-06 08:43:14,752 - INFO - Running pipeline
+2026-05-06 08:43:19,543 - ERROR - An error has occurred while restarting the process: 'Looking at the user request'
+2026-05-06 08:43:19,545 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 08:44:32,276 - INFO - Restarting
+2026-05-06 08:44:32,293 - INFO - Query ID: 107, Run ID: 2
+2026-05-06 08:44:32,296 - INFO - Running pipeline
+2026-05-06 08:44:38,126 - ERROR - An error has occurred while restarting the process: 'Looking at the user request'
+2026-05-06 08:44:38,128 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 08:46:57,735 - INFO - Restarting
+2026-05-06 08:46:57,750 - INFO - Query ID: 107, Run ID: 2
+2026-05-06 08:46:57,752 - INFO - Running pipeline
+2026-05-06 08:46:57,753 - INFO - NL query: Find at most 10 ZTF objects that satisfy the following conditions: have more than 500 detections, a probability larger than 0.5 of being an asteroid in the stamp classifier version 'stamp_classifier_1.0.4', and a distance from the nearest Solar System object below 2 arcsec. Return the following columns: ZTF identifier, number of detections, first and last detection date, probability, candidate identifier, distance between ZTF object and MPC object, MPC name, detection date and filter identifier. Order the results by the first detection date.
+2026-05-06 08:47:02,479 - ERROR - An error has occurred while restarting the process: 'Looking at the user request'
+2026-05-06 08:47:02,480 - INFO - Progress saved in new_df attribute of this object
+2026-05-06 09:12:18,057 - INFO - Restarting
+2026-05-06 09:12:18,082 - INFO - Query ID: 107, Run ID: 2
+2026-05-06 09:12:18,088 - INFO - Running pipeline
+2026-05-06 09:12:47,050 - INFO - Saving backup
+2026-05-06 09:12:47,075 - INFO - Query ID: 107, Run ID: 3
+2026-05-06 09:12:47,078 - INFO - Running pipeline
+2026-05-06 09:13:20,401 - INFO - Saving backup
+2026-05-06 09:13:20,425 - INFO - Query ID: 107, Run ID: 4
+2026-05-06 09:13:20,432 - INFO - Running pipeline
+2026-05-06 09:13:52,130 - INFO - Saving backup
+2026-05-06 09:13:52,145 - INFO - Query ID: 107, Run ID: 5
+2026-05-06 09:13:52,147 - INFO - Running pipeline
+2026-05-06 09:14:21,591 - INFO - Saving backup
+2026-05-06 09:14:21,596 - INFO - Query ID: 107, Run ID: 6
+2026-05-06 09:14:21,597 - INFO - Running pipeline
+2026-05-06 09:14:56,120 - INFO - Saving backup
+2026-05-06 09:14:56,132 - INFO - Query ID: 107, Run ID: 7
+2026-05-06 09:14:56,133 - INFO - Running pipeline
+2026-05-06 09:15:26,795 - INFO - Saving backup
+2026-05-06 09:15:26,805 - INFO - Query ID: 107, Run ID: 8
+2026-05-06 09:15:26,807 - INFO - Running pipeline
+2026-05-06 09:15:56,840 - INFO - Saving backup
+2026-05-06 09:15:56,880 - INFO - Query ID: 107, Run ID: 9
+2026-05-06 09:15:56,883 - INFO - Running pipeline
+2026-05-06 09:16:30,243 - INFO - Saving backup
+2026-05-06 09:16:30,267 - INFO - Query ID: 107, Run ID: 10
+2026-05-06 09:16:30,269 - INFO - Running pipeline
+2026-05-06 09:17:01,553 - INFO - Saving backup
+2026-05-06 09:17:01,562 - INFO - Saving all
+2026-05-06 10:33:34,056 - INFO - Restarting
+2026-05-06 10:33:34,157 - INFO - Saving all
+2026-05-06 10:33:56,567 - INFO - Running process
+2026-05-06 10:33:56,573 - INFO - Running pipeline
+2026-05-06 10:34:19,868 - INFO - Saving backup
+2026-05-06 10:34:19,888 - INFO - Running pipeline
+2026-05-06 10:34:45,248 - INFO - Saving backup
+2026-05-06 10:34:45,270 - INFO - Running pipeline
+2026-05-06 10:35:05,652 - INFO - Saving backup
+2026-05-06 10:35:05,678 - INFO - Running pipeline
+2026-05-06 10:35:29,149 - INFO - Saving backup
+2026-05-06 10:35:29,175 - INFO - Running pipeline
+2026-05-06 10:35:56,052 - INFO - Saving backup
+2026-05-06 10:35:56,081 - INFO - Running pipeline
+2026-05-06 10:36:25,173 - INFO - Saving backup
+2026-05-06 10:36:25,214 - INFO - Running pipeline
+2026-05-06 10:36:48,233 - INFO - Saving backup
+2026-05-06 10:36:48,266 - INFO - Running pipeline
+2026-05-06 10:37:13,219 - INFO - Saving backup
+2026-05-06 10:37:13,255 - INFO - Running pipeline
+2026-05-06 10:37:36,325 - INFO - Saving backup
+2026-05-06 10:37:36,353 - INFO - Running pipeline
+2026-05-06 10:38:24,858 - INFO - Saving backup
+2026-05-06 10:38:24,894 - INFO - Saving all
