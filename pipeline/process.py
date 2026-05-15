@@ -208,6 +208,8 @@ def api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
     
     elif provider == "google":
         try:
+            from google import genai
+
             client = genai.Client(api_key=GOOGLE_KEY)
             response = client.models.generate_content(
                 model=model,
@@ -315,6 +317,25 @@ def unify_decomposition_steps(steps: list[str]) -> str:
     )
 
 
+def _extract_anthropic_tool_input(response, tool_name: str) -> dict:
+    """Extract the structured input payload returned in a Claude tool_use block.
+
+    Args:
+        response: Anthropic SDK response object
+        tool_name (str): Expected tool name
+
+    Returns:
+        dict: Structured tool input payload
+    """
+    for block in response.content:
+        block_type = block.get("type") if isinstance(block, dict) else getattr(block, "type", None)
+        block_name = block.get("name") if isinstance(block, dict) else getattr(block, "name", None)
+        if block_type == "tool_use" and block_name == tool_name:
+            return block.get("input") if isinstance(block, dict) else getattr(block, "input", None)
+
+    raise ValueError(f"Claude response did not include the expected tool_use block: {tool_name}")
+
+
 def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[str, dict]:
     """Create a structured-output API call for the decomposition stage.
 
@@ -329,7 +350,9 @@ def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[st
     Returns:
         tuple[str, dict]: Unified numbered decomposition plan and API usage
     """
-    if "gpt" not in model:
+    provider = get_model_provider(model)
+    model_lower = model.lower().strip()
+    if provider == "openai" and "gpt" not in model_lower:
         return api_call(model, max_tokens, prompt)
 
     schema_prompt = prompt + """
@@ -368,46 +391,105 @@ def decomposition_api_call(model: str, max_tokens: int, prompt: str) -> tuple[st
     }
 
     try:
-        if model.lower().strip() == "gpt-5.2-codex":
-            content, usage = _responses_api_call(
-                model,
-                max_tokens,
-                schema_prompt,
-                text_format={
+        if provider == "openai":
+            if model_lower == "gpt-5.2-codex":
+                content, usage = _responses_api_call(
+                    model,
+                    max_tokens,
+                    schema_prompt,
+                    text_format={
+                        "type": "json_schema",
+                        **schema_definition
+                    }
+                )
+                parsed = json.loads(content)
+                decomp_plan = unify_decomposition_steps(
+                    [item["step"] for item in parsed["steps"]]
+                )
+                return decomp_plan, usage
+
+            client = openai.OpenAI(api_key=OPENAI_KEY)
+            response = client.chat.completions.create(
+                model=model,
+                temperature=0,
+                max_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": schema_prompt}
+                ],
+                response_format={
                     "type": "json_schema",
-                    **schema_definition
+                    "json_schema": schema_definition
                 }
             )
+            usage = {
+                "input_tokens": response.usage.prompt_tokens,
+                "output_tokens": response.usage.completion_tokens,
+                "total_tokens": response.usage.total_tokens
+            }
+            content = response.choices[0].message.content
             parsed = json.loads(content)
             decomp_plan = unify_decomposition_steps(
                 [item["step"] for item in parsed["steps"]]
             )
             return decomp_plan, usage
 
-        client = openai.OpenAI(api_key=OPENAI_KEY)
-        response = client.chat.completions.create(
-            model=model,
-            temperature=0,
-            max_tokens=max_tokens,
-            messages=[
-                {"role": "user", "content": schema_prompt}
-            ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": schema_definition
+        if provider == "anthropic":
+            tool_name = "submit_decomposition_plan"
+            client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+            response = client.messages.create(
+                model=model,
+                temperature=0,
+                max_tokens=max_tokens,
+                tools=[
+                    {
+                        "name": tool_name,
+                        "description": "Return the decomposition plan as structured JSON following the provided schema.",
+                        "input_schema": schema_definition["schema"],
+                        "strict": True
+                    }
+                ],
+                tool_choice={
+                    "type": "tool",
+                    "name": tool_name
+                },
+                messages=[
+                    {"role": "user", "content": schema_prompt}
+                ]
+            )
+            usage = response.usage.to_dict()
+            usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
+            parsed = _extract_anthropic_tool_input(response, tool_name)
+            decomp_plan = unify_decomposition_steps(
+                [item["step"] for item in parsed["steps"]]
+            )
+            return decomp_plan, usage
+
+        if provider == "google":
+            from google import genai
+
+            client = genai.Client(api_key=GOOGLE_KEY)
+            response = client.models.generate_content(
+                model=model,
+                contents=schema_prompt,
+                config={
+                    "temperature": 0,
+                    "max_output_tokens": max_tokens,
+                    "response_mime_type": "application/json",
+                    "response_json_schema": schema_definition["schema"]
+                }
+            )
+            usage = {
+                "input_tokens": response.usage_metadata.prompt_token_count,
+                "output_tokens": response.usage_metadata.candidates_token_count,
+                "total_tokens": response.usage_metadata.total_token_count
             }
-        )
-        usage = {
-            "input_tokens": response.usage.prompt_tokens,
-            "output_tokens": response.usage.completion_tokens,
-            "total_tokens": response.usage.total_tokens
-        }
-        content = response.choices[0].message.content
-        parsed = json.loads(content)
-        decomp_plan = unify_decomposition_steps(
-            [item["step"] for item in parsed["steps"]]
-        )
-        return decomp_plan, usage
+            parsed = json.loads(response.text)
+            decomp_plan = unify_decomposition_steps(
+                [item["step"] for item in parsed["steps"]]
+            )
+            return decomp_plan, usage
+
+        raise Exception(f"No structured decomposition provider configured for model: {model}")
     except Exception as e:
         print(f"The following exception occured in decomposition_api_call: {e}")
         raise Exception(e)
